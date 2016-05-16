@@ -8,7 +8,8 @@ EXE_INC = \
     -I$(LIB_SRC)/turbulenceModels/incompressible/RAS/lnInclude \
     -I$(LIB_SRC)/transportModels \
     -I$(LIB_SRC)/transportModels/incompressible/singlePhaseTransportModel \
-    -I$(LIB_SRC)/thermophysicalModels/radiationModels/lnInclude
+    -I$(LIB_SRC)/thermophysicalModels/radiationModels/lnInclude \
+    -I$(PRECICE_ROOT)/src
 
 EXE_LIBS = \
     -lfiniteVolume \
@@ -18,4 +19,11 @@ EXE_LIBS = \
     -lincompressibleTurbulenceModel \
     -lincompressibleRASModels \
     -lincompressibleTransportModels \
-    -lradiationModels
+    -lradiationModels \
+    -L${PRECICE_ROOT}/build/last \
+    -L/home/ludcila/petsc-3.5.4/arch-linux2-c-debug/lib \
+    -lprecice \
+    -lpetsc \
+    -lboost_system \
+    -lboost_filesystem \
+    -lpython2.7 

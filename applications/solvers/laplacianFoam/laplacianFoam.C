@@ -31,6 +31,7 @@ Description
 
 #include "fvCFD.H"
 #include "simpleControl.H"
+#include "precice/SolverInterface.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

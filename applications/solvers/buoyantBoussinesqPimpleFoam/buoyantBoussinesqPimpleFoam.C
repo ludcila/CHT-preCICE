@@ -52,6 +52,7 @@ Description
 #include "fvIOoptionList.H"
 #include "pimpleControl.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
+#include "precice/SolverInterface.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
