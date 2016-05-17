@@ -32,6 +32,7 @@ Description
 #include "fvCFD.H"
 #include "simpleControl.H"
 #include "precice/SolverInterface.hpp"
+#include "fixedGradientFvPatchFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -46,12 +47,72 @@ int main(int argc, char *argv[])
     simpleControl simple(mesh);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+    
+    /* =========================== Get mesh properties =========================== */
+    
+	label interfacePatchID = mesh.boundaryMesh().findPatchID("interface");
+	const vectorField faceCenters = mesh.boundaryMesh()[interfacePatchID].faceCentres();
+	int numVertices = faceCenters.size();
+	
+	/* Interface patch */
+	fixedGradientFvPatchScalarField & temperatureGradientPatch = refCast<fixedGradientFvPatchScalarField>(T.boundaryField()[interfacePatchID]);
+  
+    /* Interface data buffers */
+    double temperatureBuffer[numVertices];
+    double heatFluxBuffer[numVertices];
+    scalarField temperatureField(numVertices);
+    scalarField temperatureGradientField(numVertices);
+    
+    /* =========================== preCICE setup =========================== */
+    
+	precice::SolverInterface precice("Solid", 0, 1);
+	precice.configure("precice-config.xml");
+	
+	// Get preCICE IDs
+	int meshID = precice.getMeshID("Solid_Nodes");
+	int temperatureID = precice.getDataID("Temperature", meshID);
+	int heatFluxID = precice.getDataID("Heat_Flux", meshID);
+	
+	// Set mesh vertices
+	double * vertices = new double[numVertices * 3];
+	int vertexIDs[numVertices];
+	forAll(faceCenters, i) {
+		vertexIDs[i] = i;
+		vertices[i*3 + 0] = faceCenters[i].x();
+		vertices[i*3 + 1] = faceCenters[i].y();
+		vertices[i*3 + 2] = faceCenters[i].z();
+	}
+	precice.setMeshVertices(meshID, numVertices, vertices, vertexIDs);
+	
+    /* =========================== preCICE initialize =========================== */
+    
+	double precice_dt = precice.initialize();
+	precice.initializeData();
+	
 
     Info<< "\nCalculating temperature distribution\n" << endl;
 
     while (simple.loop())
     {
         Info<< "Time = " << runTime.timeName() << nl << endl;
+	    
+		/* =========================== preCICE read data =========================== */
+		
+		// Receive the heat flux from the fluid solver
+	    precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
+	    
+	    // Hard coded thermal conductivity k
+	    double k = 1e-3;
+	    
+	    
+	    // Compute gradient from heat flux
+	    forAll(temperatureGradientPatch, i) {
+	    	temperatureGradientPatch.gradient()[i] = -heatFluxBuffer[i] / k;
+	    }
+	    
+	    // Info << temperatureGradientPatch.gradient() << endl;
+
+		/* =========================== solve =========================== */
 
         while (simple.correctNonOrthogonal())
         {
@@ -60,6 +121,18 @@ int main(int argc, char *argv[])
                 fvm::ddt(T) - fvm::laplacian(DT, T)
             );
         }
+    
+		/* =========================== preCICE write data =========================== */
+		
+	    forAll(T.boundaryField()[interfacePatchID], i) {
+	    	temperatureBuffer[i] = T.boundaryField()[interfacePatchID][i];
+	    	std::cout << temperatureBuffer[i] << std::endl;
+	    }
+	    precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
+		
+		precice_dt = precice.advance(precice_dt);
+		
+		/* =========================== Done with preCICE =========================== */
 
         #include "write.H"
 

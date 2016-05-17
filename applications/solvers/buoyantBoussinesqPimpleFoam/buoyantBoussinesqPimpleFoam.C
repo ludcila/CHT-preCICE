@@ -73,6 +73,49 @@ int main(int argc, char *argv[])
     pimpleControl pimple(mesh);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+    
+    /* =========================== Get mesh properties =========================== */
+    
+	label interfacePatchID = mesh.boundaryMesh().findPatchID("interface");
+	const vectorField faceCenters = mesh.boundaryMesh()[interfacePatchID].faceCentres();
+	int numVertices = faceCenters.size();
+	
+	/* Interface patch */
+	fixedValueFvPatchScalarField & temperaturePatch = refCast<fixedValueFvPatchScalarField>(T.boundaryField()[interfacePatchID]);
+   
+    /* Interface data buffers */
+    double temperatureBuffer[numVertices];
+    double heatFluxBuffer[numVertices];
+    scalarField temperatureField(numVertices);
+    scalarField temperatureGradientField(numVertices);
+    
+    /* =========================== preCICE setup =========================== */
+    
+	precice::SolverInterface precice("Fluid", 0, 1);
+	precice.configure("precice-config.xml");
+	
+	// Get preCICE IDs
+	int meshID = precice.getMeshID("Fluid_Nodes");
+	int temperatureID = precice.getDataID("Temperature", meshID);
+	int heatFluxID = precice.getDataID("Heat_Flux", meshID);
+	
+	// Set mesh vertices
+	double * vertices = new double[numVertices * 3];
+	int vertexIDs[numVertices];
+	forAll(faceCenters, i) {
+		vertexIDs[i] = i;
+		vertices[i*3 + 0] = faceCenters[i].x();
+		vertices[i*3 + 1] = faceCenters[i].y();
+		vertices[i*3 + 2] = faceCenters[i].z();
+	}
+	precice.setMeshVertices(meshID, numVertices, vertices, vertexIDs);
+	
+    /* =========================== preCICE initialize =========================== */
+    
+	double precice_dt = precice.initialize();
+	precice.initializeData();
+	
+	
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -83,6 +126,19 @@ int main(int argc, char *argv[])
         #include "readTimeControls.H"
         #include "CourantNo.H"
         #include "setDeltaT.H"
+	    
+		/* =========================== preCICE read data =========================== */
+		
+		// Receive the temperature from the solid solver
+	    precice.readBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
+	    
+	    // Set the temperature Dirichlet boundary condition
+	    forAll(temperatureField, i) {
+	    	std::cout << temperatureBuffer[i] << std::endl;
+	    	temperatureField[i] = temperatureBuffer[i];
+	    }
+	    temperaturePatch == temperatureField;
+	    
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -101,6 +157,26 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
+	    
+		/* =========================== preCICE write data =========================== */
+		
+		
+    	volScalarField alphaEff("alphaEff", turbulence->nu()/Pr + alphat);
+    	fvPatchScalarField aEff = alphaEff.boundaryField()[interfacePatchID];
+    	
+    	// Hard coded values
+    	double rho = 1;
+    	double Cp = 1;
+    	
+		temperatureGradientField = temperaturePatch.snGrad();
+	    forAll(temperatureGradientField, i) {
+	    	heatFluxBuffer[i] = aEff[i] * rho * Cp * temperatureGradientField[i];
+	    }
+	    precice.writeBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
+		
+		precice_dt = precice.advance(precice_dt);
+		
+		/* =========================== Done with preCICE =========================== */
 
         runTime.write();
 
