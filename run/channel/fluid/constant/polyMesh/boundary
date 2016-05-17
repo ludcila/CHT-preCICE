@@ -21,43 +21,43 @@ FoamFile
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          90;
-        startFace       15800;
+        nFaces          30;
+        startFace       8495;
     }
     outlet
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          90;
-        startFace       15890;
+        nFaces          30;
+        startFace       8525;
     }
     top
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          90;
-        startFace       15980;
+        nFaces          150;
+        startFace       8555;
     }
     bottom
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          90;
-        startFace       16070;
+        nFaces          150;
+        startFace       8705;
     }
-    rod
+    interface
     {
         type            wall;
         inGroups        1(wall);
-        nFaces          40;
-        startFace       16160;
+        nFaces          50;
+        startFace       8855;
     }
     defaultFaces
     {
         type            empty;
         inGroups        1(empty);
-        nFaces          16000;
-        startFace       16200;
+        nFaces          8700;
+        startFace       8905;
     }
 )
 

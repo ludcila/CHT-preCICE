@@ -24,7 +24,7 @@ boundaryField
     inlet
     {
         type            fixedValue;
-        value           uniform 273;
+        value           uniform 100;
     }
 
     outlet
@@ -32,10 +32,10 @@ boundaryField
         type            zeroGradient;
     }
 
-    rod
+    interface
     {
         type            fixedValue;
-        value           uniform 0;
+        value           uniform 300;
     }
 
     top

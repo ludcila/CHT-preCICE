@@ -10,40 +10,52 @@ FoamFile
     version     2.0;
     format      ascii;
     class       volScalarField;
-    object      p_rgh;
+    location    "0";
+    object      alphat;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 2 -2 0 0 0 0];
+dimensions      [0 2 -1 0 0 0 0];
 
 internalField   uniform 0;
 
 boundaryField
 {
-	inlet
-	{
-		type			zeroGradient;
-	}
-	outlet
-	{
-		type			zeroGradient;
-	}
+    inlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    outlet
+    {
+        type            alphatJayatillekeWallFunction;
+        Prt             0.85;
+        value           uniform 0;
+    }
     top
     {
-        type            fixedFluxPressure;
+        type            alphatJayatillekeWallFunction;
+        Prt             0.85;
+        value           uniform 0;
     }
     bottom
     {
-        type            fixedFluxPressure;
+        type            alphatJayatillekeWallFunction;
+        Prt             0.85;
+        value           uniform 0;
     }
-    rod
+    interface
     {
-        type            fixedFluxPressure;
+        type            alphatJayatillekeWallFunction;
+        Prt             0.85;
+        value           uniform 0;
     }
     defaultFaces
     {
-    	type			empty;
+        type            empty;
     }
+    
 }
+
 
 // ************************************************************************* //
