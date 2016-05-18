@@ -115,7 +115,8 @@ int main(int argc, char *argv[])
 	double precice_dt = precice.initialize();
 	precice.initializeData();
 	
-	
+	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
+	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
 
     Info<< "\nStarting time loop\n" << endl;
 
@@ -126,57 +127,72 @@ int main(int argc, char *argv[])
         #include "readTimeControls.H"
         #include "CourantNo.H"
         #include "setDeltaT.H"
+        
+        while(precice.isCouplingOngoing()) {
 	    
-		/* =========================== preCICE read data =========================== */
+			/* =========================== preCICE read data =========================== */
 		
-		// Receive the temperature from the solid solver
-	    precice.readBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
-	    
-	    // Set the temperature Dirichlet boundary condition
-	    forAll(temperatureField, i) {
-	    	std::cout << temperatureBuffer[i] << std::endl;
-	    	temperatureField[i] = temperatureBuffer[i];
-	    }
-	    temperaturePatch == temperatureField;
-	    
+			if(precice.isActionRequired(cowic)){
+				precice.fulfilledAction(cowic);
+			}
+			
+			// Receive the temperature from the solid solver
+			precice.readBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
+			
+			// Set the temperature Dirichlet boundary condition
+			forAll(temperatureField, i) {
+				//std::cout << temperatureBuffer[i] << std::endl;
+				temperatureField[i] = temperatureBuffer[i];
+			}
+			temperaturePatch == temperatureField;
+			
 
-        // --- Pressure-velocity PIMPLE corrector loop
-        while (pimple.loop())
-        {
-            #include "UEqn.H"
-            #include "TEqn.H"
+		    // --- Pressure-velocity PIMPLE corrector loop
+		    while (pimple.loop())
+		    {
+		        #include "UEqn.H"
+		        #include "TEqn.H"
 
-            // --- Pressure corrector loop
-            while (pimple.correct())
-            {
-                #include "pEqn.H"
+		        // --- Pressure corrector loop
+		        while (pimple.correct())
+		        {
+		            #include "pEqn.H"
+		        }
+
+		        if (pimple.turbCorr())
+		        {
+		            turbulence->correct();
+		        }
+		    }
+			
+			/* =========================== preCICE write data =========================== */
+		
+		
+			volScalarField alphaEff("alphaEff", turbulence->nu()/Pr + alphat);
+			fvPatchScalarField aEff = alphaEff.boundaryField()[interfacePatchID];
+			
+			// Hard coded values
+			double rho = 1;
+			double Cp = 1;
+			
+			temperatureGradientField = temperaturePatch.snGrad();
+			forAll(temperatureGradientField, i) {
+				heatFluxBuffer[i] = aEff[i] * rho * Cp * temperatureGradientField[i];
+			}
+			precice.writeBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
+		
+			precice_dt = precice.advance(precice_dt);
+			
+			if(precice.isActionRequired(coric)){
+				precice.fulfilledAction(coric);
+			}
+		
+			/* =========================== Done with preCICE =========================== */
+		
+            if ( precice.isTimestepComplete() ) {
+                break;
             }
-
-            if (pimple.turbCorr())
-            {
-                turbulence->correct();
-            }
-        }
-	    
-		/* =========================== preCICE write data =========================== */
-		
-		
-    	volScalarField alphaEff("alphaEff", turbulence->nu()/Pr + alphat);
-    	fvPatchScalarField aEff = alphaEff.boundaryField()[interfacePatchID];
-    	
-    	// Hard coded values
-    	double rho = 1;
-    	double Cp = 1;
-    	
-		temperatureGradientField = temperaturePatch.snGrad();
-	    forAll(temperatureGradientField, i) {
-	    	heatFluxBuffer[i] = aEff[i] * rho * Cp * temperatureGradientField[i];
-	    }
-	    precice.writeBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
-		
-		precice_dt = precice.advance(precice_dt);
-		
-		/* =========================== Done with preCICE =========================== */
+		}
 
         runTime.write();
 

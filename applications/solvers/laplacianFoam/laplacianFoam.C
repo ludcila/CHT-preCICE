@@ -89,6 +89,9 @@ int main(int argc, char *argv[])
 	double precice_dt = precice.initialize();
 	precice.initializeData();
 	
+	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
+	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
+	
 
     Info<< "\nCalculating temperature distribution\n" << endl;
 
@@ -96,43 +99,57 @@ int main(int argc, char *argv[])
     {
         Info<< "Time = " << runTime.timeName() << nl << endl;
 	    
-		/* =========================== preCICE read data =========================== */
-		
-		// Receive the heat flux from the fluid solver
-	    precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
-	    
-	    // Hard coded thermal conductivity k
-	    double k = 1e-3;
-	    
-	    
-	    // Compute gradient from heat flux
-	    forAll(temperatureGradientPatch, i) {
-	    	temperatureGradientPatch.gradient()[i] = -heatFluxBuffer[i] / k;
-	    }
-	    
-	    // Info << temperatureGradientPatch.gradient() << endl;
+        while(precice.isCouplingOngoing()) {
+		    
+			/* =========================== preCICE read data =========================== */
 
-		/* =========================== solve =========================== */
+			if(precice.isActionRequired(cowic)){
+				precice.fulfilledAction(cowic);
+			}
+		
+			// Receive the heat flux from the fluid solver
+			precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
+			
+			// Hard coded thermal conductivity k
+			double k = 1e-3;
+			
+			
+			// Compute gradient from heat flux
+			forAll(temperatureGradientPatch, i) {
+				temperatureGradientPatch.gradient()[i] = -heatFluxBuffer[i] / k;
+			}
+			
+			// Info << temperatureGradientPatch.gradient() << endl;
 
-        while (simple.correctNonOrthogonal())
-        {
-            solve
-            (
-                fvm::ddt(T) - fvm::laplacian(DT, T)
-            );
-        }
-    
-		/* =========================== preCICE write data =========================== */
+			/* =========================== solve =========================== */
+
+		    while (simple.correctNonOrthogonal())
+		    {
+		        solve
+		        (
+		            fvm::ddt(T) - fvm::laplacian(DT, T)
+		        );
+		    }
 		
-	    forAll(T.boundaryField()[interfacePatchID], i) {
-	    	temperatureBuffer[i] = T.boundaryField()[interfacePatchID][i];
-	    	std::cout << temperatureBuffer[i] << std::endl;
-	    }
-	    precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
+			/* =========================== preCICE write data =========================== */
 		
-		precice_dt = precice.advance(precice_dt);
+			forAll(T.boundaryField()[interfacePatchID], i) {
+				temperatureBuffer[i] = T.boundaryField()[interfacePatchID][i];
+				std::cout << temperatureBuffer[i] << std::endl;
+			}
+			precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
 		
-		/* =========================== Done with preCICE =========================== */
+			precice_dt = precice.advance(precice_dt);
+			
+			if(precice.isActionRequired(coric)){
+				precice.fulfilledAction(coric);
+			}
+		
+			/* =========================== Done with preCICE =========================== */
+		
+            if ( precice.isTimestepComplete() )
+                break;
+		}
 
         #include "write.H"
 
