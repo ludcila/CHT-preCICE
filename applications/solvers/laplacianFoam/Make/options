@@ -7,7 +7,7 @@ EXE_LIBS = \
     -lfiniteVolume \
     -lmeshTools \
     -L${PRECICE_ROOT}/build/last \
-    -L/home/ludcila/petsc-3.5.4/arch-linux2-c-debug/lib \
+    -L${PETSC_DIR}/${PETSC_ARCH}/lib \
     -lprecice \
     -lpetsc \
     -lboost_system \
