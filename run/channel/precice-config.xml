@@ -12,8 +12,8 @@
   <solver-interface dimensions="3">
     
     <!-- Data fields that are exchanged between the solvers -->
-    <data:vector name="Temperature"/>
-    <data:vector name="Heat_Flux"/>
+    <data:scalar name="Temperature"/>
+    <data:scalar name="Heat_Flux"/>
 
     <!-- A common mesh that uses these data fields -->
     <mesh name="Fluid_Nodes">
