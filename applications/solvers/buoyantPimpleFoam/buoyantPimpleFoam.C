@@ -69,7 +69,6 @@ PreciceInterface::PreciceInterface(precice::SolverInterface * precice, fvMesh & 
 
     _precice = precice;
     _meshID = _precice->getMeshID(meshName);
-    std::cout << "Calling superconstructor" << _meshID << std::endl;
 
     _patchID = mesh.boundaryMesh().findPatchID(interfaceName);
     _vertexIDs = new int[_numVertices];
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
 
     /* =========================== preCICE setup =========================== */
 
-    precice::SolverInterface precice("OpenFOAM", 0, 1);
+    precice::SolverInterface precice(caseName, 0, 1);
     precice.configure("precice-config.xml");
 
     /* =========================== Setup the interfaces =========================== */
@@ -197,7 +196,12 @@ int main(int argc, char *argv[])
 
     }
 
-    //Time couplingIterationTime;
+    scalar couplingIterationTimeValue;
+    label couplingIterationTimeIndex;
+
+    // Chekpointing
+    volVectorField U_checkpoint = U;
+    volScalarField p_checkpoint = p;
 
 
 	
@@ -205,33 +209,51 @@ int main(int argc, char *argv[])
 	
 	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
 	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
-	
-	
 
 
     double preciceDt = precice.initialize();
     precice.initializeData();
+    dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
 	
     Info<< "\nStarting time loop\n" << endl;
 
     while (precice.isCouplingOngoing())
     {
+
         #include "createTimeControls.H"
         #include "compressibleCourantNo.H"
         #include "setDeltaT.H"
 
+        // Set the solver timestep
+        solverDt.value() = std::min(preciceDt, runTime.deltaT().value());
+        runTime.setDeltaT(solverDt);
+
+        // Write checkpoint
         if(precice.isActionRequired(cowic)){
-//            couplingIterationTime = runTime.time();
+
+            std::cout << "<<<<<< Write checkpoint required" << std::endl;
+
+            couplingIterationTimeIndex = runTime.timeIndex();
+            couplingIterationTimeValue = runTime.value();
+
+            if(solverDt.value() == preciceDt) {
+                std::cout << "No subcycling" << std::endl;
+            } else {
+                std::cout << "Subcycling" << std::endl;
+                U_checkpoint = U;
+                p_checkpoint = p;
+            }
+
             precice.fulfilledAction(cowic);
         }
 
-        double minDt = std::min(preciceDt, runTime.deltaT().value());
-        dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(minDt));
-        runTime.setDeltaT(solverDt);
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
+        std::cout << U.oldTime().timeIndex() << std::endl;
+
+        // Read and load interface data
         for(int i = 0; i < preciceInterfaces.size(); i++) {
             preciceInterfaces.at(i)->readData();
         }
@@ -271,8 +293,25 @@ int main(int argc, char *argv[])
 
         if(precice.isActionRequired(coric)) {
 
-//            std::cout << "Revert time to " << couplingIterationTime.value() << std::endl;
-//            runTime.setTime(couplingIterationTime);
+            std::cout << ">>>>>> Read checkpoint required" << std::endl;
+            bool noSubcycling = runTime.timeIndex() - couplingIterationTimeIndex == 1;
+
+            // Set the time before copying the fields, in order to have the correct oldTime() field
+            runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
+
+            if(noSubcycling) {
+                std::cout << "No subcycling" << std::endl;
+                // No need to manually reload the fields
+            } else {
+                std::cout << "Subcycling..." << std::endl;
+                // Reload all fields
+                U = U_checkpoint;
+                p = p_checkpoint;
+            }
+
+            std::cout << "Reset time = " << couplingIterationTimeValue << " (" << couplingIterationTimeIndex << ")" << std::endl;
+
+
             precice.fulfilledAction(coric);
 
         } else {
@@ -283,6 +322,10 @@ int main(int argc, char *argv[])
                 << "  ClockTime = " << runTime.elapsedClockTime() << " s"
                 << nl << endl;
 
+        }
+
+        if(precice.isTimestepComplete()) {
+            std::cout << "Coupling timestep completed!!!==================================================================================" << std::endl;
         }
 
     }
