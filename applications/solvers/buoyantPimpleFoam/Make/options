@@ -9,7 +9,9 @@ EXE_INC = \
     -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
 	-I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude \
 	-I$(PRECICE_ROOT)/src \
-	-I/usr/local/yaml-cpp/include
+	-I/usr/local/yaml-cpp/include \
+	-I../ \
+	-I$(HOME)/Thesis/OFCoupler/
 
 EXE_LIBS = \
     -lfiniteVolume \
@@ -30,5 +32,8 @@ EXE_LIBS = \
     -lboost_filesystem \
 	-lpython2.7 \
 	-L/usr/local/yaml-cpp/build \
-	-lyaml-cpp
+	-L$(HOME)/Thesis/OFCoupler/OFCoupler \
+	-lNULL \
+	-lyaml-cpp \
+
 

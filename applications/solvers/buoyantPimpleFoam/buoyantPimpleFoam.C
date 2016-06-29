@@ -45,104 +45,12 @@ Description
 #include <vector>
 #include <algorithm>
 #include "yaml-cpp/yaml.h"
+#include "OFCoupler/ConfigReader.h"
+#include "OFCoupler/Coupler.h"
+#include "OFCoupler/Interface.h"
+#include "OFCoupler/TemperatureBoundaryCondition.h"
+#include "OFCoupler/BuoyantPimpleHeatFluxBoundaryValues.h"
 
-class PreciceInterface {
-
-protected:
-    int _numVertices;
-    int * _vertexIDs;
-    double * _dataBuffer;
-    int _meshID;
-    int _readDataID;
-    int _writeDataID;
-    int _patchID;
-    precice::SolverInterface * _precice;
-    void _setMeshVertices(const vectorField & faceCenters);
-public:
-    PreciceInterface(precice::SolverInterface * precice, fvMesh & mesh, std::string interfaceName, std::string meshName, std::string readData, std::string writeData);
-    virtual void readData() = 0;
-    virtual void writeData(double solverDt) = 0;
-
-};
-
-PreciceInterface::PreciceInterface(precice::SolverInterface * precice, fvMesh & mesh, std::string interfaceName, std::string meshName, std::string readData, std::string writeData) {
-
-    _precice = precice;
-    _meshID = _precice->getMeshID(meshName);
-
-    _patchID = mesh.boundaryMesh().findPatchID(interfaceName);
-    _vertexIDs = new int[_numVertices];
-    _setMeshVertices(mesh.boundaryMesh()[_patchID].faceCentres());
-    _numVertices = mesh.boundaryMesh()[_patchID].faceCentres().size();
-
-    _readDataID = _precice->getDataID(readData, _meshID);
-    _writeDataID = _precice->getDataID(writeData, _meshID);
-
-}
-
-void PreciceInterface::_setMeshVertices(const vectorField & faceCenters) {
-    double vertex[3];
-    forAll(faceCenters, i) {
-        vertex[0] = faceCenters[i].x();
-        vertex[1] = faceCenters[i].y();
-        vertex[2] = faceCenters[i].z();
-        _precice->setMeshVertex(_meshID, vertex);
-        _vertexIDs[i] = i;
-    }
-}
-
-class TemperatureHeatFluxPreciceInterface : public PreciceInterface {
-
-protected:
-    rhoThermo * _thermo;
-    autoPtr<compressible::turbulenceModel> & _turbulence;
-    fixedValueFvPatchScalarField & _temperaturePatch;
-public:
-    TemperatureHeatFluxPreciceInterface(precice::SolverInterface * precice, fvMesh & mesh, rhoThermo * thermo, autoPtr<compressible::turbulenceModel> & turbulence, std::string interfaceName, std::string meshName);
-    void readData();
-    void writeData(double solverDt);
-
-};
-
-TemperatureHeatFluxPreciceInterface::TemperatureHeatFluxPreciceInterface(precice::SolverInterface * precice, fvMesh & mesh, rhoThermo * thermo, autoPtr<compressible::turbulenceModel> & turbulence, std::string interfaceName, std::string meshName)
-    : PreciceInterface(precice, mesh, interfaceName, meshName, "Temperature", "Heat_Flux"),
-        _thermo(thermo),
-        _temperaturePatch(refCast<fixedValueFvPatchScalarField>(_thermo->T().boundaryField()[_patchID])),
-        _turbulence(turbulence)
-{
-    _dataBuffer = new double[_numVertices];
-}
-
-void TemperatureHeatFluxPreciceInterface::readData() {
-
-    scalarField temperatureField(_numVertices); // TODO: avoid this
-
-    if(_precice->isReadDataAvailable()) {
-
-        _precice->readBlockScalarData(_readDataID, _numVertices, _vertexIDs, _dataBuffer);
-
-        forAll(temperatureField, i) {
-            temperatureField[i] = _dataBuffer[i];
-        }
-        _temperaturePatch == temperatureField;
-    }
-
-}
-
-void TemperatureHeatFluxPreciceInterface::writeData(double solverDt) {
-
-    if(_precice->isWriteDataRequired(solverDt)) {
-        scalarField temperatureGradientField = _temperaturePatch.snGrad();
-        forAll(temperatureGradientField, i) {
-            double alphaEff = _turbulence->alphaEff()().boundaryField()[_patchID][i];
-            double rho = _thermo->rho().boundaryField()[_patchID][i];
-            double Cp = _thermo->Cp()().boundaryField()[_patchID][i];
-            _dataBuffer[i] = - alphaEff * rho * Cp * temperatureGradientField[i];
-        }
-        _precice->writeBlockScalarData(_writeDataID, _numVertices, _vertexIDs, _dataBuffer);
-    }
-
-}
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -166,34 +74,35 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    YAML::Node interfaces = YAML::LoadFile("interfaces-config.yml");
-    
-    std::string caseName = runTime.caseName();
-    std::vector<std::string> interfacePatchNames;
-    std::vector<std::string> interfaceMeshNames;
+    std::string participantName = runTime.caseName();
 
-    int numInterfaces = interfaces[caseName].size();
+    ofcoupler::ConfigReader config("config.yml", participantName);
 
-    for(int i = 0; i < numInterfaces; i++) {
-        interfacePatchNames.push_back(interfaces[caseName][i]["interface"].as<std::string>());
-        interfaceMeshNames.push_back(interfaces[caseName][i]["faces-mesh"].as<std::string>());
-    }
+    precice::SolverInterface precice(participantName, 0, 1);
+    precice.configure(config.preciceConfigFilename());
+    ofcoupler::Coupler coupler(precice, mesh, "buoyantPimpleFoam");
 
-    /* =========================== preCICE setup =========================== */
+    for(int i = 0; i < config.interfaces().size(); i++) {
+        ofcoupler::Interface & interface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchName);
+        for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
+            std::string dataName = config.interfaces().at(i).data.at(j).name;
+            std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
+            if(dataName.compare("Temperature") == 0) {
+                if(dataDirection.compare("in") == 0) {
+                    ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
+                    interface.addDataChannel(dataName, *br);
+                } else {
 
-    precice::SolverInterface precice(caseName, 0, 1);
-    precice.configure("precice-config.xml");
+                }
+            } else if(dataName.compare("Heat-Flux") == 0) {
+                if(dataDirection.compare("in") == 0) {
 
-    /* =========================== Setup the interfaces =========================== */
-
-    std::vector<TemperatureHeatFluxPreciceInterface*> preciceInterfaces;
-    
-    for(int i = 0; i < numInterfaces; i++) {
-
-        std::string interfacePatchName = interfacePatchNames.at(i);
-        std::string interfaceMeshName = interfaceMeshNames.at(i);
-        preciceInterfaces.push_back(new TemperatureHeatFluxPreciceInterface(&precice, mesh, &thermo, turbulence, interfacePatchName, interfaceMeshName));
-
+                } else {
+                    ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
+                    interface.addDataChannel(dataName, *bw);
+                }
+            }
+        }
     }
 
     scalar couplingIterationTimeValue;
@@ -204,17 +113,17 @@ int main(int argc, char *argv[])
     volScalarField p_checkpoint = p;
 
 
-	
+
     /* =========================== preCICE initialize =========================== */
-	
-	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
+
+    const std::string& coric = precice::constants::actionReadIterationCheckpoint();
+    const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
 
 
     double preciceDt = precice.initialize();
     precice.initializeData();
     dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
-	
+
     Info<< "\nStarting time loop\n" << endl;
 
     while (precice.isCouplingOngoing())
@@ -253,10 +162,7 @@ int main(int argc, char *argv[])
 
         std::cout << U.oldTime().timeIndex() << std::endl;
 
-        // Read and load interface data
-        for(int i = 0; i < preciceInterfaces.size(); i++) {
-            preciceInterfaces.at(i)->readData();
-        }
+        coupler.receiveInterfaceData();
 
         #include "rhoEqn.H"
 
@@ -285,9 +191,7 @@ int main(int argc, char *argv[])
         /* =========================== preCICE write data =========================== */
 
 
-        for(int i = 0; i < preciceInterfaces.size(); i++) {
-            preciceInterfaces.at(i)->writeData(solverDt.value());
-        }
+        coupler.sendInterfaceData();
 
         preciceDt = precice.advance(solverDt.value());
 
