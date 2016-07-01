@@ -29,9 +29,25 @@
     );
 
 
-    Info<< "Reading diffusivity DT\n" << endl;
+    Info<< "Reading conductivity k\n" << endl;
 
-    dimensionedScalar DT
+    dimensionedScalar k
     (
-        transportProperties.lookup("DT")
+        transportProperties.lookup("k")
+    );
+
+
+    Info<< "Reading density rho\n" << endl;
+
+    dimensionedScalar rho
+    (
+        transportProperties.lookup("rho")
+    );
+
+
+    Info<< "Reading specific heat Cp\n" << endl;
+
+    dimensionedScalar Cp
+    (
+        transportProperties.lookup("Cp")
     );
