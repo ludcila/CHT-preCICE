@@ -1,0 +1,8 @@
+$(OBJECTS_DIR)/DataChannelOut.C.dep: \
+DataChannelOut.C \
+DataChannelOut.h \
+DataBufferWriter.h \
+DataBufferUser.h \
+DataChannel.h \
+
+
