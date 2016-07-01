@@ -16,6 +16,9 @@ ScalarDataBufferWriter.C
 Coupler.C
 ConfigReader.C
 TemperatureBoundaryCondition.C
+TemperatureBoundaryValues.C
+HeatFluxBoundaryCondition.C
+HeatFluxBoundaryValues.C
 BuoyantPimpleHeatFluxBoundaryValues.C
 
 EXE = test
