@@ -33,6 +33,12 @@ Description
 #include "simpleControl.H"
 #include "precice/SolverInterface.hpp"
 #include "fixedGradientFvPatchFields.H"
+#include "OFCoupler/ConfigReader.h"
+#include "OFCoupler/Coupler.h"
+#include "OFCoupler/TemperatureBoundaryValues.h"
+#include "OFCoupler/TemperatureBoundaryCondition.h"
+#include "OFCoupler/HeatFluxBoundaryValues.h"
+#include "OFCoupler/HeatFluxBoundaryCondition.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -47,114 +53,87 @@ int main(int argc, char *argv[])
     simpleControl simple(mesh);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    
-    /* =========================== Get mesh properties =========================== */
-    
-	label interfacePatchID = mesh.boundaryMesh().findPatchID("interface");
-	const vectorField faceCenters = mesh.boundaryMesh()[interfacePatchID].faceCentres();
-	int numVertices = faceCenters.size();
-	
-	/* Interface patch */
-	fixedGradientFvPatchScalarField & temperatureGradientPatch = refCast<fixedGradientFvPatchScalarField>(T.boundaryField()[interfacePatchID]);
-  
-    /* Interface data buffers */
-    double temperatureBuffer[numVertices];
-    double heatFluxBuffer[numVertices];
-    scalarField temperatureField(numVertices);
-    scalarField temperatureGradientField(numVertices);
 
-    /* =========================== preCICE setup =========================== */
+    std::string participantName = runTime.caseName();
+    ofcoupler::ConfigReader config("config.yml", participantName);
+    precice::SolverInterface precice(participantName, 0, 1);
+    precice.configure(config.preciceConfigFilename());
+    ofcoupler::Coupler coupler(precice, mesh, "laplacianFoam");
 
-    std::string caseName = runTime.caseName();
-    precice::SolverInterface precice(caseName, 0, 1);
-    precice.configure("precice-config.xml");
-	
-	// Get preCICE IDs
-	int meshID = precice.getMeshID("Solid_Nodes");
-	int temperatureID = precice.getDataID("Temperature", meshID);
-    int heatFluxID = precice.getDataID("Heat-Flux", meshID);
-	
-	// Set mesh vertices
-	double * vertices = new double[numVertices * 3];
-	int vertexIDs[numVertices];
-	forAll(faceCenters, i) {
-		vertexIDs[i] = i;
-		vertices[i*3 + 0] = faceCenters[i].x();
-		vertices[i*3 + 1] = faceCenters[i].y();
-		vertices[i*3 + 2] = faceCenters[i].z();
-	}
-	precice.setMeshVertices(meshID, numVertices, vertices, vertexIDs);
-	
-    /* =========================== preCICE initialize =========================== */
+    for(int i = 0; i < config.interfaces().size(); i++) {
+        ofcoupler::Interface & interface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchName);
+        for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
+            std::string dataName = config.interfaces().at(i).data.at(j).name;
+            std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
+            if(dataName.compare("Temperature") == 0 && dataDirection.compare("out") == 0) {
+                ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(T);
+                interface.addDataChannel(dataName, *bw);
+            } else if(dataName.compare("Temperature") == 0 && dataDirection.compare("in") == 0) {
+                ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(T);
+                interface.addDataChannel(dataName, *br);
+            }
+            if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("in") == 0) {
+                ofcoupler::HeatFluxBoundaryCondition * br = new ofcoupler::HeatFluxBoundaryCondition(T, k.value());
+                interface.addDataChannel(dataName, *br);
+            } else if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("out") == 0) {
+                ofcoupler::HeatFluxBoundaryValues * bw = new ofcoupler::HeatFluxBoundaryValues(T, k.value());
+                interface.addDataChannel(dataName, *bw);
+            }
+        }
+    }
     
-	double precice_dt = precice.initialize();
-	precice.initializeData();
+    double precice_dt = precice.initialize();
+    precice.initializeData();
 	
 	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
 	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
 	
+    simple.loop();
 
     Info<< "\nCalculating temperature distribution\n" << endl;
-
-    while (simple.loop())
-    {
-        Info<< "Time = " << runTime.timeName() << nl << endl;
 	    
-        while(precice.isCouplingOngoing()) {
-		    
-			/* =========================== preCICE read data =========================== */
+    while(precice.isCouplingOngoing()) {
 
-			if(precice.isActionRequired(cowic)){
-				precice.fulfilledAction(cowic);
-			}
-		
-            // Receive the heat flux from the fluid solver
-            if(precice.isReadDataAvailable()) {
-                precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
-                // Compute gradient from heat flux
-                forAll(temperatureGradientPatch, i) {
-                    temperatureGradientPatch.gradient()[i] = heatFluxBuffer[i] / k.value();
-                }
-                //Info << temperatureGradientPatch.gradient() << endl;
-            }
-			
-			// Info << temperatureGradientPatch.gradient() << endl;
+        /* =========================== preCICE read data =========================== */
 
-			/* =========================== solve =========================== */
+        if(precice.isActionRequired(cowic)){
+            precice.fulfilledAction(cowic);
+        }
 
-		    while (simple.correctNonOrthogonal())
-		    {
-		        solve
-		        (
-                    fvm::ddt(T) - fvm::laplacian(k/rho/Cp, T)
-		        );
-		    }
-		
-			/* =========================== preCICE write data =========================== */
-		
-			forAll(T.boundaryField()[interfacePatchID], i) {
-				temperatureBuffer[i] = T.boundaryField()[interfacePatchID][i];
-                std::cout << temperatureBuffer[i] << std::endl;
-			}
-            precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
-		
-			precice_dt = precice.advance(precice_dt);
-			
-			if(precice.isActionRequired(coric)){
-				precice.fulfilledAction(coric);
-			}
-		
-			/* =========================== Done with preCICE =========================== */
-		
-            if ( precice.isTimestepComplete() )
-                break;
-		}
+        coupler.receiveInterfaceData();
 
-        #include "write.H"
+        /* =========================== solve =========================== */
 
-        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-            << nl << endl;
+        while (simple.correctNonOrthogonal())
+        {
+            solve
+            (
+                fvm::ddt(T) - fvm::laplacian(k/rho/Cp, T)
+            );
+        }
+
+        /* =========================== preCICE write data =========================== */
+
+        coupler.sendInterfaceData();
+
+        precice_dt = precice.advance(precice_dt);
+
+        if(precice.isActionRequired(coric)){
+
+            precice.fulfilledAction(coric);
+
+        } else {
+
+            #include "write.H"
+
+            Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+                << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+                << nl << endl;
+
+            // Advance in time
+            simple.loop();
+
+        }
     }
 
     Info<< "End\n" << endl;
