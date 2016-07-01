@@ -65,13 +65,14 @@ int main(int argc, char *argv[])
     
     /* =========================== preCICE setup =========================== */
     
-	precice::SolverInterface precice("Solid", 0, 1);
+    std::string caseName = runTime.caseName();
+    precice::SolverInterface precice(caseName, 0, 1);
 	precice.configure("precice-config.xml");
 	
 	// Get preCICE IDs
 	int meshID = precice.getMeshID("Solid_Nodes");
 	int temperatureID = precice.getDataID("Temperature", meshID);
-	int heatFluxID = precice.getDataID("Heat_Flux", meshID);
+    int heatFluxID = precice.getDataID("Heat-Flux", meshID);
 	
 	// Set mesh vertices
 	double * vertices = new double[numVertices * 3];
@@ -107,17 +108,15 @@ int main(int argc, char *argv[])
 				precice.fulfilledAction(cowic);
 			}
 		
-			// Receive the heat flux from the fluid solver
-			precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
-			
-			// Hard coded thermal conductivity k
-			double k = 1e-3;
-			
-			
-			// Compute gradient from heat flux
-			forAll(temperatureGradientPatch, i) {
-				temperatureGradientPatch.gradient()[i] = -heatFluxBuffer[i] / k;
-			}
+            // Receive the heat flux from the fluid solver
+            if(precice.isReadDataAvailable()) {
+                precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
+                // Compute gradient from heat flux
+                forAll(temperatureGradientPatch, i) {
+                    temperatureGradientPatch.gradient()[i] = heatFluxBuffer[i] / k;
+                }
+                //Info << temperatureGradientPatch.gradient() << endl;
+            }
 			
 			// Info << temperatureGradientPatch.gradient() << endl;
 
@@ -127,7 +126,7 @@ int main(int argc, char *argv[])
 		    {
 		        solve
 		        (
-		            fvm::ddt(T) - fvm::laplacian(DT, T)
+                    fvm::ddt(T) - fvm::laplacian(k/rho/Cp, T)
 		        );
 		    }
 		
@@ -135,9 +134,9 @@ int main(int argc, char *argv[])
 		
 			forAll(T.boundaryField()[interfacePatchID], i) {
 				temperatureBuffer[i] = T.boundaryField()[interfacePatchID][i];
-				std::cout << temperatureBuffer[i] << std::endl;
+                std::cout << temperatureBuffer[i] << std::endl;
 			}
-			precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
+            precice.writeBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
 		
 			precice_dt = precice.advance(precice_dt);
 			
