@@ -1,0 +1,7 @@
+$(OBJECTS_DIR)/ScalarDataBufferWriter.C.dep: \
+ScalarDataBufferWriter.C \
+ScalarDataBufferWriter.h \
+DataBufferWriter.h \
+DataBufferUser.h \
+
+
