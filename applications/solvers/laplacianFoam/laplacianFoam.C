@@ -62,12 +62,12 @@ int main(int argc, char *argv[])
     double heatFluxBuffer[numVertices];
     scalarField temperatureField(numVertices);
     scalarField temperatureGradientField(numVertices);
-    
+
     /* =========================== preCICE setup =========================== */
-    
+
     std::string caseName = runTime.caseName();
     precice::SolverInterface precice(caseName, 0, 1);
-	precice.configure("precice-config.xml");
+    precice.configure("precice-config.xml");
 	
 	// Get preCICE IDs
 	int meshID = precice.getMeshID("Solid_Nodes");
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
                 precice.readBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
                 // Compute gradient from heat flux
                 forAll(temperatureGradientPatch, i) {
-                    temperatureGradientPatch.gradient()[i] = heatFluxBuffer[i] / k;
+                    temperatureGradientPatch.gradient()[i] = heatFluxBuffer[i] / k.value();
                 }
                 //Info << temperatureGradientPatch.gradient() << endl;
             }
