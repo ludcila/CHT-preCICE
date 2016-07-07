@@ -57,9 +57,13 @@ Description
 
 int main(int argc, char *argv[])
 {
+
+    #include "addRegionOption.H"
+
     #include "setRootCase.H"
     #include "createTime.H"
-    #include "createMesh.H"
+//    #include "createMesh.H"
+    #include "createNamedMesh.H"
 
     pimpleControl pimple(mesh);
 
@@ -111,6 +115,8 @@ int main(int argc, char *argv[])
     // Chekpointing
     volVectorField U_checkpoint = U;
     volScalarField p_checkpoint = p;
+    volScalarField p_rgh_checkpoint = p_rgh;
+    volScalarField rho_checkpoint = rho;
 
 
 
@@ -145,6 +151,9 @@ int main(int argc, char *argv[])
             couplingIterationTimeIndex = runTime.timeIndex();
             couplingIterationTimeValue = runTime.value();
 
+            rho_checkpoint = rho;
+            p_rgh_checkpoint = p_rgh;
+
             if(solverDt.value() == preciceDt) {
                 std::cout << "No subcycling" << std::endl;
             } else {
@@ -158,11 +167,11 @@ int main(int argc, char *argv[])
 
         runTime++;
 
-        Info<< "Time = " << runTime.timeName() << nl << endl;
-
-        std::cout << U.oldTime().timeIndex() << std::endl;
-
         coupler.receiveInterfaceData();
+
+        /* Start of original solver code */
+
+        Info<< "Time = " << runTime.timeName() << nl << endl;
 
         #include "rhoEqn.H"
 
@@ -184,11 +193,9 @@ int main(int argc, char *argv[])
             }
         }
 
-
         rho = thermo.rho();
 
-
-        /* =========================== preCICE write data =========================== */
+        /* End of original solver code */
 
 
         coupler.sendInterfaceData();
@@ -203,9 +210,11 @@ int main(int argc, char *argv[])
             // Set the time before copying the fields, in order to have the correct oldTime() field
             runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
 
+            rho = rho_checkpoint;
+            p_rgh = p_rgh_checkpoint;
+
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
-                // No need to manually reload the fields
             } else {
                 std::cout << "Subcycling..." << std::endl;
                 // Reload all fields
