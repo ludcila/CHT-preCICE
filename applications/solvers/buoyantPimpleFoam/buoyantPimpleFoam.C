@@ -47,9 +47,9 @@ Description
 #include "yaml-cpp/yaml.h"
 #include "OFCoupler/ConfigReader.h"
 #include "OFCoupler/Coupler.h"
-#include "OFCoupler/Interface.h"
-#include "OFCoupler/TemperatureBoundaryCondition.h"
-#include "OFCoupler/BuoyantPimpleHeatFluxBoundaryValues.h"
+#include "OFCoupler/CoupledSurface.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
 
 
 
@@ -87,14 +87,15 @@ int main(int argc, char *argv[])
     ofcoupler::Coupler coupler(precice, mesh, "buoyantPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
-        ofcoupler::Interface & interface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchName);
+
+        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
             std::string dataName = config.interfaces().at(i).data.at(j).name;
             std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
             if(dataName.compare("Temperature") == 0) {
                 if(dataDirection.compare("in") == 0) {
                     ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
-                    interface.addDataChannel(dataName, *br);
+                    coupledSurface.addCouplingDataReader(dataName, br);
                 } else {
 
                 }
@@ -103,7 +104,7 @@ int main(int argc, char *argv[])
 
                 } else {
                     ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
-                    interface.addDataChannel(dataName, *bw);
+                    coupledSurface.addCouplingDataWriter(dataName, bw);
                 }
             }
         }
@@ -167,7 +168,7 @@ int main(int argc, char *argv[])
 
         runTime++;
 
-        coupler.receiveInterfaceData();
+        coupler.receiveCouplingData();
 
         /* Start of original solver code */
 
@@ -198,7 +199,7 @@ int main(int argc, char *argv[])
         /* End of original solver code */
 
 
-        coupler.sendInterfaceData();
+        coupler.sendCouplingData();
 
         preciceDt = precice.advance(solverDt.value());
 
