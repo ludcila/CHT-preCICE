@@ -1,15 +1,15 @@
 #ifndef BUOYANTPIMPLEHEATFLUXBOUNDARYVALUES_H
 #define BUOYANTPIMPLEHEATFLUXBOUNDARYVALUES_H
 
-#include "ScalarDataBufferWriter.h"
 #include "fvCFD.H"
 #include "rhoThermo.H"
 #include "turbulentFluidThermoModel.H"
+#include "CouplingDataWriter.h"
 
 namespace ofcoupler
 {
 
-class BuoyantPimpleHeatFluxBoundaryValues : public ScalarDataBufferWriter
+class BuoyantPimpleHeatFluxBoundaryValues : public CouplingDataWriter
 {
 
 protected:
@@ -19,10 +19,10 @@ protected:
 public:
     BuoyantPimpleHeatFluxBoundaryValues(volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence);
 
-
-    // DataBufferWriter interface
+    // CouplingDataWriter interface
 public:
-    void writeToBuffer();
+    void write(double * dataBuffer);
+
 };
 
 }

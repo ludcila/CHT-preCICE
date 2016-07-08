@@ -2,13 +2,13 @@
 #define BUOYANTBOUSSINESQPIMPLEHEATFLUXBOUNDARYVALUES_H
 
 #include "fvCFD.H"
-#include "ScalarDataBufferWriter.h"
 #include "turbulentTransportModel.H"
+#include "CouplingDataWriter.h"
 
 
 namespace ofcoupler
 {
-class BuoyantBoussinesqPimpleHeatFluxBoundaryValues : public ScalarDataBufferWriter
+class BuoyantBoussinesqPimpleHeatFluxBoundaryValues : public CouplingDataWriter
 {
 protected:
     volScalarField & _T;
@@ -21,9 +21,9 @@ public:
     BuoyantBoussinesqPimpleHeatFluxBoundaryValues(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp);
 
 
-    // DataBufferWriter interface
+    // CouplingDataWriter interface
 public:
-    void writeToBuffer();
+    void write(double * dataBuffer);
 };
 }
 

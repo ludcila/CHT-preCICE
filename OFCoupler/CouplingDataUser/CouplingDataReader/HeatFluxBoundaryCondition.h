@@ -2,12 +2,12 @@
 #define HEATFLUXBOUNDARYCONDITION_H
 
 #include "fvCFD.H"
-#include "ScalarDataBufferReader.h"
 #include "fixedGradientFvPatchFields.H"
+#include "CouplingDataReader.h"
 
 namespace ofcoupler
 {
-class HeatFluxBoundaryCondition : public ScalarDataBufferReader
+class HeatFluxBoundaryCondition : public CouplingDataReader
 {
 protected:
     volScalarField & _T;
@@ -15,9 +15,9 @@ protected:
 public:
     HeatFluxBoundaryCondition(volScalarField & T, double k);
 
-    // DataBufferReader interface
+    // CouplingDataReader interface
 public:
-    void readFromBuffer();
+    void read(double * dataBuffer);
 };
 }
 
