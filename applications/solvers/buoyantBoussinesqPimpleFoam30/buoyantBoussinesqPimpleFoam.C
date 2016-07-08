@@ -53,6 +53,11 @@ Description
 #include "pimpleControl.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
 #include "precice/SolverInterface.hpp"
+#include <sstream>
+#include "OFCoupler/ConfigReader.h"
+#include "OFCoupler/Coupler.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantBoussinesqPimpleHeatFluxBoundaryValues.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -75,136 +80,106 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    /* =========================== Get mesh properties =========================== */
-    
-	label interfacePatchID = mesh.boundaryMesh().findPatchID("interface");
-	const vectorField faceCenters = mesh.boundaryMesh()[interfacePatchID].faceCentres();
-	int numVertices = faceCenters.size();
-	
-	/* Interface patch */
-	fixedValueFvPatchScalarField & temperaturePatch = refCast<fixedValueFvPatchScalarField>(T.boundaryField()[interfacePatchID]);
-   
-    /* Interface data buffers */
-    double temperatureBuffer[numVertices];
-    double heatFluxBuffer[numVertices];
-    scalarField temperatureField(numVertices);
-    scalarField temperatureGradientField(numVertices);
-    
-    /* =========================== preCICE setup =========================== */
-    
-	precice::SolverInterface precice("Fluid", 0, 1);
-	precice.configure("precice-config.xml");
-	
-	// Get preCICE IDs
-	int meshID = precice.getMeshID("Fluid_Nodes");
-	int temperatureID = precice.getDataID("Temperature", meshID);
-	int heatFluxID = precice.getDataID("Heat_Flux", meshID);
-	
-	// Set mesh vertices
-	double * vertices = new double[numVertices * 3];
-	int vertexIDs[numVertices];
-	forAll(faceCenters, i) {
-		vertexIDs[i] = i;
-		vertices[i*3 + 0] = faceCenters[i].x();
-		vertices[i*3 + 1] = faceCenters[i].y();
-		vertices[i*3 + 2] = faceCenters[i].z();
-	}
-	precice.setMeshVertices(meshID, numVertices, vertices, vertexIDs);
-	
-    /* =========================== preCICE initialize =========================== */
-    
-	double precice_dt = precice.initialize();
-	precice.initializeData();
-	
-	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
+
+    std::string participantName = runTime.caseName();
+
+    ofcoupler::ConfigReader config("config.yml", participantName);
+
+    precice::SolverInterface precice(participantName, 0, 1);
+    precice.configure(config.preciceConfigFilename());
+    ofcoupler::Coupler coupler(precice, mesh, "buoyantPimpleFoam");
+
+    for(int i = 0; i < config.interfaces().size(); i++) {
+        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
+            std::string dataName = config.interfaces().at(i).data.at(j).name;
+            std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
+            if(dataName.compare("Temperature") == 0) {
+                if(dataDirection.compare("in") == 0) {
+                    ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(T);
+                    coupledSurface.addCouplingDataReader(dataName, br);
+                } else {
+
+                }
+            } else if(dataName.compare("Heat-Flux") == 0) {
+                if(dataDirection.compare("in") == 0) {
+                } else {
+                    ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
+                    coupledSurface.addCouplingDataWriter(dataName, bw);
+                }
+            }
+        }
+    }
+
+
+    double precice_dt = precice.initialize();
+    precice.initializeData();
+
+    const std::string& coric = precice::constants::actionReadIterationCheckpoint();
+    const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
 
     Info<< "\nStarting time loop\n" << endl;
 
-    while (runTime.loop())
+    runTime++;
+
+    while(precice.isCouplingOngoing())
     {
+
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
         #include "createTimeControls.H"
         #include "CourantNo.H"
         #include "setDeltaT.H"
-        
-        // TODO: verify dt
-        
-        while(precice.isCouplingOngoing()) {
-        
-			/* =========================== preCICE read data =========================== */
-		
-			if(precice.isActionRequired(cowic)){
-				precice.fulfilledAction(cowic);
-			}
-			
-			// Receive the temperature from the solid solver
-			precice.readBlockScalarData(temperatureID, numVertices, vertexIDs, temperatureBuffer);
-			
-			// Set the temperature Dirichlet boundary condition
-			forAll(temperatureField, i) {
-				//std::cout << temperatureBuffer[i] << std::endl;
-				temperatureField[i] = temperatureBuffer[i];
-			}
-			temperaturePatch == temperatureField;
-			
 
-		    // --- Pressure-velocity PIMPLE corrector loop
-		    while (pimple.loop())
-		    {
-		        #include "UEqn.H"
-		        #include "TEqn.H"
 
-		        // --- Pressure corrector loop
-		        while (pimple.correct())
-		        {
-		            #include "pEqn.H"
-		        }
+        /* =========================== preCICE read data =========================== */
 
-		        if (pimple.turbCorr())
-		        {
-		            laminarTransport.correct();
-		            turbulence->correct();
-		        }
-		    }
-		    
-			
-			/* =========================== preCICE write data =========================== */
-		
-		
-			volScalarField alphaEff("alphaEff", turbulence->nu()/Pr + alphat);
-			fvPatchScalarField aEff = alphaEff.boundaryField()[interfacePatchID];
-			
-			// Hard coded values
-			double rho = 1;
-			double Cp = 1;
-			
-			temperatureGradientField = temperaturePatch.snGrad();
-			forAll(temperatureGradientField, i) {
-				heatFluxBuffer[i] = aEff[i] * rho * Cp * temperatureGradientField[i];
-			}
-			precice.writeBlockScalarData(heatFluxID, numVertices, vertexIDs, heatFluxBuffer);
-		
-			precice_dt = precice.advance(precice_dt);
-			
-			if(precice.isActionRequired(coric)){
-				precice.fulfilledAction(coric);
-			}
-		
-			/* =========================== Done with preCICE =========================== */
-		
-            if ( precice.isTimestepComplete() ) {
-                break;
+        if(precice.isActionRequired(cowic)){
+            precice.fulfilledAction(cowic);
+        }
+
+        coupler.receiveCouplingData();
+
+        // --- Pressure-velocity PIMPLE corrector loop
+        while (pimple.loop())
+        {
+            #include "UEqn.H"
+            #include "TEqn.H"
+
+            // --- Pressure corrector loop
+            while (pimple.correct())
+            {
+                #include "pEqn.H"
             }
-		    
-	    }
 
-        runTime.write();
+            if (pimple.turbCorr())
+            {
+                laminarTransport.correct();
+                turbulence->correct();
+            }
+        }
 
-        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-            << nl << endl;
+
+        /* =========================== preCICE write data =========================== */
+
+
+        coupler.sendCouplingData();
+
+        precice_dt = precice.advance(precice_dt);
+
+        if(precice.isActionRequired(coric)){
+            precice.fulfilledAction(coric);
+        } else {
+
+            runTime.write();
+
+            Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+                << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+                << nl << endl;
+
+            runTime++;
+        }
+
     }
 
     Info<< "End\n" << endl;

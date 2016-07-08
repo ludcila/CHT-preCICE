@@ -120,3 +120,19 @@ if (p_rgh.needReference())
 }
 
 mesh.setFluxRequired(p_rgh.name());
+
+
+Info<< "Reading density rho\n" << endl;
+
+dimensionedScalar rho
+(
+    laminarTransport.lookup("rho")
+);
+
+
+Info<< "Reading specific heat Cp\n" << endl;
+
+dimensionedScalar Cp
+(
+    laminarTransport.lookup("Cp")
+);
