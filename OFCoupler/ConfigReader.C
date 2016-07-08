@@ -7,12 +7,14 @@ ofcoupler::ConfigReader::ConfigReader(std::string configFile, std::string partic
 
     _preciceConfigFilename = config["precice-config-file"].as<std::string>();
 
-    YAML::Node configInterfaces = config[participantName]["interfaces"];
+    YAML::Node configInterfaces = config[participantName]["coupled-surfaces"];
 
     for(int i = 0; i < configInterfaces.size(); i++) {
         struct Interface interface;
         interface.meshName = configInterfaces[i]["mesh-name"].as<std::string>();
-        interface.patchName = configInterfaces[i]["patch-name"].as<std::string>();
+        for(int j = 0; j < configInterfaces[i]["patch-names"].size(); j++) {
+            interface.patchNames.push_back(configInterfaces[i]["patch-names"][j].as<std::string>());
+        }
         for(int j = 0; j < configInterfaces[i]["data"].size(); j++) {
             struct Data data;
             data.name = configInterfaces[i]["data"][j]["name"].as<std::string>();

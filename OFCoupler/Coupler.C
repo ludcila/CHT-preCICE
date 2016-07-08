@@ -8,20 +8,21 @@ ofcoupler::Coupler::Coupler(precice::SolverInterface & precice, fvMesh & mesh, s
 
 }
 
-ofcoupler::Interface & ofcoupler::Coupler::addNewInterface(std::string meshName, std::string patchName) {
-    ofcoupler::Interface * interface = new ofcoupler::Interface(_precice, _mesh, meshName, patchName);
-    _interfaces.push_back(interface);
-    return *interface;
+ofcoupler::CoupledSurface &ofcoupler::Coupler::addNewCoupledSurface(std::string meshName, std::vector<std::string> patchNames)
+{
+    ofcoupler::CoupledSurface * coupledSurface = new ofcoupler::CoupledSurface(_precice, _mesh, meshName, patchNames);
+    _coupledSurfaces.push_back(coupledSurface);
+    return *coupledSurface;
 }
 
-void ofcoupler::Coupler::receiveInterfaceData() {
-    for(int i = 0; i < _interfaces.size(); i++) {
-        _interfaces.at(i)->receiveData();
+void ofcoupler::Coupler::receiveCouplingData() {
+    for(int i = 0; i < _coupledSurfaces.size(); i++) {
+        _coupledSurfaces.at(i)->receiveData();
     }
 }
 
-void ofcoupler::Coupler::sendInterfaceData() {
-    for(int i = 0; i < _interfaces.size(); i++) {
-        _interfaces.at(i)->sendData();
+void ofcoupler::Coupler::sendCouplingData() {
+    for(int i = 0; i < _coupledSurfaces.size(); i++) {
+        _coupledSurfaces.at(i)->sendData();
     }
 }

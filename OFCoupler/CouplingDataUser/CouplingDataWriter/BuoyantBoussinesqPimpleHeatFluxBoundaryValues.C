@@ -11,15 +11,19 @@ ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::BuoyantBoussinesqPimpl
 
 }
 
-void ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::writeToBuffer()
+void ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
 {
-    scalarField alphaEff = _turbulence->nu()().boundaryField()[_patchID] / _Pr + _alphat.boundaryField()[_patchID];
-    scalarField flux = - alphaEff * _rho * _Cp * refCast<fixedValueFvPatchScalarField>(_T.boundaryField()[_patchID]).snGrad();
-    Info << alphaEff *_rho*_Cp << endl;
-    std::cout << "Flux" << std::endl;
-    forAll(flux, i) {
-        _dataBuffer[i] = flux[i];
-        std::cout << flux[i] << std::endl;
+    int bufferIndex = 0;
+    for(int k = 0; k < _patchIDs.size(); k++) {
+        int patchID = _patchIDs.at(k);
+        scalarField alphaEff = _turbulence->nu()().boundaryField()[patchID] / _Pr + _alphat.boundaryField()[patchID];
+        scalarField flux = - alphaEff * _rho * _Cp * refCast<fixedValueFvPatchScalarField>(_T.boundaryField()[patchID]).snGrad();
+        Info << alphaEff *_rho*_Cp << endl;
+        std::cout << "Flux" << std::endl;
+        forAll(flux, i) {
+            dataBuffer[bufferIndex++] = flux[i];
+            std::cout << flux[i] << std::endl;
+        }
     }
 }
 

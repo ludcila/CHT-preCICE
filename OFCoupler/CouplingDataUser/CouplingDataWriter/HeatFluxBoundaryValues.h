@@ -1,12 +1,12 @@
 #ifndef HEATFLUXBOUNDARYVALUES_H
 #define HEATFLUXBOUNDARYVALUES_H
 
-#include "ScalarDataBufferWriter.h"
 #include "fvCFD.H"
+#include "CouplingDataWriter.h"
 
 namespace ofcoupler
 {
-class HeatFluxBoundaryValues : public ScalarDataBufferWriter
+class HeatFluxBoundaryValues : public CouplingDataWriter
 {
 protected:
     volScalarField & _T;
@@ -14,9 +14,10 @@ protected:
 public:
     HeatFluxBoundaryValues(volScalarField & T, double k);
 
-    // DataBufferWriter interface
+
+    // CouplingDataWriter interface
 public:
-    void writeToBuffer();
+    void write(double * dataBuffer);
 };
 }
 

@@ -1,22 +1,22 @@
 #ifndef TEMPERATUREBOUNDARYCONDITION_H
 #define TEMPERATUREBOUNDARYCONDITION_H
 
+#include "CouplingDataReader.h"
 #include "fvCFD.H"
-#include "ScalarDataBufferReader.h"
 
 namespace ofcoupler
 {
 
-class TemperatureBoundaryCondition : public ScalarDataBufferReader
+class TemperatureBoundaryCondition : public CouplingDataReader
 {
 protected:
     volScalarField & _T;
 public:
     TemperatureBoundaryCondition(volScalarField & T);
 
-    // DataBufferReader interface
+    // CouplingDataReader interface
 public:
-    void readFromBuffer();
+    void read(double * dataBuffer);
 };
 
 }
