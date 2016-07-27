@@ -48,8 +48,11 @@ Description
 #include "OFCoupler/ConfigReader.h"
 #include "OFCoupler/Coupler.h"
 #include "OFCoupler/CoupledSurface.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
 #include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
 #include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.h"
 
 
 
@@ -75,6 +78,7 @@ int main(int argc, char *argv[])
     #include "createTimeControls.H"
     #include "compressibleCourantNo.H"
     #include "setInitialDeltaT.H"
+    
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -97,13 +101,22 @@ int main(int argc, char *argv[])
                     ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
                     coupledSurface.addCouplingDataReader(dataName, br);
                 } else {
-
+                    ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(thermo.T());
+                    coupledSurface.addCouplingDataWriter(dataName, bw);
+//                    ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues * bw = new ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues(thermo.T(), thermo, turbulence);
+//                    coupledSurface.addCouplingDataWriter(dataName, bw);
                 }
             } else if(dataName.compare("Heat-Flux") == 0) {
                 if(dataDirection.compare("in") == 0) {
-
+                    ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
+                    coupledSurface.addCouplingDataReader(dataName, br);
                 } else {
                     ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
+                    coupledSurface.addCouplingDataWriter(dataName, bw);
+                }
+            } else if(dataName.compare("Sink-Temperature") == 0) {
+                if(dataDirection.compare("out") == 0) {
+                    ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues * bw = new ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues(thermo.T(), thermo, turbulence);
                     coupledSurface.addCouplingDataWriter(dataName, bw);
                 }
             }
@@ -118,7 +131,12 @@ int main(int argc, char *argv[])
     volScalarField p_checkpoint = p;
     volScalarField p_rgh_checkpoint = p_rgh;
     volScalarField rho_checkpoint = rho;
-
+    volScalarField he_checkpoint = thermo.he();
+    volScalarField hc_checkpoint = thermo.hc()();
+    volScalarField tp_checkpoint = thermo.p();
+    volScalarField K_checkpoint = K;
+    surfaceScalarField phi_checkpoint = phi;
+    volScalarField dpdt_checkpoint = dpdt;
 
 
     /* =========================== preCICE initialize =========================== */
@@ -128,7 +146,11 @@ int main(int argc, char *argv[])
 
 
     double preciceDt = precice.initialize();
-    precice.initializeData();
+    if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
+        coupler.sendCouplingData();
+        precice.fulfilledAction(precice::constants::actionWriteInitialData());
+        precice.initializeData();
+    }
     dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
 
     Info<< "\nStarting time loop\n" << endl;
@@ -154,13 +176,19 @@ int main(int argc, char *argv[])
 
             rho_checkpoint = rho;
             p_rgh_checkpoint = p_rgh;
+            he_checkpoint = thermo.he();
+            hc_checkpoint = thermo.hc()();
+            tp_checkpoint = thermo.p();
+            K_checkpoint = K;
+            U_checkpoint = U;
+            p_checkpoint = p;
+            phi_checkpoint = phi;
+            dpdt_checkpoint = dpdt;
 
             if(solverDt.value() == preciceDt) {
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling" << std::endl;
-                U_checkpoint = U;
-                p_checkpoint = p;
             }
 
             precice.fulfilledAction(cowic);
@@ -213,14 +241,20 @@ int main(int argc, char *argv[])
 
             rho = rho_checkpoint;
             p_rgh = p_rgh_checkpoint;
+            thermo.he() = he_checkpoint;
+            thermo.hc()() = hc_checkpoint;
+            thermo.p() = tp_checkpoint;
+            K = K_checkpoint;
+            U = U_checkpoint;
+            p = p_checkpoint;
+            phi = phi_checkpoint;
+            dpdt = dpdt_checkpoint;
 
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling..." << std::endl;
                 // Reload all fields
-                U = U_checkpoint;
-                p = p_checkpoint;
             }
 
             std::cout << "Reset time = " << couplingIterationTimeValue << " (" << couplingIterationTimeIndex << ")" << std::endl;
