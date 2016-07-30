@@ -29,6 +29,7 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
+#include "mpi/mpi.h"
 #include "fvCFD.H"
 #include "simpleControl.H"
 #include "precice/SolverInterface.hpp"
@@ -53,10 +54,17 @@ int main(int argc, char *argv[])
     simpleControl simple(mesh);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-    std::string participantName = runTime.caseName();
+    
+    int mpiUsed, rank = 0, size = 1;
+    MPI_Initialized(&mpiUsed);
+    if(mpiUsed) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+    }
+    
+    std::string participantName = runTime.caseName().components().first();
     ofcoupler::ConfigReader config("config.yml", participantName);
-    precice::SolverInterface precice(participantName, 0, 1);
+    precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
     ofcoupler::Coupler coupler(precice, mesh, "laplacianFoam");
 
