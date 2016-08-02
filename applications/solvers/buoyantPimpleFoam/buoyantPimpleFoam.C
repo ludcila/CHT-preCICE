@@ -54,6 +54,11 @@ Description
 #include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 #include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.h"
 
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
+
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -117,12 +122,25 @@ int main(int argc, char *argv[])
             } else if(dataName.compare("Sink-Temperature") == 0) {
                 if(dataDirection.compare("out") == 0) {
                     ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues * bw = new ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues(thermo.T(), thermo, turbulence);
+                    // ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
                     coupledSurface.addCouplingDataWriter(dataName, bw);
+                }
+            } else if(dataName.compare("kDelta-Temperature") == 0) {
+                if(dataDirection.compare("in") == 0) {
+                    ofcoupler::KDeltaBoundaryCondition * br = new ofcoupler::KDeltaBoundaryCondition(thermo.T(), turbulence);
+                    coupledSurface.addCouplingDataReader("kDelta-CCX", br);
+                    ofcoupler::RefTemperatureBoundaryCondition * br2 = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
+                    coupledSurface.addCouplingDataReader("kDelta-Temperature-CCX", br2);
+                } else {
+                    ofcoupler::KDeltaBoundaryValues * bw = new ofcoupler::KDeltaBoundaryValues(turbulence);
+                    coupledSurface.addCouplingDataWriter("kDelta-OF", bw);
+                    ofcoupler::RefTemperatureBoundaryValues * bw2 = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
+                    coupledSurface.addCouplingDataWriter("kDelta-Temperature-OF", bw2);
                 }
             }
         }
     }
-
+    
     scalar couplingIterationTimeValue;
     label couplingIterationTimeIndex;
 
@@ -180,8 +198,6 @@ int main(int argc, char *argv[])
             hc_checkpoint = thermo.hc()();
             tp_checkpoint = thermo.p();
             K_checkpoint = K;
-            U_checkpoint = U;
-            p_checkpoint = p;
             phi_checkpoint = phi;
             dpdt_checkpoint = dpdt;
 
@@ -189,6 +205,8 @@ int main(int argc, char *argv[])
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling" << std::endl;
+                U_checkpoint = U;
+                p_checkpoint = p;
             }
 
             precice.fulfilledAction(cowic);
@@ -240,13 +258,11 @@ int main(int argc, char *argv[])
             runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
 
             rho = rho_checkpoint;
-            p_rgh = p_rgh_checkpoint;
             thermo.he() = he_checkpoint;
             thermo.hc()() = hc_checkpoint;
             thermo.p() = tp_checkpoint;
+            p_rgh = p_rgh_checkpoint;
             K = K_checkpoint;
-            U = U_checkpoint;
-            p = p_checkpoint;
             phi = phi_checkpoint;
             dpdt = dpdt_checkpoint;
 
@@ -254,6 +270,8 @@ int main(int argc, char *argv[])
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling..." << std::endl;
+                U = U_checkpoint;
+                p = p_checkpoint;
                 // Reload all fields
             }
 
