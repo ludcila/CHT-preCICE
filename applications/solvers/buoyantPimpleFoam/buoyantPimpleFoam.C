@@ -33,6 +33,7 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
+#include <mpi.h>
 #include "fvCFD.H"
 #include "rhoThermo.H"
 #include "turbulentFluidThermoModel.H"
@@ -65,6 +66,9 @@ Description
 
 int main(int argc, char *argv[])
 {
+    
+    argList::addOption("precice-participant", "string", "name of preCICE participant");
+    argList::addOption("precice-config", "string", "name of preCICE config file");
 
     #include "addRegionOption.H"
 
@@ -86,12 +90,19 @@ int main(int argc, char *argv[])
     
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+    
+    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
+    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
+    ofcoupler::ConfigReader config(preciceConfig, participantName);
+    
+    int mpiUsed, rank = 0, size = 1;
+    MPI_Initialized(&mpiUsed);
+    if(mpiUsed) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+    }
 
-    std::string participantName = runTime.caseName();
-
-    ofcoupler::ConfigReader config("config.yml", participantName);
-
-    precice::SolverInterface precice(participantName, 0, 1);
+    precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
     ofcoupler::Coupler coupler(precice, mesh, "buoyantPimpleFoam");
 
