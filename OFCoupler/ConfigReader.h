@@ -19,6 +19,8 @@ class ConfigReader
     struct Interface {
         std::string meshName;
         std::vector<std::string> patchNames;
+        std::vector<std::string> writeData;
+        std::vector<std::string> readData;
         std::vector<struct Data> data;
     };
 
