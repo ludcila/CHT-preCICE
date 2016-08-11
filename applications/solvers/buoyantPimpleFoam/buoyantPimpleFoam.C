@@ -109,47 +109,47 @@ int main(int argc, char *argv[])
     for(int i = 0; i < config.interfaces().size(); i++) {
 
         ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
-            std::string dataName = config.interfaces().at(i).data.at(j).name;
-            std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
+        
+        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).writeData.at(j);
             if(dataName.compare("Temperature") == 0) {
-                if(dataDirection.compare("in") == 0) {
-                    ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
-                    coupledSurface.addCouplingDataReader(dataName, br);
-                } else {
-                    ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(thermo.T());
-                    coupledSurface.addCouplingDataWriter(dataName, bw);
-//                    ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues * bw = new ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues(thermo.T(), thermo, turbulence);
-//                    coupledSurface.addCouplingDataWriter(dataName, bw);
-                }
+                ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(thermo.T());
+                coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.compare("Heat-Flux") == 0) {
-                if(dataDirection.compare("in") == 0) {
-                    ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
-                    coupledSurface.addCouplingDataReader(dataName, br);
-                } else {
-                    ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
-                    coupledSurface.addCouplingDataWriter(dataName, bw);
-                }
-            } else if(dataName.compare("Sink-Temperature") == 0) {
-                if(dataDirection.compare("out") == 0) {
-                    ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues * bw = new ofcoupler::BuoyantPimpleSinkTemperatureBoundaryValues(thermo.T(), thermo, turbulence);
-                    // ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
-                    coupledSurface.addCouplingDataWriter(dataName, bw);
-                }
-            } else if(dataName.compare("kDelta-Temperature") == 0) {
-                if(dataDirection.compare("in") == 0) {
-                    ofcoupler::KDeltaBoundaryCondition * br = new ofcoupler::KDeltaBoundaryCondition(thermo.T(), turbulence);
-                    coupledSurface.addCouplingDataReader("kDelta-CCX", br);
-                    ofcoupler::RefTemperatureBoundaryCondition * br2 = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
-                    coupledSurface.addCouplingDataReader("kDelta-Temperature-CCX", br2);
-                } else {
-                    ofcoupler::KDeltaBoundaryValues * bw = new ofcoupler::KDeltaBoundaryValues(turbulence);
-                    coupledSurface.addCouplingDataWriter("kDelta-OF", bw);
-                    ofcoupler::RefTemperatureBoundaryValues * bw2 = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
-                    coupledSurface.addCouplingDataWriter("kDelta-Temperature-OF", bw2);
-                }
+                ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
+                coupledSurface.addCouplingDataWriter(dataName, bw);
+            } else if(dataName.find("kDelta-OF") == 0) {
+                ofcoupler::KDeltaBoundaryValues * bw = new ofcoupler::KDeltaBoundaryValues(turbulence);
+                coupledSurface.addCouplingDataWriter(dataName, bw);
+            } else if(dataName.find("kDelta-Temperature-OF") == 0) {
+                ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
+                coupledSurface.addCouplingDataWriter(dataName, bw);
+            } else {
+                std::cout << "Error: " << dataName << " does not exist." << std::endl;
+                return 1;
             }
         }
+        
+        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).readData.at(j);
+            if(dataName.compare("Temperature") == 0) {
+                ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else if(dataName.compare("Heat-Flux") == 0) {
+                ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else if(dataName.find("kDelta-CCX") == 0) {
+                ofcoupler::KDeltaBoundaryCondition * br = new ofcoupler::KDeltaBoundaryCondition(thermo.T(), turbulence);
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else if(dataName.find("kDelta-Temperature-CCX") == 0) {
+                ofcoupler::RefTemperatureBoundaryCondition * br = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else {
+                std::cout << "Error: " << dataName << " does not exist." << std::endl;
+                return 1;
+            }
+        }
+        
     }
     
     scalar couplingIterationTimeValue;
