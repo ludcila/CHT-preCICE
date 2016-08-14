@@ -1,0 +1,15 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+export WM_COMPILER=Mpicc
+
+cd adapter
+wmake lib
+mv libNULL.a libOpenFoamAdapter.a
+
+cd ../solvers
+
+# wmake -all solvers
+cd buoyantPimpleFoam; wmake; cd ..
+cd buoyantBoussinesqPimpleFoam; wmake; cd ..
+cd laplacianFoam; wmake; cd ..
