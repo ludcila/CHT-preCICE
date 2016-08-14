@@ -34,12 +34,12 @@ Description
 #include "simpleControl.H"
 #include "precice/SolverInterface.hpp"
 #include "fixedGradientFvPatchFields.H"
-#include "OFCoupler/ConfigReader.h"
-#include "OFCoupler/Coupler.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/HeatFluxBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/HeatFluxBoundaryCondition.h"
+#include "adapter/ConfigReader.h"
+#include "adapter/Coupler.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/HeatFluxBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/HeatFluxBoundaryCondition.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

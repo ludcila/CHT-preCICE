@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------*\
+﻿/*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
@@ -46,19 +46,19 @@ Description
 #include <vector>
 #include <algorithm>
 #include "yaml-cpp/yaml.h"
-#include "OFCoupler/ConfigReader.h"
-#include "OFCoupler/Coupler.h"
-#include "OFCoupler/CoupledSurface.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.h"
+#include "adapter/ConfigReader.h"
+#include "adapter/Coupler.h"
+#include "adapter/CoupledSurface.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.h"
 
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
 
 
 
@@ -204,13 +204,13 @@ int main(int argc, char *argv[])
             couplingIterationTimeValue = runTime.value();
 
             rho_checkpoint = rho;
-            p_rgh_checkpoint = p_rgh;
-            he_checkpoint = thermo.he();
-            hc_checkpoint = thermo.hc()();
-            tp_checkpoint = thermo.p();
-            K_checkpoint = K;
-            phi_checkpoint = phi;
-            dpdt_checkpoint = dpdt;
+//            p_rgh_checkpoint = p_rgh;
+//            he_checkpoint = thermo.he();
+//            hc_checkpoint = thermo.hc()();
+//            tp_checkpoint = thermo.p();
+//            K_checkpoint = K;
+//            phi_checkpoint = phi;
+//            dpdt_checkpoint = dpdt;
 
             if(solverDt.value() == preciceDt) {
                 std::cout << "No subcycling" << std::endl;
@@ -269,13 +269,13 @@ int main(int argc, char *argv[])
             runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
 
             rho = rho_checkpoint;
-            thermo.he() = he_checkpoint;
-            thermo.hc()() = hc_checkpoint;
-            thermo.p() = tp_checkpoint;
-            p_rgh = p_rgh_checkpoint;
-            K = K_checkpoint;
-            phi = phi_checkpoint;
-            dpdt = dpdt_checkpoint;
+            //            p_rgh = p_rgh_checkpoint;
+//            thermo.he() = he_checkpoint;
+//            thermo.hc()() = hc_checkpoint;
+//            thermo.p() = tp_checkpoint;
+//            K = K_checkpoint;
+//            phi = phi_checkpoint;
+//            dpdt = dpdt_checkpoint;
 
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
