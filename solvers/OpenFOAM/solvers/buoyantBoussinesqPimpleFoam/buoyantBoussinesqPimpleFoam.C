@@ -54,12 +54,12 @@ Description
 #include "fixedFluxPressureFvPatchScalarField.H"
 #include "precice/SolverInterface.hpp"
 #include <sstream>
-#include "OFCoupler/ConfigReader.h"
-#include "OFCoupler/Coupler.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataReader/BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.h"
-#include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantBoussinesqPimpleHeatFluxBoundaryValues.h"
+#include "adapter/ConfigReader.h"
+#include "adapter/Coupler.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantBoussinesqPimpleHeatFluxBoundaryValues.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
