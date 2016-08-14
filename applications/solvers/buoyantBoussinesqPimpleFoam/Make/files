@@ -1,3 +1,0 @@
-buoyantBoussinesqPimpleFoam.C
-
-EXE = $(FOAM_USER_APPBIN)/buoyantBoussinesqPimpleFoam_preCICE
