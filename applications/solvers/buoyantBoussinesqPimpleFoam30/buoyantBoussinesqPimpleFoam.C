@@ -57,6 +57,8 @@ Description
 #include "OFCoupler/ConfigReader.h"
 #include "OFCoupler/Coupler.h"
 #include "OFCoupler/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
+#include "OFCoupler/CouplingDataUser/CouplingDataReader/BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.h"
 #include "OFCoupler/CouplingDataUser/CouplingDataWriter/BuoyantBoussinesqPimpleHeatFluxBoundaryValues.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -99,10 +101,13 @@ int main(int argc, char *argv[])
                     ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(T);
                     coupledSurface.addCouplingDataReader(dataName, br);
                 } else {
-
+                    ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(T);
+                    coupledSurface.addCouplingDataWriter(dataName, bw);
                 }
             } else if(dataName.compare("Heat-Flux") == 0) {
                 if(dataDirection.compare("in") == 0) {
+                    ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
+                    coupledSurface.addCouplingDataReader(dataName, br);
                 } else {
                     ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
                     coupledSurface.addCouplingDataWriter(dataName, bw);
