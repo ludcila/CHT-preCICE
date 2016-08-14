@@ -1,7 +1,4 @@
-
-
 CoupledSurface.C
-
 
 Coupler.C
 ConfigReader.C
@@ -16,7 +13,18 @@ CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.C
 CouplingDataUser/CouplingDataReader/HeatFluxBoundaryCondition.C
 CouplingDataUser/CouplingDataWriter/HeatFluxBoundaryValues.C
 
-CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.C
+CouplingDataUser/CouplingDataReader/BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.C
 CouplingDataUser/CouplingDataWriter/BuoyantBoussinesqPimpleHeatFluxBoundaryValues.C
+
+CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.C
+CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.C
+
+CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.C
+
+CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.C
+CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.C
+
+CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.C
+CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.C
 
 EXE = test
