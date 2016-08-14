@@ -1,8 +1,0 @@
-$(OBJECTS_DIR)/DataChannelIn.C.dep: \
-DataChannelIn.C \
-DataChannelIn.h \
-DataBufferReader.h \
-DataBufferUser.h \
-DataChannel.h \
-
-

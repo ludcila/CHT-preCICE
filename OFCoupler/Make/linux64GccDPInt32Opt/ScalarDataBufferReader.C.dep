@@ -1,7 +1,0 @@
-$(OBJECTS_DIR)/ScalarDataBufferReader.C.dep: \
-ScalarDataBufferReader.C \
-ScalarDataBufferReader.h \
-DataBufferReader.h \
-DataBufferUser.h \
-
-
