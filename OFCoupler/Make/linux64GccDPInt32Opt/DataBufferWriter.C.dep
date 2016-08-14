@@ -1,6 +1,0 @@
-$(OBJECTS_DIR)/DataBufferWriter.C.dep: \
-DataBufferWriter.C \
-DataBufferWriter.h \
-DataBufferUser.h \
-
-
