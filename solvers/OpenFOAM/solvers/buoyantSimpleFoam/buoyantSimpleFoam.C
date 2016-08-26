@@ -82,9 +82,9 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        coupledSurface.addCouplingDataWriter("kDelta-OF", new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence));
+        coupledSurface.addCouplingDataWriter("kDelta-OF", new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
         coupledSurface.addCouplingDataWriter("kDelta-Temperature-OF", new ofcoupler::RefTemperatureBoundaryValues(thermo.T()));
-        coupledSurface.addCouplingDataReader("kDelta-CCX", new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence));
+        coupledSurface.addCouplingDataReader("kDelta-CCX", new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
         coupledSurface.addCouplingDataReader("kDelta-Temperature-CCX", new ofcoupler::RefTemperatureBoundaryCondition(thermo.T()));
 
 //        coupledSurface.addCouplingDataWriter("Temperature", new ofcoupler::TemperatureBoundaryValues(thermo.T()));
