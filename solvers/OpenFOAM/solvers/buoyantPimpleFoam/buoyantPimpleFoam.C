@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
         
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
+            std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
                 ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(thermo.T());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
                 ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("kDelta-OF") == 0) {
-                ofcoupler::KDeltaBoundaryValues * bw = new ofcoupler::KDeltaBoundaryValues(turbulence);
+                ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("kDelta-Temperature-OF") == 0) {
                 ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
@@ -132,6 +133,7 @@ int main(int argc, char *argv[])
         
         for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
             std::string dataName = config.interfaces().at(i).readData.at(j);
+            std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
                 ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
                 coupledSurface.addCouplingDataReader(dataName, br);
@@ -139,7 +141,7 @@ int main(int argc, char *argv[])
                 ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("kDelta-CCX") == 0) {
-                ofcoupler::KDeltaBoundaryCondition * br = new ofcoupler::KDeltaBoundaryCondition(thermo.T(), turbulence);
+                ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("kDelta-Temperature-CCX") == 0) {
                 ofcoupler::RefTemperatureBoundaryCondition * br = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
@@ -178,8 +180,10 @@ int main(int argc, char *argv[])
     if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
         coupler.sendCouplingData();
         precice.fulfilledAction(precice::constants::actionWriteInitialData());
-        precice.initializeData();
     }
+    precice.initializeData();
+    coupler.receiveCouplingData();
+    
     dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
 
     Info<< "\nStarting time loop\n" << endl;
@@ -204,13 +208,13 @@ int main(int argc, char *argv[])
             couplingIterationTimeValue = runTime.value();
 
             rho_checkpoint = rho;
-//            p_rgh_checkpoint = p_rgh;
-//            he_checkpoint = thermo.he();
-//            hc_checkpoint = thermo.hc()();
-//            tp_checkpoint = thermo.p();
-//            K_checkpoint = K;
-//            phi_checkpoint = phi;
-//            dpdt_checkpoint = dpdt;
+            p_rgh_checkpoint = p_rgh;
+            he_checkpoint = thermo.he();
+            hc_checkpoint = thermo.hc()();
+            tp_checkpoint = thermo.p();
+            K_checkpoint = K;
+            phi_checkpoint = phi;
+            dpdt_checkpoint = dpdt;
 
             if(solverDt.value() == preciceDt) {
                 std::cout << "No subcycling" << std::endl;
@@ -225,7 +229,9 @@ int main(int argc, char *argv[])
 
         runTime++;
 
+        std::cout << "Receive" << std::endl;
         coupler.receiveCouplingData();
+        std::cout << "Finish receive" << std::endl;
 
         /* Start of original solver code */
 
@@ -254,11 +260,14 @@ int main(int argc, char *argv[])
         rho = thermo.rho();
 
         /* End of original solver code */
-
-
+        
+        std::cout << "Send" << std::endl;
         coupler.sendCouplingData();
-
+        std::cout << "Finish send" << std::endl;
+        
+        std::cout << "Advance" << std::endl;
         preciceDt = precice.advance(solverDt.value());
+        std::cout << "Finish advance" << std::endl;
 
         if(precice.isActionRequired(coric)) {
 
@@ -269,13 +278,13 @@ int main(int argc, char *argv[])
             runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
 
             rho = rho_checkpoint;
-            //            p_rgh = p_rgh_checkpoint;
-//            thermo.he() = he_checkpoint;
-//            thermo.hc()() = hc_checkpoint;
-//            thermo.p() = tp_checkpoint;
-//            K = K_checkpoint;
-//            phi = phi_checkpoint;
-//            dpdt = dpdt_checkpoint;
+            p_rgh = p_rgh_checkpoint;
+            thermo.he() = he_checkpoint;
+            thermo.hc()() = hc_checkpoint;
+            thermo.p() = tp_checkpoint;
+            K = K_checkpoint;
+            phi = phi_checkpoint;
+            dpdt = dpdt_checkpoint;
 
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
