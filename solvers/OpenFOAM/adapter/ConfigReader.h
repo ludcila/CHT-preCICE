@@ -25,8 +25,10 @@ class ConfigReader
     };
 
 protected:
+    YAML::Node _config;
     std::vector<struct Interface> _interfaces;
     std::string _preciceConfigFilename;
+    void checkFields(std::string filename, YAML::Node & config, std::string participantName);
 
 public:
     ConfigReader(std::string configFile, std::string participantName);
