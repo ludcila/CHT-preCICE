@@ -16,9 +16,10 @@ void ofcoupler::RefTemperatureBoundaryCondition::read(double * dataBuffer)
         int patchID = _patchIDs.at(k);
         
         mixedFvPatchScalarField & TPatch = refCast<mixedFvPatchScalarField>(_T.boundaryField()[patchID]);
+        scalarField & rf = TPatch.refValue();
         forAll(TPatch, i) {
-            TPatch.refValue()[i] = dataBuffer[bufferIndex++];
-            std::cout << "read refValue(" << i << ") = " << TPatch.refValue()[i] << std::endl;
+            rf[i] = dataBuffer[bufferIndex++];
+//            std::cout << "read refValue(" << i << ") = " << TPatch.refValue()[i] << std::endl;
         }
 
     }

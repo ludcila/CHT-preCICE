@@ -16,9 +16,10 @@ void ofcoupler::RefTemperatureBoundaryValues::write(double *dataBuffer)
         int patchID = _patchIDs.at(k);
         
         fvPatchScalarField & TPatch = refCast<fvPatchScalarField>(_T.boundaryField()[patchID]);
+        scalarField scf = TPatch.patchInternalField()();
         forAll(TPatch, i) {
-            dataBuffer[bufferIndex++] = TPatch.patchInternalField()()[i];
-            std::cout << "write refValue(" << i << ") = " << TPatch.patchInternalField()()[i] << std::endl;
+            dataBuffer[bufferIndex++] = scf[i];
+//            std::cout << "write refValue(" << i << ") = " << TPatch.patchInternalField()()[i] << std::endl;
         }
 
     }
