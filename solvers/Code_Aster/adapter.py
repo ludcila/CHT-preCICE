@@ -21,6 +21,9 @@ class Interface:
 	facesGroupName = ""
 	nodesGroupName = ""
 	
+	facesMeshName = ""
+	nodesMeshName = ""
+	
 	nodes = []
 	faces = []
 	nodeCoordinates = []
@@ -54,13 +57,15 @@ class Interface:
 	def __init__(self, precice):
 		self.precice = precice
 	
-	def configure(self, facesGroupName, nodesGroupName):
-		self.nodesGroupName = nodesGroupName
-		self.facesGroupName = facesGroupName
-		self.nodes = [self.mesh.correspondance_noeuds[idx] for idx in self.mesh.gno[nodesGroupName]]
-		self.faces = [self.mesh.correspondance_mailles[idx] for idx in self.mesh.gma[facesGroupName]]
-		self.nodeCoordinates = [self.mesh.cn[idx] for idx in self.mesh.gno[nodesGroupName]]
-		connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[facesGroupName]]
+	def configure(self, data):
+		self.nodesGroupName = data["nodesGroupName"]
+		self.facesGroupName = data["facesGroupName"]
+		self.nodesMeshName = data["nodesMeshName"]
+		self.faceCentersMeshName = data["faceCentersMeshName"]
+		self.nodes = [self.mesh.correspondance_noeuds[idx] for idx in self.mesh.gno[self.nodesGroupName]]
+		self.faces = [self.mesh.correspondance_mailles[idx] for idx in self.mesh.gma[self.facesGroupName]]
+		self.nodeCoordinates = [self.mesh.cn[idx] for idx in self.mesh.gno[self.nodesGroupName]]
+		connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[self.facesGroupName]]
 		self.faceCenterCoordinates = [(
 			self.mesh.cn[connectivity[i][0]] + 
 			self.mesh.cn[connectivity[i][1]] + 
@@ -78,11 +83,11 @@ class Interface:
 	def setVertices(self):
 		# Nodes
 		self.preciceNodeIndices = [0] * len(self.nodeCoordinates)
-		self.preciceNodesMeshID = self.precice.getMeshID("Aster-Nodes")
+		self.preciceNodesMeshID = self.precice.getMeshID(self.nodesMeshName)
 		self.precice.setMeshVertices(self.preciceNodesMeshID, len(self.nodeCoordinates), np.hstack(self.nodeCoordinates), self.preciceNodeIndices)
 		# Face centers
 		self.preciceFaceCenterIndices = [0] * len(self.faceCenterCoordinates)
-		self.preciceFaceCentersMeshID = self.precice.getMeshID("Aster-Face-Centers")
+		self.preciceFaceCentersMeshID = self.precice.getMeshID(self.faceCentersMeshName)
 		self.precice.setMeshVertices(self.preciceFaceCentersMeshID, len(self.faceCenterCoordinates), np.hstack(self.faceCenterCoordinates), self.preciceFaceCenterIndices)
 		
 	def setDataIDs(self):
