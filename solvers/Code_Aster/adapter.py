@@ -60,8 +60,8 @@ class Interface:
 	
 	mesh = None
 	
-	facesGroupName = ""
-	nodesGroupName = ""
+	groupName = ""
+	groupName = ""
 	
 	facesMeshName = ""
 	nodesMeshName = ""
@@ -108,14 +108,13 @@ class Interface:
 		self.configure(names)
 	
 	def configure(self, names):
-		self.nodesGroupName = names["nodesGroupName"]
-		self.facesGroupName = names["facesGroupName"]
+		self.groupName = names["groupName"]
 		self.nodesMeshName = names["nodesMeshName"]
 		self.faceCentersMeshName = names["faceCentersMeshName"]
-		self.nodes = [self.mesh.correspondance_noeuds[idx] for idx in self.mesh.gno[self.nodesGroupName]]
-		self.faces = [self.mesh.correspondance_mailles[idx] for idx in self.mesh.gma[self.facesGroupName]]
-		self.nodeCoordinates = [self.mesh.cn[idx] for idx in self.mesh.gno[self.nodesGroupName]]
-		connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[self.facesGroupName]]
+		self.nodes = [self.mesh.correspondance_noeuds[idx] for idx in self.mesh.gno[self.groupName]]
+		self.faces = [self.mesh.correspondance_mailles[idx] for idx in self.mesh.gma[self.groupName]]
+		self.nodeCoordinates = [self.mesh.cn[idx] for idx in self.mesh.gno[self.groupName]]
+		connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[self.groupName]]
 		self.faceCenterCoordinates = np.array([np.array([self.mesh.cn[node] for node in elem]).mean(0) for elem in connectivity])
 		self.setNormals()
 		self.setVertices()
@@ -132,10 +131,10 @@ class Interface:
 		N = CREA_CHAMP(
 			MODELE=self.MODEL,
 			TYPE_CHAM='NOEU_GEOM_R',
-			GROUP_MA=self.facesGroupName,
+			GROUP_MA=self.groupName,
 			OPERATION='NORMALE'
 		)
-		self.normals = N.EXTR_COMP(lgno=[self.nodesGroupName]).valeurs
+		self.normals = N.EXTR_COMP(lgno=[self.groupName]).valeurs
 		self.normals = np.resize(np.array(self.normals), (len(self.normals)/3, 3))
 		DETRUIRE(CONCEPT={"NOM": N})
 	
@@ -242,8 +241,8 @@ class Interface:
 			NUME_ORDRE=NUME_ORDRE,
 		)
 		
-		t = T.EXTR_COMP(lgno=[self.nodesGroupName]).valeurs
-		q = Q.EXTR_COMP(lgno=[self.nodesGroupName]).valeurs
+		t = T.EXTR_COMP(lgno=[self.groupName]).valeurs
+		q = Q.EXTR_COMP(lgno=[self.groupName]).valeurs
 		q = np.resize(np.array(q), (len(q)/3, 3))
 		
 		DETRUIRE(CONCEPT=({'NOM': T}, {'NOM': Q}))
