@@ -6,6 +6,8 @@ from mpi4py import MPI
 from Cata.cata import *
 from Utilitai.partition import *
 
+np.set_printoptions(threshold=np.inf)
+
 precice_root = os.getenv('PRECICE_ROOT')
 precice_python_adapter_root = precice_root+"/src/precice/adapters/python"
 sys.path.insert(0, precice_python_adapter_root)
@@ -31,20 +33,25 @@ class Adapter:
 		self.configure(config)
 	
 	def configure(self, config):
-		L = [None] * self.numInterfaces
+		L = [None] * self.numInterfaces		# Loads
+		SM = [None] * self.numInterfaces	# Shifted meshes
 		for i in range(self.numInterfaces):
-			interface = Interface(self.precice, config[i], self.MESH, self.MODEL)
+			# Shifted mesh
+			SM[i] = CREA_MAILLAGE(MAILLAGE=self.MESH, RESTREINT={"GROUP_MA": config[i]["groupName"], "GROUP_NO": config[i]["groupName"]})
+			# Create interface
+			interface = Interface(self.precice, config[i], self.MESH, SM[i], self.MODEL)
+			# Loads
 			BCs = interface.createBCs()
 			L[i] = AFFE_CHAR_THER(MODELE=self.MODEL, ECHANGE=BCs)
 			interface.setLoad(L[i])
 			interface.setConductivity(np.ones(interface.writeDataSize) * self.conductivity)
-			self.LOADS.append({"CHARGE": L[i]})
+			self.LOADS.append({'CHARGE': L[i]})
 			self.interfaces.append(interface)
 	
-	def sendCouplingData(self, TEMP, dt=0, NUME_ORDRE=0):
+	def sendCouplingData(self, TEMP, dt=0):
 		if (dt == 0) or (dt > 0 and self.precice.isWriteDataRequired(dt)):
 			for interface in self.interfaces:
-				interface.writeBCs(TEMP, NUME_ORDRE)
+				interface.writeBCs(TEMP)
 	
 	def receiveCouplingData(self):
 		if self.precice.isReadDataAvailable():
@@ -68,12 +75,13 @@ class Interface:
 	
 	nodes = []
 	faces = []
+	connectivity = []
 	nodeCoordinates = []
 	faceCenterCoordinates = []
 	normals = None
 	
 	conductivity = None
-	delta = 1e-6
+	delta = 1e-5
 	
 	preciceNodeIndices = []
 	preciceFaceCenterIndices = []
@@ -99,9 +107,13 @@ class Interface:
 	LOAD = None
 	LOADS = []
 	
-	def __init__(self, precice, names, MESH, MODEL):
+	# Shifted mesh (contains only the interface, and is shifted by delta in the direction opposite to the normal)
+	SHMESH = None
+	
+	def __init__(self, precice, names, MESH, SHMESH, MODEL):
 		self.precice = precice
 		self.MESH = MESH
+		self.SHMESH = SHMESH
 		self.MODEL = MODEL
 		self.mesh = MAIL_PY()
 		self.mesh.FromAster(MESH)
@@ -111,32 +123,61 @@ class Interface:
 		self.groupName = names["groupName"]
 		self.nodesMeshName = names["nodesMeshName"]
 		self.faceCentersMeshName = names["faceCentersMeshName"]
-		self.nodes = [self.mesh.correspondance_noeuds[idx] for idx in self.mesh.gno[self.groupName]]
+		
+		self.computeNormals()
+		
+		self.nodeCoordinates = np.array([p for p in self.SHMESH.sdj.COORDO.VALE.get()])
+		self.nodeCoordinates = np.resize(self.nodeCoordinates, (len(self.nodeCoordinates)/3, 3))
+		self.shiftMesh()
+		
 		self.faces = [self.mesh.correspondance_mailles[idx] for idx in self.mesh.gma[self.groupName]]
-		self.nodeCoordinates = [self.mesh.cn[idx] for idx in self.mesh.gno[self.groupName]]
-		connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[self.groupName]]
-		self.faceCenterCoordinates = np.array([np.array([self.mesh.cn[node] for node in elem]).mean(0) for elem in connectivity])
-		self.setNormals()
+		self.connectivity = [self.mesh.co[idx] for idx in self.mesh.gma[self.groupName]]
+		self.faceCenterCoordinates = np.array([np.array([self.mesh.cn[node] for node in elem]).mean(0) for elem in self.connectivity])
+
 		self.setVertices()
 		self.setDataIDs()
 		
 		self.readDataSize = len(self.faces)
-		self.writeDataSize = len(self.nodes)
+		self.writeDataSize = len(self.nodeCoordinates)
 		
 		self.readHCoeff = np.zeros(self.readDataSize)
 		self.readTemp = np.zeros(self.readDataSize)
 	
-	def setNormals(self):
+	def computeNormals(self):
 		# Get normals at the nodes
+		DUMMY = AFFE_MODELE(
+			MAILLAGE=self.SHMESH,
+			AFFE={
+				'TOUT': 'OUI',
+				'PHENOMENE': 'THERMIQUE',
+				'MODELISATION': '3D',
+			},
+		);
 		N = CREA_CHAMP(
-			MODELE=self.MODEL,
+			MODELE=DUMMY,
 			TYPE_CHAM='NOEU_GEOM_R',
 			GROUP_MA=self.groupName,
 			OPERATION='NORMALE'
 		)
-		self.normals = N.EXTR_COMP(lgno=[self.groupName]).valeurs
+		self.normals = N.EXTR_COMP().valeurs
 		self.normals = np.resize(np.array(self.normals), (len(self.normals)/3, 3))
-		DETRUIRE(CONCEPT={"NOM": N})
+		
+		"""
+		print self.normals
+		faces = np.array([np.array([self.mesh.cn[node] for node in elem]) for elem in self.connectivity])
+		normals = []
+		for face in faces:
+			A = face[0]
+			B = face[1]
+			C = face[2]
+			normal = np.cross(B-A, C-A)
+			normal = normal / np.linalg.norm(normal)
+			normals.append(normal)
+		
+		print np.array(normals)
+		quit()
+		"""
+		DETRUIRE(CONCEPT=({"NOM": N}, {"NOM": DUMMY}))
 	
 	def setVertices(self):
 		# Nodes
@@ -165,12 +206,6 @@ class Interface:
 	
 	def getPreciceFaceCentersMeshID(self):
 		return self.preciceFaceCentersMeshID
-	
-	def getNodes(self):
-		return self.nodes
-	
-	def getFaces(self):
-		return self.faces
 	
 	def getNodeCoordinates(self):
 		return self.nodeCoordinates
@@ -213,46 +248,25 @@ class Interface:
 		self.precice.readBlockScalarData(self.readTempDataID, self.readDataSize, self.preciceFaceCenterIndices, self.readTemp)
 		self.updateBCs(self.readTemp, self.readHCoeff)
 		
-	def writeBCs(self, TEMP, NUME_ORDRE=0):
-		writeTemp, writeHCoeff = self.getBoundaryValues(TEMP, NUME_ORDRE)
+	def writeBCs(self, TEMP):
+		writeTemp, writeHCoeff = self.getBoundaryValues(TEMP)
 		self.precice.writeBlockScalarData(self.writeHCoeffDataID, self.writeDataSize, self.preciceNodeIndices, writeHCoeff)
 		self.precice.writeBlockScalarData(self.writeTempDataID, self.writeDataSize, self.preciceNodeIndices, writeTemp)
 
-	def getBoundaryValues(self, TEMP, NUME_ORDRE=0):
+	def getBoundaryValues(self, T):
 		if self.conductivity is None:
 			print "ERROR: Call setConductivity(conductivity) before calling getBoundaryValues()!"
 			exit(1)
-			
-		# Temperature at the nodes
-		T = CREA_CHAMP(
-			RESULTAT=TEMP,
-			NOM_CHAM='TEMP',
-			TYPE_CHAM='NOEU_TEMP_R',
-			OPERATION='EXTR',
-			NUME_ORDRE=NUME_ORDRE,
-		)
 		
-		# Flux at the nodes
-		Q = CREA_CHAMP(
-			RESULTAT=TEMP,
-			NOM_CHAM='FLUX_NOEU',
-			TYPE_CHAM='NOEU_FLUX_R',
-			OPERATION='EXTR',
-			NUME_ORDRE=NUME_ORDRE,
-		)
-		
-		t = T.EXTR_COMP(lgno=[self.groupName]).valeurs
-		q = Q.EXTR_COMP(lgno=[self.groupName]).valeurs
-		q = np.resize(np.array(q), (len(q)/3, 3))
-		
-		DETRUIRE(CONCEPT=({'NOM': T}, {'NOM': Q}))
-		
-		# Surface normal flux (flux dot normal)
-		snq = (self.normals * q).sum(1)
 		# Sink temperature
-		writeTemp = t + snq * self.delta
+		TPROJ = PROJ_CHAMP(MAILLAGE_1=self.MESH, MAILLAGE_2=self.SHMESH, CHAM_GD=T, METHODE='COLLOCATION')
+		writeTemp = TPROJ.EXTR_COMP(lgno=[self.groupName]).valeurs
+		
 		# Heat transfer coefficient
 		writeHCoeff = np.array(self.conductivity) / self.delta
+		
+		DETRUIRE(CONCEPT=({'NOM': TPROJ}))
+		
 		return writeTemp, writeHCoeff
 	
 	def setLoad(self, LOAD):
@@ -260,3 +274,11 @@ class Interface:
 		
 	def setConductivity(self, conductivity):
 		self.conductivity = conductivity
+		
+	def shiftMesh(self):
+		coords = [p for p in self.SHMESH.sdj.COORDO.VALE.get()]
+		for i in range(len(self.normals)):
+			for c in range(3):
+				coords[i*3 + c] = coords[i*3 + c] - self.normals[i][c] * self.delta
+		self.SHMESH.sdj.COORDO.VALE.changeJeveuxValues(len(coords), tuple(range(1, len(coords)+1)), tuple(coords), tuple(coords), 1)
+
