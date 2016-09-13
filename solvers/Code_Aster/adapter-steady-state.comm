@@ -1,0 +1,110 @@
+DEBUT(PAR_LOT='NON');
+
+from subprocess import call
+import sys
+sys.path.insert(0, "/home/lcheung/Thesis/CHT-preCICE/solvers/Code_Aster")
+from adapter import *
+
+# ==========================================================================================
+# Include file in UNITE 90: PreCICE setup
+# ==========================================================================================
+
+# Defines: preciceConfigFile, interfaces, participantName
+INCLUDE(UNITE=90)
+precice = PySolverInterface(participantName, 0, 1)
+precice.configure(preciceConfigFile)
+
+# ==========================================================================================
+# Include file in UNITE 91: Setup Aster case
+# ==========================================================================================
+
+# Defines: MESH, MODEL, BC[], MAT[], MATS
+INCLUDE(UNITE=91)
+                         
+# ==========================================================================================
+# Get interface mesh
+# ==========================================================================================
+
+adapter = Adapter(precice, interfaces, MESH, MODEL)
+BCs = [{'CHARGE': bc} for bc in BC]
+LOADS = BCs + adapter.LOADS
+
+# ==========================================================================================
+# Setup preCICE
+# ==========================================================================================
+
+preciceDt = precice.initialize()
+
+if precice.isActionRequired(PyActionWriteInitialData()):
+	adapter.sendCouplingData(INIT_T, preciceDt)
+	precice.fulfilledAction(PyActionWriteInitialData())
+
+precice.initializeData()
+
+# ==========================================================================================
+# ==========================================================================================
+# 										SOLUTION LOOP
+# ==========================================================================================
+# ==========================================================================================
+
+k = 0
+time = 0.0
+
+while precice.isCouplingOngoing():
+	
+	# ======================================================================================
+	# Read and set boundary conditions
+	# ======================================================================================
+	
+	adapter.receiveCouplingData()
+	
+	# ======================================================================================
+	# Solve
+	# ======================================================================================
+
+	TEMP = THER_LINEAIRE(
+		MODELE=MODEL,
+		CHAM_MATER=MATS,
+		EXCIT=LOADS,
+		ETAT_INIT=_F(STATIONNAIRE='OUI'),
+	);
+		
+	T = CREA_CHAMP(
+		RESULTAT=TEMP,
+		NOM_CHAM='TEMP',
+		TYPE_CHAM='NOEU_TEMP_R',
+		OPERATION='EXTR'
+	)
+
+	# ======================================================================================
+	# Extract and write boundary values
+	# ======================================================================================
+	
+	adapter.sendCouplingData(T, preciceDt)
+
+	# ======================================================================================
+	# Advance
+	# ======================================================================================
+		
+	preciceDt = precice.advance(preciceDt)
+		
+	if k % outputFrequency == 0:
+		   filename = "output-" + str(k) + ".rmed"
+		   DEFI_FICHIER(FICHIER=filename, UNITE=80)
+		   IMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=TEMP));
+		   call(["mv", filename, outputDirectory])
+		   DEFI_FICHIER(ACTION='LIBERER', UNITE=80)
+		   
+	k = k + 1
+
+	time = time + preciceDt
+
+	# ======================================================================================
+	# Destroy Aster objects
+	# ======================================================================================
+	
+	DETRUIRE(CONCEPT=_F(NOM=TEMP))
+	DETRUIRE(CONCEPT=_F(NOM=T))
+
+
+FIN();
