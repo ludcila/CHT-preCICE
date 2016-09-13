@@ -32,8 +32,8 @@ class Adapter:
 		self.MESH = MESH
 		self.MODEL = MODEL
 		self.MAT = MAT
-		self.configure(config)
 		self.isNonLinear = isNonLinear
+		self.configure(config)
 	
 	def configure(self, config):
 		L = [None] * self.numInterfaces		# Loads
@@ -83,7 +83,7 @@ class Interface:
 	
 	isNonLinear = False
 	conductivity = None
-	conductivityIsInitialized = False
+	isConductivityInitialized = False
 	delta = 1e-5
 	
 	preciceNodeIndices = []
@@ -282,7 +282,10 @@ class Interface:
 		self.SHMESH.sdj.COORDO.VALE.changeJeveuxValues(len(coords), tuple(range(1, len(coords)+1)), tuple(coords), tuple(coords), 1)
 
 	def updateConductivity(self, T):
-		if not self.conductivityIsInitialized or self.isNonLinear:
+		if self.isNonLinear:
+			self.conductivity = [self.MAT.RCVALE("THER_NL", nompar="TEMP", valpar=t, nomres="LAMBDA")[0][0] for t in T]
+			self.isConductivityInitialized = True
+		elif not self.isConductivityInitialized:
 			self.conductivity = [self.MAT.RCVALE("THER", nompar="TEMP", valpar=t, nomres="LAMBDA")[0][0] for t in T]
-			self.conductivityIsInitialized = True
-			# RCVALE returns ((LAMBDA,),(0,)), therefore we use [0][0] to extract the value of LAMBDA
+			self.isConductivityInitialized = True
+		# Note: RCVALE returns ((LAMBDA,),(0,)), therefore we use [0][0] to extract the value of LAMBDA
