@@ -17,20 +17,23 @@ from PySolverInterface import *
 
 class Adapter:
 	
-	conductivity = 100
 	precice = None
 	numInterfaces = 0
 	interfaces = []
 	LOADS = []
 	MESH = None
 	MODEL = None
+	MAT = None
+	isNonLinear = False
 	
-	def __init__(self, precice, config, MESH, MODEL):
+	def __init__(self, precice, config, MESH, MODEL, MAT, isNonLinear=False):
 		self.numInterfaces = len(config)
 		self.precice = precice
 		self.MESH = MESH
 		self.MODEL = MODEL
+		self.MAT = MAT
 		self.configure(config)
+		self.isNonLinear = isNonLinear
 	
 	def configure(self, config):
 		L = [None] * self.numInterfaces		# Loads
@@ -39,12 +42,11 @@ class Adapter:
 			# Shifted mesh
 			SM[i] = CREA_MAILLAGE(MAILLAGE=self.MESH, RESTREINT={"GROUP_MA": config[i]["groupName"], "GROUP_NO": config[i]["groupName"]})
 			# Create interface
-			interface = Interface(self.precice, config[i], self.MESH, SM[i], self.MODEL)
+			interface = Interface(self.precice, config[i], self.MESH, SM[i], self.MODEL, self.MAT[config[i]["materialID"]], self.isNonLinear)
 			# Loads
 			BCs = interface.createBCs()
 			L[i] = AFFE_CHAR_THER(MODELE=self.MODEL, ECHANGE=BCs)
 			interface.setLoad(L[i])
-			interface.setConductivity(np.ones(interface.writeDataSize) * self.conductivity)
 			self.LOADS.append({'CHARGE': L[i]})
 			self.interfaces.append(interface)
 	
@@ -57,13 +59,12 @@ class Adapter:
 		if self.precice.isReadDataAvailable():
 			for interface in self.interfaces:
 				interface.readAndUpdateBCs()
-				
-	def setConductivity(self, cond):
-		self.conductivity = cond
 
 class Interface:
 	
 	precice = None
+	
+	
 	
 	mesh = None
 	
@@ -80,7 +81,9 @@ class Interface:
 	faceCenterCoordinates = []
 	normals = None
 	
+	isNonLinear = False
 	conductivity = None
+	conductivityIsInitialized = False
 	delta = 1e-5
 	
 	preciceNodeIndices = []
@@ -110,14 +113,16 @@ class Interface:
 	# Shifted mesh (contains only the interface, and is shifted by delta in the direction opposite to the normal)
 	SHMESH = None
 	
-	def __init__(self, precice, names, MESH, SHMESH, MODEL):
+	def __init__(self, precice, names, MESH, SHMESH, MODEL, MAT, isNonLinear = False):
 		self.precice = precice
 		self.MESH = MESH
 		self.SHMESH = SHMESH
 		self.MODEL = MODEL
+		self.MAT = MAT
 		self.mesh = MAIL_PY()
 		self.mesh.FromAster(MESH)
 		self.configure(names)
+		self.isNonLinear = isNonLinear
 	
 	def configure(self, names):
 		self.groupName = names["groupName"]
@@ -254,26 +259,20 @@ class Interface:
 		self.precice.writeBlockScalarData(self.writeTempDataID, self.writeDataSize, self.preciceNodeIndices, writeTemp)
 
 	def getBoundaryValues(self, T):
-		if self.conductivity is None:
-			print "ERROR: Call setConductivity(conductivity) before calling getBoundaryValues()!"
-			exit(1)
 		
 		# Sink temperature
 		TPROJ = PROJ_CHAMP(MAILLAGE_1=self.MESH, MAILLAGE_2=self.SHMESH, CHAM_GD=T, METHODE='COLLOCATION')
 		writeTemp = TPROJ.EXTR_COMP(lgno=[self.groupName]).valeurs
+		DETRUIRE(CONCEPT=({'NOM': TPROJ}))
 		
 		# Heat transfer coefficient
+		self.updateConductivity(writeTemp)
 		writeHCoeff = np.array(self.conductivity) / self.delta
-		
-		DETRUIRE(CONCEPT=({'NOM': TPROJ}))
 		
 		return writeTemp, writeHCoeff
 	
 	def setLoad(self, LOAD):
 		self.LOAD = LOAD
-		
-	def setConductivity(self, conductivity):
-		self.conductivity = conductivity
 		
 	def shiftMesh(self):
 		coords = [p for p in self.SHMESH.sdj.COORDO.VALE.get()]
@@ -282,3 +281,8 @@ class Interface:
 				coords[i*3 + c] = coords[i*3 + c] - self.normals[i][c] * self.delta
 		self.SHMESH.sdj.COORDO.VALE.changeJeveuxValues(len(coords), tuple(range(1, len(coords)+1)), tuple(coords), tuple(coords), 1)
 
+	def updateConductivity(self, T):
+		if not self.conductivityIsInitialized or self.isNonLinear:
+			self.conductivity = [self.MAT.RCVALE("THER", nompar="TEMP", valpar=t, nomres="LAMBDA")[0][0] for t in T]
+			self.conductivityIsInitialized = True
+			# RCVALE returns ((LAMBDA,),(0,)), therefore we use [0][0] to extract the value of LAMBDA

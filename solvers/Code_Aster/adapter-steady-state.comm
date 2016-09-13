@@ -11,8 +11,8 @@ from adapter import *
 
 # Defines: preciceConfigFile, interfaces, participantName
 INCLUDE(UNITE=90)
-precice = PySolverInterface(participantName, 0, 1)
-precice.configure(preciceConfigFile)
+precice = PySolverInterface(settings["participantName"], 0, 1)
+precice.configure(settings["preciceConfigFile"])
 
 # ==========================================================================================
 # Include file in UNITE 91: Setup Aster case
@@ -25,7 +25,7 @@ INCLUDE(UNITE=91)
 # Get interface mesh
 # ==========================================================================================
 
-adapter = Adapter(precice, interfaces, MESH, MODEL)
+adapter = Adapter(precice, settings["interfaces"], MESH, MODEL, MAT, isNonLinear=settings["isNonLinear"])
 BCs = [{'CHARGE': bc} for bc in BC]
 LOADS = BCs + adapter.LOADS
 
@@ -62,12 +62,20 @@ while precice.isCouplingOngoing():
 	# Solve
 	# ======================================================================================
 
-	TEMP = THER_LINEAIRE(
-		MODELE=MODEL,
-		CHAM_MATER=MATS,
-		EXCIT=LOADS,
-		ETAT_INIT=_F(STATIONNAIRE='OUI'),
-	);
+	if settings["isNonLinear"]:
+		TEMP = THER_NON_LINE(
+			MODELE=MODEL,
+			CHAM_MATER=MATS,
+			EXCIT=LOADS,
+			ETAT_INIT=_F(STATIONNAIRE='OUI'),
+		);
+	else:
+		TEMP = THER_LINEAIRE(
+			MODELE=MODEL,
+			CHAM_MATER=MATS,
+			EXCIT=LOADS,
+			ETAT_INIT=_F(STATIONNAIRE='OUI'),
+		);
 		
 	T = CREA_CHAMP(
 		RESULTAT=TEMP,
@@ -88,11 +96,11 @@ while precice.isCouplingOngoing():
 		
 	preciceDt = precice.advance(preciceDt)
 		
-	if k % outputFrequency == 0:
+	if k % settings["outputFrequency"] == 0:
 		   filename = "output-" + str(k) + ".rmed"
 		   DEFI_FICHIER(FICHIER=filename, UNITE=80)
 		   IMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=TEMP));
-		   call(["mv", filename, outputDirectory])
+		   call(["mv", filename, settings["outputDirectory"]])
 		   DEFI_FICHIER(ACTION='LIBERER', UNITE=80)
 		   
 	k = k + 1
