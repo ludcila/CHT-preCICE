@@ -26,4 +26,8 @@
 
     thermo.correct();
     radiation->correct();
+    
+    Info<< "Min/max T:" << min(thermo.T()).value() << ' '
+        << max(thermo.T()).value() << endl;
+    
 }
