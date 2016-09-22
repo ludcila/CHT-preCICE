@@ -1,0 +1,37 @@
+precice-config-file: precice-config.xml
+
+participants:
+
+  Water:
+    solver: OpenFOAM
+    interfaces:
+    - name: Water-to-Cold-Plate
+      patches:
+      - cold-top
+      - cold-bottom
+    - name: Water-to-Hot-Plate
+      patches:
+      - hot-top
+      - hot-bottom
+    
+  Cold-Plate:
+    solver: CalculiX
+    interfaces:
+    - name: Cold-Plate-to-Water
+      patches:
+      - interface
+
+  Hot-Plate:
+    solver: CalculiX
+    interfaces:
+    - name: Hot-Plate-to-Water
+      patches:
+      - interface
+    
+couplings:
+-
+  A: Water-to-Cold-Plate
+  B: Cold-Plate-to-Water
+-
+  A: Water-to-Hot-Plate
+  B: Hot-Plate-to-Water
