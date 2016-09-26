@@ -162,13 +162,18 @@ int main(int argc, char *argv[])
     volScalarField p_checkpoint = p;
     volScalarField p_rgh_checkpoint = p_rgh;
     volScalarField rho_checkpoint = rho;
+    volScalarField T_checkpoint = thermo.T();
     volScalarField he_checkpoint = thermo.he();
     volScalarField hc_checkpoint = thermo.hc()();
     volScalarField tp_checkpoint = thermo.p();
     volScalarField K_checkpoint = K;
     surfaceScalarField phi_checkpoint = phi;
     volScalarField dpdt_checkpoint = dpdt;
-
+    volScalarField k_checkpoint = turbulence->k();
+    volScalarField epsilon_checkpoint = turbulence->epsilon();
+    volScalarField nut_checkpoint = turbulence->nut();
+    volScalarField alphat_checkpoint = turbulence->alphat();
+    volScalarField mut_checkpoint = turbulence->mut();
 
     /* =========================== preCICE initialize =========================== */
 
@@ -206,22 +211,30 @@ int main(int argc, char *argv[])
 
             couplingIterationTimeIndex = runTime.timeIndex();
             couplingIterationTimeValue = runTime.value();
-
-            rho_checkpoint = rho;
+            
+            U_checkpoint = U;
+            p_checkpoint = p;
             p_rgh_checkpoint = p_rgh;
+            rho_checkpoint = rho;
+            T_checkpoint = thermo.T();
             he_checkpoint = thermo.he();
             hc_checkpoint = thermo.hc()();
             tp_checkpoint = thermo.p();
             K_checkpoint = K;
             phi_checkpoint = phi;
             dpdt_checkpoint = dpdt;
+            k_checkpoint = turbulence->k()();
+            epsilon_checkpoint = turbulence->epsilon()();
+            nut_checkpoint = turbulence->nut()();
+            mut_checkpoint = turbulence->mut()();
+            turbulence->alphat()().correctBoundaryConditions();
+            alphat_checkpoint = turbulence->alphat()();
+            
 
             if(solverDt.value() == preciceDt) {
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling" << std::endl;
-                U_checkpoint = U;
-                p_checkpoint = p;
             }
 
             precice.fulfilledAction(cowic);
@@ -276,22 +289,29 @@ int main(int argc, char *argv[])
 
             // Set the time before copying the fields, in order to have the correct oldTime() field
             runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
-
+            
+            U = U_checkpoint;
+            p = p_checkpoint;
             rho = rho_checkpoint;
             p_rgh = p_rgh_checkpoint;
+            thermo.T() = T_checkpoint;
             thermo.he() = he_checkpoint;
             thermo.hc()() = hc_checkpoint;
             thermo.p() = tp_checkpoint;
             K = K_checkpoint;
             phi = phi_checkpoint;
             dpdt = dpdt_checkpoint;
+            turbulence->k()() = k_checkpoint;
+            turbulence->epsilon()() = epsilon_checkpoint;
+            turbulence->nut()() = nut_checkpoint;
+            turbulence->mut()() = mut_checkpoint;
+            turbulence->alphat()() = alphat_checkpoint;
+            turbulence->alphat()().correctBoundaryConditions();
 
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
             } else {
                 std::cout << "Subcycling..." << std::endl;
-                U = U_checkpoint;
-                p = p_checkpoint;
                 // Reload all fields
             }
 
