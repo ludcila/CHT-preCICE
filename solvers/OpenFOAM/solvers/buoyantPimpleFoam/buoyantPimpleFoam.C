@@ -88,6 +88,23 @@ int main(int argc, char *argv[])
     #include "compressibleCourantNo.H"
     #include "setInitialDeltaT.H"
     
+    bool turbulenceUsed = false;
+    const word turbulenceModel
+    (
+        IOdictionary
+        (
+            IOobject
+            (
+                "turbulenceProperties",
+                runTime.constant(),
+                mesh,
+                IOobject::MUST_READ_IF_MODIFIED,
+                IOobject::NO_WRITE
+            )
+        ).lookup("simulationType")
+    );
+    if(turbulenceModel != "laminar") turbulenceUsed = true;
+    
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
@@ -190,7 +207,7 @@ int main(int argc, char *argv[])
     coupler.receiveCouplingData();
     
     dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
-
+    
     Info<< "\nStarting time loop\n" << endl;
 
     while (precice.isCouplingOngoing())
@@ -223,12 +240,15 @@ int main(int argc, char *argv[])
             K_checkpoint = K;
             phi_checkpoint = phi;
             dpdt_checkpoint = dpdt;
-            k_checkpoint = turbulence->k()();
-            epsilon_checkpoint = turbulence->epsilon()();
-            nut_checkpoint = turbulence->nut()();
-            mut_checkpoint = turbulence->mut()();
-            turbulence->alphat()().correctBoundaryConditions();
-            alphat_checkpoint = turbulence->alphat()();
+            if(turbulenceUsed) {
+                Info << "Writing turbulence checkpoing" << endl;
+                k_checkpoint = turbulence->k()();
+                epsilon_checkpoint = turbulence->epsilon()();
+                nut_checkpoint = turbulence->nut()();
+                mut_checkpoint = turbulence->mut()();
+                turbulence->alphat()().correctBoundaryConditions();
+                alphat_checkpoint = turbulence->alphat()();
+            }
             
 
             if(solverDt.value() == preciceDt) {
@@ -301,13 +321,16 @@ int main(int argc, char *argv[])
             K = K_checkpoint;
             phi = phi_checkpoint;
             dpdt = dpdt_checkpoint;
-            turbulence->k()() = k_checkpoint;
-            turbulence->epsilon()() = epsilon_checkpoint;
-            turbulence->nut()() = nut_checkpoint;
-            turbulence->mut()() = mut_checkpoint;
-            turbulence->alphat()() = alphat_checkpoint;
-            turbulence->alphat()().correctBoundaryConditions();
-
+            if(turbulenceUsed) {
+                Info << "Reading turbulence checkpoing" << endl;
+                turbulence->k()() = k_checkpoint;
+                turbulence->epsilon()() = epsilon_checkpoint;
+                turbulence->nut()() = nut_checkpoint;
+                turbulence->mut()() = mut_checkpoint;
+                turbulence->alphat()() = alphat_checkpoint;
+                turbulence->alphat()().correctBoundaryConditions();
+            }
+            
             if(noSubcycling) {
                 std::cout << "No subcycling" << std::endl;
             } else {
