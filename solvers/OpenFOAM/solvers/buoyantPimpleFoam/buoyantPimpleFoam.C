@@ -241,7 +241,6 @@ int main(int argc, char *argv[])
             phi_checkpoint = phi;
             dpdt_checkpoint = dpdt;
             if(turbulenceUsed) {
-                Info << "Writing turbulence checkpoing" << endl;
                 k_checkpoint = turbulence->k()();
                 epsilon_checkpoint = turbulence->epsilon()();
                 nut_checkpoint = turbulence->nut()();
@@ -322,7 +321,6 @@ int main(int argc, char *argv[])
             phi = phi_checkpoint;
             dpdt = dpdt_checkpoint;
             if(turbulenceUsed) {
-                Info << "Reading turbulence checkpoing" << endl;
                 turbulence->k()() = k_checkpoint;
                 turbulence->epsilon()() = epsilon_checkpoint;
                 turbulence->nut()() = nut_checkpoint;
