@@ -19,8 +19,7 @@
 			- [OpenFOAM](#openfoam)
 			- [CalculiX](#calculix)
 			- [Code_Aster](#code_aster)
-		- [How many interfaces to use](#how-many-interfaces-to-use)
-			- [Multi-coupling](#multi-coupling)
+		- [Multiple interfaces](#multiple-interfaces)
 	- [The preCICE XML configuration file](#the-precice-xml-configuration-file)
 	- [Transient vs Steady-State Simulation](#transient-vs-steady-state-simulation)
 
@@ -59,7 +58,7 @@ The output from preCICE (e.g. regarding the coupling convergence and iterations)
 # Setting up a CHT simulation with preCICE
 
 ## Overview
-Initially, the input files for the case are prepared for each solver the usual way, as if they were running independently.  Afterwards, some changes (or files) are required in order for the coupling to work.  These include:
+The input files for the case are prepared for each solver the usual way, as if they were running independently.  However, special care must be taken so that the boundary conditions are appropriate for the coupling.  Additional configuration files are required for the coupling and extra command line arguments must be passed to the coupled solvers:
 
  1. **Boundary conditions at the interfaces**: the appropriate type of boundary condition must be set according to the type of coupling to be used (e.g. Dirichlet-Neumann, Robin-Robin, etc.).  It is important to use the correct type of boundary condition, such that afterwards the values can be overriden during the coupling.
  2. **Configuration files**:
@@ -81,7 +80,7 @@ Below is a list of the boundary conditions used for the coupling.  The terminolo
 | Heat Flux (Neumann) | zeroGradient | DFLUX | - |
 | Convection (Robin) | mixed | FILM | ECHANGE
 
-For instructions on how to setup a particular solver, please refer to the section dedicated to it.
+For instructions on how to setup a particular solver, please refer to the section dedicated to that solver.
 
 > Note that Code_Aster only supports Robin-Robin coupling at the moment.
 
@@ -134,22 +133,18 @@ Similar to CalculiX, in Code_Aster we have to create a "group" that contains all
 
 
 
-### How many interfaces to use
+### Multiple interfaces
 
-A simulation coupled with preCICE can contain multiple interfaces.  At least one interface must exist between every pair of coupled participants.  More than one interface can exist between the same pair of coupled participants.
-
-#### Multi-coupling
-
-A typical case where multiple interfaces are necessary, is when we are coupling more than two participants.  An example of this, is the heat exchanger case, where we have a coupling as depicted in the picture below:
+Each participant may have multiple interfaces.  A typical situation is when a participant is coupled to two (or more) other participants.  An example of this is the heat exchanger case, where the solid is coupled with two fluids:
 
 ```{mermaid}
 graph LR
 Inner-Fluid---Solid
 Solid---Outer-Fluid
 ```
-
 The solid participant has an interface with each of the two fluid participants.
 
+More than one interface may also be defined between the same pair of coupled participants.  If we simulate the heat exchanger with only one fluid participant and a solid participant, then we may decide to treat it as only one fluid-solid interface, or we may treat the interfaces with the inner fluid and the outer fluid separately.
 
 ## The preCICE XML configuration file
 
@@ -169,5 +164,3 @@ The solid participant has an interface with each of the two fluid participants.
 | Coupling schemes (in precice-config.xml) | Implicit / Explicit | Explicit only |
 | Coupling boundary conditions | Dirichlet-Neumann, Robin-Robin | Robin-Robin only |
 | Timestep | any | 1 |
-
-> If multiple participants are used, residual control must be disabled for the SIMPLE algorithm, otherwise one of the participants may terminate earlier, causing the others to terminate as well

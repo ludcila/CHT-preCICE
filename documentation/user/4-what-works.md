@@ -2,23 +2,24 @@
 
 This section describes configurations that have been tested to work.
 
-## preCICE
+### Coupling boundary conditions
 
-### Type of coupling (based on the boundary condition)
-
-- Robin-Robin (RR): the preferred option, superior in both stability and convergence.
+- Robin-Robin (RR): the preferred option, superior in stability and convergence.
 - Dirichlet-Neumann (DN): Fluid Dirichlet - Solid Neumann (FDSN) worked well in the flat plate validation case.  For the rest of the document, DN actually refers to FDSN.
     - If the simulation becomes unstable, try with a smaller step size (??)
 
+## preCICE setup
+
 ### Coupling-scheme
 
-- Explicit coupling scheme: safe to use only when using Robin-Robin coupling.  Robin-Robin explicit coupling must be used for steady-state coupling.
+- Explicit coupling scheme: safe to use only when using Robin-Robin coupling.  Robin-Robin explicit coupling must be used for steady-state setups.
 - Implicit coupling scheme
 
 Below are some suggestions regarding the parameters for implicit coupling:
 
+- `exchange`
+    - `initialize="yes"`
 - `extrapolation-order`:
-    - Robin-Robin: best is to omit the tag (no extrapolation)
 - `max-iterations`:
     - Robin-Robin:
         - Large value (e.g. 200): to ensure convergence
@@ -27,7 +28,7 @@ Below are some suggestions regarding the parameters for implicit coupling:
     - Dirichlet-Neumann: Require convergence of both temperature and heat-flux (`suffices="0"`)
     - Robin-Robin: It is usually enough to require convergence of the sink temperature
 
-### Multi-coupling
+### Multi-coupling (`coupling-scheme:multi`)
 
 Multi-coupling can/should be used when:
 

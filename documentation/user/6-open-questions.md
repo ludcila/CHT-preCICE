@@ -12,6 +12,7 @@
 - In which cases is it problematic to use radial basis functions (RBF) for the data mapping? (e.g. complex geometries, where the interface consists of several distinct physical surfaces: the RBF interpolant might be constructed with points that belong to another surface.)
 
 ## OpenFOAM
+- Checkpointing of turbulence variables
 
 ## CalculiX
 
@@ -26,4 +27,7 @@
 # Future work / possible improvements
 
 Some ideas that might be implemented in the future:
-- In preCICE, add a new type of data-mapping scheme, like the nearestPatchFace from OpenFOAM
+
+For preCICE:
+- Add a new type of data-mapping scheme, like the nearestPatchFace from OpenFOAM
+- Allow using the same data names: for example, when doing Robin-Robin coupling, it is currently necessary to use different data names to distinguish the data that is sent/received from each side of the coupling, even though they have the same physical meaning (e.g. `Sink-Temperature-A`, `Sink-Temperature-B`) (explanation to be improved...)

@@ -1,10 +1,12 @@
-# Automatic configuration utility
+# Automatic configuration utilities
+
+(All to be implemented)
 
 ## Contents
 
 <!-- toc orderedList:0 -->
 
-- [Automatic configuration utility](#automatic-configuration-utility)
+- [Automatic configuration utilities](#automatic-configuration-utilities)
 	- [Contents](#contents)
 	- [Configuration file generation utility](#configuration-file-generation-utility)
 		- [Input files](#input-files)
