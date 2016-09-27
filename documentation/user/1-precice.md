@@ -83,4 +83,4 @@ Available options are:
 
 The first four coupling schemes are defined between two participants, and can be defined as implicit or explicit.  The last coupling scheme can be configured for multiple participants coupled implicitly.
 
-Whether Dirichlet-Neumann or Robin-Robin type of coupling is used, depends on what coupling data is exchanged and what boundary conditions are set on the solvers.  This is transparent to preCICE, as it only knows that data is exchanged.
+Whether Dirichlet-Neumann or Robin-Robin type of coupling is used, depends on what coupling data is exchanged and what boundary conditions are set on the solvers.  This is transparent to preCICE, who only knows that data is exchanged.

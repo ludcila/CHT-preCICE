@@ -17,9 +17,12 @@
 
 ## Dirichlet-Neumann vs Robin-Robin coupling
 
+- Dirichlet-Neumann: one participant has a temperature boundary condition (Dirichlet) and the other has a heat flux boundary condition (Neumann).
+- Robin-Robin: Robin boundary conditions are realized through mixed type boundary conditions (in OpenFOAM) and convective boundary conditions (in the solid solvers).
+
 In most applications, it is recommended to use Robin-Robin (RR) type of coupling, as it shows better stability and convergence properties.
 
-Robin-Robin coupling is stable enough that the simulation does not blow up with explicit coupling, but with implicit coupling we can make sure that the coupling converges.  A trade-off can also be achieved by using implicit coupling with a low number of `max-iterations`.
+Robin-Robin coupling is stable enough that simulations do not blow up with explicit coupling, but by using implicit coupling we can make sure that the coupling converges.  A trade-off can also be achieved by using implicit coupling with a low number of `max-iterations`.
 
 ## The coupling data
 
@@ -40,7 +43,7 @@ In every simulation, we will have at least two regions (typically a fluid and a 
         - If the regions have different properties (e.g. thermophysical properties)
         - If there are fluid-fluid interfaces
 - How many solid participants to use:
-    - One participant may be used; if there are solid-solid interfaces, they can be dealt with by defining contacts
+    - One participant may be used; if there are solid-solid interfaces, they can be treated as contacts
     - Multiple participants may be used; the interfaces are coupled with preCICE (only perfect contact can be modeled in this case)
 
 Another way to summarize these guidelines, is in terms of the interfaces:
@@ -48,7 +51,7 @@ Another way to summarize these guidelines, is in terms of the interfaces:
 - Fluid-fluid interfaces*: must be coupled through preCICE
 - Solid-solid interfaces: can be coupled either through preCICE or by using contacts
 
-*The current implementation couples the buoyantPimpleFoam solver, which does not support regions.  In future developments, one might couple chtMultiRegionFoam in order to be able to simulate fluid-fluid interfaces within one solver, instead of using an external coupling.
+*The current implementation couples the buoyantPimpleFoam solver, which does not support regions.  In future developments, one might couple chtMultiRegionFoam in order to be able to simulate fluid-fluid interfaces within one solver instance, instead of using an external coupling.
 
 ## Location of the coupling data
 
@@ -57,17 +60,17 @@ Depending on the solver, it is more "natural" or straightforward to extract or a
 ### Location of "read" data
 Data that is read from the coupling partner is applied as BC at the following locations:
 
-| Data | OpenFOAM | CalculiX | Code_Aster |
-|---|---|---|---|
-| Temperature BC | Face center | Nodes | - |
-| Heat Flux BC | Face center | Face center (element face) | - |
-| Convection BC | Face center | Face center (element face) | Nodes
+| Solver \ Data | Temperature | Heat flux | Convection |
+| --- | --- | --- | --- |
+| OpenFOAM | Face center | Face center | Face center |
+| CalculiX | Node | Face center | Face center |
+| Code_Aster | - | - | Face center |
 
 ### Location of "write" data
 Data that is written or sent to the coupling partner is extracted from the following locations:
 
-| Data | OpenFOAM | CalculiX | Code_Aster |
-|---|---|---|---|
-| Temperature | Face center | Nodes | - |
-| Heat Flux | Face center | Face center (element face) | - |
-| Sink Temperature | Face center | Face center (element face) | Face center (element face)
+| Solver \ Data | Temperature | Heat flux | Convection |
+| --- | --- | --- | --- |
+| OpenFOAM | Face center | Face center | Face center |
+| CalculiX | Node | Face center | Face center |
+| Code_Aster | - | - | Node |

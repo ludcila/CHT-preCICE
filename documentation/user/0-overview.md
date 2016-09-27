@@ -135,7 +135,7 @@ Similar to CalculiX, in Code_Aster we have to create a "group" that contains all
 
 ### Multiple interfaces
 
-Each participant may have multiple interfaces.  A typical situation is when a participant is coupled to two (or more) other participants.  An example of this is the heat exchanger case, where the solid is coupled with two fluids:
+A participant may have multiple interfaces.  A typical situation is when a participant is coupled to two (or more) other participants.  An example of this is the heat exchanger case, where the solid is coupled with two fluids:
 
 ```{mermaid}
 graph LR
@@ -153,6 +153,8 @@ More than one interface may also be defined between the same pair of coupled par
 - Coupling scheme (parallel/serial, implicit/explicit)
 - Data mapping scheme
 
+(...)
+
 
 ## Transient vs Steady-State Simulation
 
@@ -160,7 +162,9 @@ More than one interface may also be defined between the same pair of coupled par
 | --- | --- | --- |
 | OpenFOAM (different solvers) | buoyantPimpleFoam | buoyantSimpleFoam |
 | CalculiX (change in .inp file) | *HEAT TRANSFER, DIRECT | *HEAT TRANSFER, DIRECT, STEADY STATE|
-| Code_Aster (different adapter in .export file) | adapter.comm | adapter-steady-state.comm |
+| Code_Aster (different adapter in .export file) | adapter.comm | adapter-steady-state.comm** |
 | Coupling schemes (in precice-config.xml) | Implicit / Explicit | Explicit only |
 | Coupling boundary conditions | Dirichlet-Neumann, Robin-Robin | Robin-Robin only |
-| Timestep | any | 1 |
+| Timestep | any, but no subcycling | 1 |
+
+**Will be merged with adapter.comm

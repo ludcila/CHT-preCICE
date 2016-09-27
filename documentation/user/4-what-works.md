@@ -6,7 +6,6 @@ This section describes configurations that have been tested to work.
 
 - Robin-Robin (RR): the preferred option, superior in stability and convergence.
 - Dirichlet-Neumann (DN): Fluid Dirichlet - Solid Neumann (FDSN) worked well in the flat plate validation case.  For the rest of the document, DN actually refers to FDSN.
-    - If the simulation becomes unstable, try with a smaller step size (??)
 
 ## preCICE setup
 
@@ -18,7 +17,7 @@ This section describes configurations that have been tested to work.
 Below are some suggestions regarding the parameters for implicit coupling:
 
 - `exchange`
-    - `initialize="yes"`
+    - `initialize="yes"`: always initialize the data
 - `extrapolation-order`:
 - `max-iterations`:
     - Robin-Robin:
@@ -26,7 +25,7 @@ Below are some suggestions regarding the parameters for implicit coupling:
         - Small value (e.g. 5) as a trade-off between accuracy and computational cost
 - `relative-convergence-measure`
     - Dirichlet-Neumann: Require convergence of both temperature and heat-flux (`suffices="0"`)
-    - Robin-Robin: It is usually enough to require convergence of the sink temperature
+    - Robin-Robin: For laminar flow and constant material properties is usually enough to require convergence of the sink temperature
 
 ### Multi-coupling (`coupling-scheme:multi`)
 
@@ -41,9 +40,11 @@ Multi-coupling can/should be used when:
 - Nearest projection cannot be used in most of the cases, because the data is located at the faces and not at the nodes (for nearest projection to work, we need to specify the vertices of the faces, and the data must be located at these vertices)
 - Radial basis functions: there are some challenges when using RBFs:
     - If they have global support, they are not efficient if the interface meshes are large
-    - If they have local support, we have to choose a suitable support radius, which depends on the mesh, and might be problematic if the mesh has both very coarse and very fine elements (?)
+    - If they have local support, we have to choose a suitable support radius, which depends on the mesh, and might be problematic for complex geometries or if the mesh has both very coarse and very fine elements (?)
 
 ### Post-processing (??)
+
+(needs more testing... especially for turbulent flows)
 
 #### Laminar flow
 
