@@ -1,10 +1,11 @@
 # CalculiX
 
 
+## How to setup an interface
 
-## How to setup the interface
+> In this section we describe the files that are required for each interface.  We assume that the name of the interface is "interface", and therefore all the files have this name (with different extensions).
 
-There are two files that are required for each interface:
+For each interface, it is necessary to generate these two files:
 - `interface.nam`: contains the set of nodes
 - `interface.sur`: contains the set of element faces
 
@@ -44,11 +45,16 @@ To use Robin boundary condition in CalculiX, we specify a film heat transfer at 
 
     *INCLUDE, INPUT=solid/interface.flm
 
+## Supported element types
+
+The current implementation only works with tetrahedral elements.  Both first order (C3D4) and second order (C3D10) elements are supported.  Please note, however, that when higher order elements are used, data that comes from the Gauss points (such as the heat flux, the sink temperature and the heat transfer coefficient) is averaged over the multiple Gauss points.  Only the average value at the face center is exposed to preCICE. (This will be soon changed to expose the individual Gauss points and their data to preCICE.)
 
 ## Location of the coupling data
 
 | Data | Location |
 | --- | --- |
 | Temperature | Nodes |
-| Heat-Flux | Gauss points |
-| Sink temperature and heat transfer coefficient | Gauss points |
+| Heat-Flux | Faces* |
+| Sink temperature and heat transfer coefficient | Faces* |
+
+*To be changed to Gauss points before the end of the thesis.

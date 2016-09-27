@@ -1,4 +1,4 @@
-# Coupling OpenFOAM and CalculiX
+# Tutorial: Coupling OpenFOAM and CalculiX
 
 ## Setting up a Dirichlet-Neumann coupled simulation
 

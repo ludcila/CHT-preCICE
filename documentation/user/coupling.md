@@ -2,29 +2,12 @@
 
 
 
-## Types of coupling
 
-When talking about the type of coupling, this might be referring to different categorizations:
+## Dirichlet-Neumann vs Robin-Robin coupling
 
-| Type of coupling | Description |
-| --- | --- |
-| Implicit / Explicit | Implicit: coupling iterations are performed until convergence.  Explicit: Only one coupling iteration per timestep |
-| Serial / Parallel | Serial: Gauss-Seidel type of update; participants are executed in turn, using the most recent data from the other participant. Parallel: Jacobi type of update.   |
-| Dirichlet-Neumann / Robin-Robin | Depends on what coupling data is used (or what kind of boundary conditions). |
+In most applications, it is recommended to use Robin-Robin (RR) type of coupling, as it shows better stability and convergence properties.
 
-Combinations of implicit/explicit, serial/parallel couplings are referred to as `coupling-scheme` and need to be specified in the `precice-config.xml` file.
-
-Available options are:
-- `coupling-scheme:serial-explicit`
-- `coupling-scheme:serial-implicit`
-- `coupling-scheme:parallel-explicit`
-- `coupling-scheme:parallel-implicit`
-- `coupling-scheme:multi`
-
-The first four coupling schemes are defined between two participants, and can be defined as implicit or explicit.  The last coupling scheme can be configured for multiple participants coupled implicitly.
-
-Whether Dirichlet-Neumann or Robin-Robin type of coupling is used, depends on what coupling data is exchanged and what boundary conditions are set on the solvers.  
-
+Robin-Robin coupling is stable enough that the simulation does not blow up with explicit coupling; but using implicit coupling we can make sure that the coupling has converged.  A trade-off can also be achieved by using implicit coupling with a small number of `max-iterations`.
 
 ## The coupling data
 
@@ -35,7 +18,7 @@ At the moment of setting up the coupled simulation, we must decide what data wil
 
 ## Location of the coupling data
 
-Depending on the solver, it might be more "natural" or easy to extract or apply the coupling data either at the faces or at the nodes.
+Depending on the solver, it is more "natural" or straightforward to extract or apply the coupling data either at the faces or at the nodes.  This section describes the location of the data in the current implementation.
 
 ### Location of "read" data
 Data that is read from the coupling partner is applied as BC at the following locations:

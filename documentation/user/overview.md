@@ -1,18 +1,33 @@
 
 
-# Contents
+# Overview
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+## Contents
 
-- [Contents](#contents)
+
+<!-- toc orderedList:0 -->
+
+- [Overview](#overview)
+	- [Contents](#contents)
+- [Running a CHT simulation with preCICE](#running-a-cht-simulation-with-precice)
+	- [Directory structure of the case](#directory-structure-of-the-case)
 - [Setting up a CHT simulation with preCICE](#setting-up-a-cht-simulation-with-precice)
-	- [Overview](#overview)
-	- [Steps](#steps)
+	- [Overview](#overview-1)
+	- [Coupling boundary conditions](#coupling-boundary-conditions)
+	- [The interfaces](#the-interfaces)
+		- [How to specify an interface](#how-to-specify-an-interface)
+			- [OpenFOAM](#openfoam)
+			- [CalculiX](#calculix)
+			- [Code_Aster](#code_aster)
+		- [How many interfaces to use](#how-many-interfaces-to-use)
+			- [Multi-coupling](#multi-coupling)
 	- [The preCICE XML configuration file](#the-precice-xml-configuration-file)
-	- [Boundary conditions for thermal coupling](#boundary-conditions-for-thermal-coupling)
 	- [Transient vs Steady-State Simulation](#transient-vs-steady-state-simulation)
 
-<!-- /TOC -->
+<!-- tocstop -->
+
+
+---
 
 # Running a CHT simulation with preCICE
 
@@ -50,19 +65,32 @@ Initially, the input files for the case are prepared for each solver the usual w
  2. **Configuration files**:
 	 3. For preCICE: `precice-config.xml` (read by all participants)
 	 4. For the adapter: `config.yml` for OpenFOAM and CalculiX, `config.comm` for Code_Aster)
- 5.  **Command line arguments**: OpenFOAM and CalculiX must be run with additional command line arguments:
-	 6. `-precice-participant` [name]
-	 7. `-precice-config` [YAML config file]
+ 5.  **Command line arguments**: OpenFOAM and CalculiX recognize two additional command line arguments:
+	 6. `-precice-participant` (required) [name]
+	 7. `-precice-config` (optional) [YAML config file]
+
+(To be added: what parameters need to match)
+
+## Coupling boundary conditions
+
+Below is a list of the boundary conditions used for the coupling.  The terminology is specific to each solver.
+
+| Boundary condition | OpenFOAM | CalculiX | Code_Aster |
+|---|---|---|---|
+| Temperature (Dirichlet) | fixedValue | BOUNDARY | - |
+| Heat Flux (Neumann) | zeroGradient | DFLUX | - |
+| Convection (Robin) | mixed | FILM | ECHANGE
+
+For instructions on how to setup a particular solver, please refer to the section dedicated to it.
+
+> Note that Code_Aster only supports Robin-Robin coupling at the moment.
+
 
 ## The interfaces
 
-### What is an interface
-
-
-
 ### How to specify an interface
 
-Each interface consists of nodes and faces.  The way we associate these nodes and faces with an interface, depends on the particular solver we are using.
+Each interface consists of nodes and/or faces.  We need to tell the adapter which nodes/faces belong to which interface.  The way we associate these nodes and faces with an interface, depends on the particular solver we are using.
 
 #### OpenFOAM
 In OpenFOAM, an interface can be made up from several patches.  To associate multiple patches with one interface, it is enough to specify the list of patches in the `config.yml` file.  No changes are required in the OpenFOAM case files:
@@ -108,7 +136,7 @@ Similar to CalculiX, in Code_Aster we have to create a "group" that contains all
 
 ### How many interfaces to use
 
-A simulation coupled with preCICE can contain multiple interfaces.  At least one interface must exist between every pair of coupled participants.  More than one interface can exist between the same pair of coupled participants, but this is rarely necessary, and therefore we only consider the case of one interface per pair of coupled participants.
+A simulation coupled with preCICE can contain multiple interfaces.  At least one interface must exist between every pair of coupled participants.  More than one interface can exist between the same pair of coupled participants.
 
 #### Multi-coupling
 
@@ -120,7 +148,7 @@ Inner-Fluid---Solid
 Solid---Outer-Fluid
 ```
 
-The solid participant has an interface with eahc of the two fluid participants.
+The solid participant has an interface with each of the two fluid participants.
 
 
 ## The preCICE XML configuration file
@@ -130,48 +158,16 @@ The solid participant has an interface with eahc of the two fluid participants.
 - Coupling scheme (parallel/serial, implicit/explicit)
 - Data mapping scheme
 
-## Boundary conditions for thermal coupling
-
-| BC | OpenFOAM | CalculiX | Code_Aster |
-|---|---|---|---|
-| Temperature (Dirichlet) | fixedValue | BOUNDARY | - |
-| Heat Flux (Neumann) | zeroGradient | DFLUX | - |
-| Convection (Robin) | mixed | FILM | ECHANGE
-
-
-## Summary
-
-| - | OpenFOAM | CalculiX | Code_Aster |
-|---|---|---|---|
-| Transient | YES | YES | YES |
-| Steady-State | YES | YES | YES |
-| Dirichlet-Neumann coupling implemented | YES | YES | NO |
-| Robin-Robin coupling implemented | YES | YES | YES |
-| Configuration file | config.yml | config.yml | config.comm |
-
-## Steps
-
-1. Is it a transient or steady-state simulation?
-	- Transient
-		- Implicit and explicit coupling available
-		-
-	- Steady-state
-		- Only explicit coupling
-		- Timestep size always 1
-2. What type of coupling will be used?
-	- Dirichlet-Neumann
-	- Robin-Robin
-3.
-
-
-
-
----
 
 ## Transient vs Steady-State Simulation
 
-1. OpenFOAM: Different solvers are executed (e.g. buoyantPimpleFoam for transient, buoyantSimpleFoam for steady-state)
-2. CalculiX: Keyword STEADY STATE must be added to the *HEAT TRANSFER card
-3. Code_Aster: Different adapters are included in the .export file
+| | Transient | Steady-State |
+| --- | --- | --- |
+| OpenFOAM (different solvers) | buoyantPimpleFoam | buoyantSimpleFoam |
+| CalculiX (change in .inp file) | *HEAT TRANSFER, DIRECT | *HEAT TRANSFER, DIRECT, STEADY STATE|
+| Code_Aster (different adapter in .export file) | adapter.comm | adapter-steady-state.comm |
+| Coupling schemes (in precice-config.xml) | Implicit / Explicit | Explicit only |
+| Coupling boundary conditions | Dirichlet-Neumann, Robin-Robin | Robin-Robin only |
+| Timestep | any | 1 |
 
 > If multiple participants are used, residual control must be disabled for the SIMPLE algorithm, otherwise one of the participants may terminate earlier, causing the others to terminate as well
