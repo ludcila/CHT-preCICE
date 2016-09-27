@@ -1,17 +1,3 @@
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-
-- [Coupling Code_Aster](#coupling-codeaster)
-	- [Location of the coupling data](#location-of-the-coupling-data)
-- [Code_Aster files](#codeaster-files)
-	- [Code_Aster `.export` file](#codeaster-export-file)
-	- [Case definition file (`setup.comm`)](#case-definition-file-setupcomm)
-	- [Other configuration parameters (`config.comm`)](#other-configuration-parameters-configcomm)
-	- [The adapter (`adapter.comm`)](#the-adapter-adaptercomm)
-	- [Execution](#execution)
-	- [Important: Full paths](#important-full-paths)
-
-<!-- /TOC -->
-
 # Coupling Code_Aster
 
 > Important: Only Robin-Robin coupling has been implemented for Code_Aster!
