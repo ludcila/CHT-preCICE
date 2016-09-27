@@ -53,6 +53,13 @@ This refers to the method that is used to map the data from the surface mesh of 
 - Nearest projection (requires specifying the vertices that constitute the faces, but the data must be located at the nodes!)
 - Radial basis functions (several different types available)
 
+Furthermore, each of these mapping schemes can be either consistent or conservative:
+
+- Conservative mapping: sum of the data values is equal on both sides of the mapping
+- Consistent mapping: constants must be interpolated exactly
+
+> In this CHT implementation, only consistent mapping is used!  Therefore it is not mentioned anymore in this document.  Consistent mapping is always assumed.
+
 ## Coupling schemes
 
 In preCICE, the coupling scheme refers to whether the coupling is implicit or explicit, serial or parallel.  In the literature, it may also refer to the type of partitioning (boundary conditions) used.
@@ -60,8 +67,10 @@ In preCICE, the coupling scheme refers to whether the coupling is implicit or ex
 | Type of coupling | Description |
 | --- | --- |
 | Implicit / Explicit | Implicit: coupling iterations are performed until convergence.  Explicit: Only one coupling iteration per timestep |
-| Serial / Parallel | Serial: Gauss-Seidel type of update; participants are executed in turn, using the most recent data from the other participant. Parallel: Jacobi type of update.   |
+| Serial / Parallel | Serial: Gauss-Seidel type of update; participants are executed in turn, using the most recent data from the other participant. Parallel: Jacobi type of update  (interfield parallelism).   |
 | Dirichlet-Neumann / Robin-Robin | Depends on what coupling data is used (or what kind of boundary conditions). |
+
+Note that when talking about the coupling scheme, parallelism refers to interfield parallelism (e.g. solving the fluid equations and the solid equations in parallel).
 
 Combinations of implicit/explicit, serial/parallel couplings are referred to as `coupling-scheme` and need to be specified in the `precice-config.xml` file.
 
