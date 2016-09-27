@@ -3,18 +3,18 @@
 This document describes how to compile and run the adapted OpenFOAM solvers.  For more details on how to compile a new OpenFOAM solver with preCICE, please refer to this other document.
 
 
+## Contents
 
 <!-- toc orderedList:0 -->
 
 - [OpenFOAM adapted solvers](#openfoam-adapted-solvers)
+	- [Contents](#contents)
 	- [Installing OpenFOAM 3.0](#installing-openfoam-30)
 		- [Create a new compilation rule for wmake](#create-a-new-compilation-rule-for-wmake)
 	- [Compiling the adapted OpenFOAM solvers](#compiling-the-adapted-openfoam-solvers)
 	- [Running the adapted OpenFOAM solvers](#running-the-adapted-openfoam-solvers)
 
 <!-- tocstop -->
-
-
 
 ## Installing OpenFOAM 3.0
     sudo apt-get install openfoam30
