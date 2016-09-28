@@ -14,6 +14,8 @@ INCLUDE(UNITE=90)
 precice = PySolverInterface(settings["participantName"], 0, 1)
 precice.configure(settings["preciceConfigFile"])
 
+isSteadyState = ("steadyState" in settings) and (settings["steadyState"])
+
 # ==========================================================================================
 # Include file in UNITE 91: Setup Aster case
 # ==========================================================================================
@@ -25,7 +27,7 @@ INCLUDE(UNITE=91)
 # Get interface mesh
 # ==========================================================================================
 
-adapter = Adapter(precice, settings["interfaces"], MESH, MODEL, MAT, isNonLinear=settings["isNonLinear"])
+adapter = Adapter(precice, settings["participantName"], settings["interfaces"], MESH, MODEL, MAT, isNonLinear=settings["isNonLinear"])
 BCs = [{'CHARGE': bc} for bc in BC]
 LOADS = BCs + adapter.LOADS
 
@@ -73,37 +75,63 @@ while precice.isCouplingOngoing():
 	# Solve
 	# ======================================================================================
 	
-	STEP = DEFI_LIST_REEL(
-		DEBUT=time,
-		INTERVALLE = (_F(JUSQU_A=time+preciceDt, NOMBRE=1))
-	)
-	
-	if settings["isNonLinear"]:
-		TEMP = THER_NON_LINE(
-			MODELE=MODEL,
-			CHAM_MATER=MATS,
-			EXCIT=LOADS,
-			ETAT_INIT=ICOND,
-			INCREMENT=_F(LIST_INST=STEP),
-			PARM_THETA=1.0
-		);
-	else:
-		TEMP = THER_LINEAIRE(
-			MODELE=MODEL,
-			CHAM_MATER=MATS,
-			EXCIT=LOADS,
-			ETAT_INIT=ICOND,
-			INCREMENT=_F(LIST_INST=STEP),
-			PARM_THETA=1.0
-		);
+	if isSteadyState:
 		
-	T = CREA_CHAMP(
-		RESULTAT=TEMP,
-		NOM_CHAM='TEMP',
-		TYPE_CHAM='NOEU_TEMP_R',
-		OPERATION='EXTR',
-		NUME_ORDRE=1,
-	)
+		if settings["isNonLinear"]:
+			TEMP = THER_NON_LINE(
+				MODELE=MODEL,
+				CHAM_MATER=MATS,
+				EXCIT=LOADS,
+				ETAT_INIT=_F(STATIONNAIRE='OUI'),
+			);
+		else:
+			TEMP = THER_LINEAIRE(
+				MODELE=MODEL,
+				CHAM_MATER=MATS,
+				EXCIT=LOADS,
+				ETAT_INIT=_F(STATIONNAIRE='OUI'),
+			);
+			
+		T = CREA_CHAMP(
+			RESULTAT=TEMP,
+			NOM_CHAM='TEMP',
+			TYPE_CHAM='NOEU_TEMP_R',
+			OPERATION='EXTR'
+		)
+
+	else:
+	
+		STEP = DEFI_LIST_REEL(
+			DEBUT=time,
+			INTERVALLE = (_F(JUSQU_A=time+preciceDt, NOMBRE=1))
+		)
+		
+		if settings["isNonLinear"]:
+			TEMP = THER_NON_LINE(
+				MODELE=MODEL,
+				CHAM_MATER=MATS,
+				EXCIT=LOADS,
+				ETAT_INIT=ICOND,
+				INCREMENT=_F(LIST_INST=STEP),
+				PARM_THETA=1.0
+			);
+		else:
+			TEMP = THER_LINEAIRE(
+				MODELE=MODEL,
+				CHAM_MATER=MATS,
+				EXCIT=LOADS,
+				ETAT_INIT=ICOND,
+				INCREMENT=_F(LIST_INST=STEP),
+				PARM_THETA=1.0
+			);
+		
+		T = CREA_CHAMP(
+			RESULTAT=TEMP,
+			NOM_CHAM='TEMP',
+			TYPE_CHAM='NOEU_TEMP_R',
+			OPERATION='EXTR',
+			NUME_ORDRE=1,
+		)
 
 	# ======================================================================================
 	# Extract and write boundary values
@@ -143,8 +171,10 @@ while precice.isCouplingOngoing():
 	# Destroy Aster objects
 	# ======================================================================================
 	
-	DETRUIRE(CONCEPT=_F(NOM=STEP))
 	DETRUIRE(CONCEPT=_F(NOM=TEMP))
 	DETRUIRE(CONCEPT=_F(NOM=T))
+	
+	if not isSteadyState:
+		DETRUIRE(CONCEPT=_F(NOM=STEP))
 
 FIN();

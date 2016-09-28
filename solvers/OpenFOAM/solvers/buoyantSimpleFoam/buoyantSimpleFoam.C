@@ -56,6 +56,8 @@ int main(int argc, char *argv[])
 {
     argList::addOption("precice-participant", "string", "name of preCICE participant");
     argList::addOption("precice-config", "string", "name of preCICE config file");
+    
+    
 
     #include "setRootCase.H"
     #include "createTime.H"
@@ -80,16 +82,31 @@ int main(int argc, char *argv[])
     ofcoupler::Coupler coupler(precice, mesh, "buoyantSimpleFoam");
 
 
-    for(int i = 0; i < config.interfaces().size(); i++) {
+    for(int i = 0; i < config.interfaces().size(); i++) {        
         ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        coupledSurface.addCouplingDataWriter("kDelta-OF", new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
-        coupledSurface.addCouplingDataWriter("kDelta-Temperature-OF", new ofcoupler::RefTemperatureBoundaryValues(thermo.T()));
-        coupledSurface.addCouplingDataReader("kDelta-CCX", new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
-        coupledSurface.addCouplingDataReader("kDelta-Temperature-CCX", new ofcoupler::RefTemperatureBoundaryCondition(thermo.T()));
-
-//        coupledSurface.addCouplingDataWriter("Temperature", new ofcoupler::TemperatureBoundaryValues(thermo.T()));
-//        coupledSurface.addCouplingDataReader("Heat-Flux", new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence));
-        
+        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).writeData.at(j);
+            if(dataName.find("Heat-Transfer-Coefficient") == 0) {
+                coupledSurface.addCouplingDataWriter(dataName, new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
+            } else if(dataName.find("Sink-Temperature") == 0) {
+                coupledSurface.addCouplingDataWriter(dataName, new ofcoupler::RefTemperatureBoundaryValues(thermo.T()));
+            } else {
+                std::cout << "Error: " << dataName << " is not valid" << std::endl;
+                return 1;
+            }
+        }
+        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).readData.at(j);
+            if(dataName.find("Heat-Transfer-Coefficient") == 0) {
+                coupledSurface.addCouplingDataReader(dataName, new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
+            } else if(dataName.find("Sink-Temperature") == 0) {
+                coupledSurface.addCouplingDataReader(dataName, new ofcoupler::RefTemperatureBoundaryCondition(thermo.T()));
+            } else {
+                std::cout << "Error: " << dataName << " is not valid" << std::endl;
+                return 1;
+            }
+            
+        }  
     }
     
     const std::string& coric = precice::constants::actionReadIterationCheckpoint();
