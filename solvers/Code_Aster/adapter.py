@@ -26,13 +26,14 @@ class Adapter:
 	MAT = None
 	isNonLinear = False
 	
-	def __init__(self, precice, config, MESH, MODEL, MAT, isNonLinear=False):
+	def __init__(self, precice, participantName, config, MESH, MODEL, MAT, isNonLinear=False):
 		self.numInterfaces = len(config)
 		self.precice = precice
 		self.MESH = MESH
 		self.MODEL = MODEL
 		self.MAT = MAT
 		self.isNonLinear = isNonLinear
+		self.participantName = participantName
 		self.configure(config)
 	
 	def configure(self, config):
@@ -42,7 +43,7 @@ class Adapter:
 			# Shifted mesh
 			SM[i] = CREA_MAILLAGE(MAILLAGE=self.MESH, RESTREINT={"GROUP_MA": config[i]["groupName"], "GROUP_NO": config[i]["groupName"]})
 			# Create interface
-			interface = Interface(self.precice, config[i], self.MESH, SM[i], self.MODEL, self.MAT[config[i]["materialID"]], self.isNonLinear)
+			interface = Interface(self.precice, self.participantName, config[i], self.MESH, SM[i], self.MODEL, self.MAT[config[i]["materialID"]], self.isNonLinear)
 			# Loads
 			BCs = interface.createBCs()
 			L[i] = AFFE_CHAR_THER(MODELE=self.MODEL, ECHANGE=BCs)
@@ -113,8 +114,9 @@ class Interface:
 	# Shifted mesh (contains only the interface, and is shifted by delta in the direction opposite to the normal)
 	SHMESH = None
 	
-	def __init__(self, precice, names, MESH, SHMESH, MODEL, MAT, isNonLinear = False):
+	def __init__(self, precice, participantName, names, MESH, SHMESH, MODEL, MAT, isNonLinear = False):
 		self.precice = precice
+		self.participantName = participantName
 		self.MESH = MESH
 		self.SHMESH = SHMESH
 		self.MODEL = MODEL
@@ -128,6 +130,7 @@ class Interface:
 		self.groupName = names["groupName"]
 		self.nodesMeshName = names["nodesMeshName"]
 		self.faceCentersMeshName = names["faceCentersMeshName"]
+		self.partnerParticipantName = names["partnerParticipantName"]
 		
 		self.computeNormals()
 		
@@ -195,10 +198,10 @@ class Interface:
 		self.precice.setMeshVertices(self.preciceFaceCentersMeshID, len(self.faceCenterCoordinates), np.hstack(self.faceCenterCoordinates), self.preciceFaceCenterIndices)
 		
 	def setDataIDs(self):
-		self.readHCoeffDataID = self.precice.getDataID("kDelta-OF", self.preciceFaceCentersMeshID)
-		self.readTempDataID = self.precice.getDataID("kDelta-Temperature-OF", self.preciceFaceCentersMeshID)
-		self.writeHCoeffDataID = self.precice.getDataID("kDelta-CCX", self.preciceNodesMeshID)
-		self.writeTempDataID = self.precice.getDataID("kDelta-Temperature-CCX", self.preciceNodesMeshID)
+		self.readHCoeffDataID = self.precice.getDataID("Heat-Transfer-Coefficient-" + self.partnerParticipantName, self.preciceFaceCentersMeshID)
+		self.readTempDataID = self.precice.getDataID("Sink-Temperature-" + self.partnerParticipantName, self.preciceFaceCentersMeshID)
+		self.writeHCoeffDataID = self.precice.getDataID("Heat-Transfer-Coefficient-" + self.participantName, self.preciceNodesMeshID)
+		self.writeTempDataID = self.precice.getDataID("Sink-Temperature-" + self.participantName, self.preciceNodesMeshID)
 	
 	def getPreciceNodeIndices(self):
 		return self.preciceNodeIndices
