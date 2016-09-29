@@ -15,16 +15,16 @@ class Interface(object):
     def setMeshNames(self):
         pass
 
-    def addProvideMeshTags(self, parent):
+    def addProvideMeshTagsTo(self, parent):
         etree.SubElement(parent, "use-mesh", name=self.readMesh, provide="yes")
         if self.readMesh != self.writeMesh:
             etree.SubElement(parent, "use-mesh", name=self.writeMesh, provide="yes")
 
-    def addFromMeshTag(self, parent):
+    def addFromMeshTagTo(self, parent):
         e = etree.SubElement(parent, "use-mesh", name=self.writeMesh)
         e.set("from", self.participant.name)
 
-    def addReadWriteMappingTags(self, parent):
+    def addReadWriteMappingTagsTo(self, parent):
         etree.SubElement(parent, "write-data", name=self.participant.dataNameT, mesh=self.writeMesh)
         etree.SubElement(parent, "write-data", name=self.participant.dataNameHTC, mesh=self.writeMesh)
         etree.SubElement(parent, "read-data", name=self.participant.dataNameT, mesh=self.readMesh)
@@ -32,14 +32,14 @@ class Interface(object):
         e = etree.SubElement(parent, etree.QName(XMLNamespaces.mapping, "nearest-neighbor"), direction="read", to=self.readMesh)
         e.set("from", self.partnerInterface.writeMesh)
 
-    def addExchangeTags(self, parent):
+    def addExchangeTagsTo(self, parent):
         # From me to partner
         e = etree.SubElement(parent, "exchange", data=self.participant.dataNameT, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
         e.set("from", self.participant.name)
         e = etree.SubElement(parent, "exchange", data=self.participant.dataNameHTC, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
         e.set("from", self.participant.name)
 
-    def addPostProcessingDataTags(self, parent):
+    def addPostProcessingDataTagsTo(self, parent):
         pass
 
 
@@ -48,7 +48,7 @@ class OpenFOAMInterface(Interface):
     def __init__(self, participant):
         super(OpenFOAMInterface, self).__init__(participant)
 
-    def addMeshTags(self, parent):
+    def addMeshTagsTo(self, parent):
         mesh = etree.SubElement(parent, "mesh", name=self.mesh)
         etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
         etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
@@ -66,7 +66,7 @@ class CodeAsterInterface(Interface):
     def __init__(self, participant):
         super(CodeAsterInterface, self).__init__(participant)
 
-    def addMeshTags(self, parent):
+    def addMeshTagsTo(self, parent):
         writeMesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
         etree.SubElement(writeMesh, "use-data", name=self.participant.dataNameT)
         etree.SubElement(writeMesh, "use-data", name=self.participant.dataNameHTC)

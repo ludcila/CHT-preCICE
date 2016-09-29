@@ -14,29 +14,29 @@ class CouplingScheme(object):
         self.type = "explicit"
         self.schemeName = scheme + "-" + self.type
 
-    def addCouplingSchemeTag(self, parent):
+    def addCouplingSchemeTagTo(self, parent):
         couplingSchemeTag = etree.SubElement(parent, etree.QName(XMLNamespaces.couplingScheme, self.schemeName))
-        self.addTimestepTag(couplingSchemeTag)
-        self.addMaxTimeTag(couplingSchemeTag)
-        self.addCouplingParticipantTags(couplingSchemeTag)
-        self.addExchangeTags(couplingSchemeTag)
+        self.addTimestepTagTo(couplingSchemeTag)
+        self.addMaxTimeTagTo(couplingSchemeTag)
+        self.addCouplingParticipantTagsTo(couplingSchemeTag)
+        self.addExchangeTagsTo(couplingSchemeTag)
         return couplingSchemeTag
 
-    def addTimestepTag(self, parent):
+    def addTimestepTagTo(self, parent):
         etree.SubElement(parent, "timestep-length", value=str(self.timestep))
 
-    def addMaxTimeTag(self, parent):
+    def addMaxTimeTagTo(self, parent):
         etree.SubElement(parent, "max-time", value=str(self.maxTime))
 
-    def addCouplingParticipantTags(self, parent):
+    def addCouplingParticipantTagsTo(self, parent):
         etree.SubElement(parent, "participants", first=self.participants[0].name, second=self.participants[1].name)
 
-    def addExchangeTags(self, parent):
+    def addExchangeTagsTo(self, parent):
         interfaces = self.participants[0].getInterfacesWith(self.participants[1])
         for interface in interfaces:
-            interface.addExchangeTags(parent)
-            interface.partnerInterface.addExchangeTags(parent)
-            interface.addPostProcessingDataTags(parent)
+            interface.addExchangeTagsTo(parent)
+            interface.partnerInterface.addExchangeTagsTo(parent)
+            interface.addPostProcessingDataTagsTo(parent)
 
 
 class ImplicitCouplingScheme(CouplingScheme):
@@ -46,23 +46,23 @@ class ImplicitCouplingScheme(CouplingScheme):
         self.schemeName = "implicit"
         self.maxIterations = maxIterations
 
-    def addCouplingSchemeTag(self, parent):
-        couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTag(parent)
-        self.addMaxIterationsTag(couplingSchemeTag)
-        postProcessingTag = self.addPostProcessingTag(couplingSchemeTag)
-        self.addPostProcessingDataTags(postProcessingTag)
+    def addCouplingSchemeTagTo(self, parent):
+        couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTagTo(parent)
+        self.addMaxIterationsTagTo(couplingSchemeTag)
+        postProcessingTag = self.addPostProcessingTagTo(couplingSchemeTag)
+        self.addPostProcessingDataTagsTo(postProcessingTag)
 
-    def getRelativeConvergenceMeasureTags(self):
+    def getRelativeConvergenceMeasureTagsTo(self):
         pass
 
-    def addMaxIterationsTag(self, parent):
+    def addMaxIterationsTagTo(self, parent):
         print self.maxIterations
         etree.SubElement(parent, "max-iterations", value=str(self.maxIterations))
 
-    def addPostProcessingTag(self, parent):
+    def addPostProcessingTagTo(self, parent):
         return etree.SubElement(parent, etree.QName(XMLNamespaces.postProcessing, "IQN-ILS"))
 
-    def addPostProcessingDataTags(self, parent):
+    def addPostProcessingDataTagsTo(self, parent):
         if self.serial:
             pass
             # Apply post-processing only to the data from the second participant
@@ -86,14 +86,14 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
         super(MultiCouplingScheme, self).__init__(timestep, maxTime, maxIterations, self.participants, False)
         self.schemeName="multi"
 
-    def addCouplingParticipantTags(self, parent):
+    def addCouplingParticipantTagsTo(self, parent):
         for participant in self.participants:
             etree.SubElement(parent, "participant", name=participant.name)
 
-    def addExchangeTags(self, parent):
+    def addExchangeTagsTo(self, parent):
         for pair in self.participantPairs:
             interfaces = pair[0].getInterfacesWith(pair[1])
             for interface in interfaces:
-                interface.addExchangeTags(parent)
-                interface.partnerInterface.addExchangeTags(parent)
-                interface.addPostProcessingDataTags(parent)
+                interface.addExchangeTagsTo(parent)
+                interface.partnerInterface.addExchangeTagsTo(parent)
+                interface.addPostProcessingDataTagsTo(parent)
