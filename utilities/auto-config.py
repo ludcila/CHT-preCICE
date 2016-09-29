@@ -15,27 +15,27 @@ class Interface(object):
     def setMeshNames(self):
         pass
 
-    def provideMeshes(self):
+    def getProvideMeshTags(self):
         print '\t<use-mesh name="' + self.readMesh + '" provide="yes"/>'
         if self.readMesh != self.writeMesh:
             print '\t<use-mesh name="' + self.writeMesh + '" provide="yes"/>'
 
-    def fromMeshes(self):
+    def getFromMeshTag(self):
         print '\t<use-mesh name="' + self.writeMesh + '" from="' + self.participant.name + '"/>'
 
-    def addReadWriteMappingTags(self):
+    def getReadWriteMappingTags(self):
         print '\t<write-data name="' + self.participant.dataNameT + '" mesh="' + self.writeMesh + '"/>'
         print '\t<write-data name="' + self.participant.dataNameHTC + '" mesh="' + self.writeMesh + '"/>'
         print '\t<read-data name="' + self.partnerInterface.participant.dataNameT + '" mesh="' + self.readMesh + '"/>'
         print '\t<read-data name="' + self.partnerInterface.participant.dataNameHTC + '" mesh="' + self.readMesh + '"/>'
         print '\t<mapping:nearest-neighbor direction="read" from="' + self.partnerInterface.writeMesh + '" to="' + self.readMesh + '"/>'
 
-    def addExchangeTags(self):
+    def getExchangeTags(self, initialize=False):
         # From me to partner
         print '\t<exchange data="' + self.participant.dataNameT + '" mesh="' + self.writeMesh + '" from="' + self.participant.name + '" to="' + self.partnerInterface.participant.name + '"/>'
         print '\t<exchange data="' + self.participant.dataNameHTC + '" mesh="' + self.writeMesh + '" from="' + self.participant.name + '" to="' + self.partnerInterface.participant.name + '"/>'
 
-    def addPostProcessingData(self):
+    def getPostProcessingDataTags(self):
         pass
 
 class OpenFOAMInterface(Interface):
@@ -43,7 +43,7 @@ class OpenFOAMInterface(Interface):
     def __init__(self, participant):
         super(OpenFOAMInterface, self).__init__(participant)
 
-    def addMeshTags(self):
+    def getMeshTags(self):
         print '<mesh name="' + self.mesh + '"/>'
         print '\t<use-data name="' + self.participant.dataNameT + '"/>'
         print '\t<use-data name="' + self.participant.dataNameHTC + '"/>'
@@ -61,7 +61,7 @@ class CodeAsterInterface(Interface):
     def __init__(self, participant):
         super(CodeAsterInterface, self).__init__(participant)
 
-    def addMeshTags(self):
+    def getMeshTags(self):
         print '<mesh name="' + self.writeMesh + '"/>'
         print '\t<use-data name="' + self.participant.dataNameT + '"/>'
         print '\t<use-data name="' + self.participant.dataNameHTC + '"/>'
@@ -83,20 +83,20 @@ class Participant(object):
         self.dataNameT = "Sink-Temperature-" + self.name
         self.dataNameHTC = "Heat-Transfer-Coefficient-" + self.name
 
-    def addDataTag(self):
+    def getDataTags(self):
         print '<data:scalar name="' + self.dataNameHTC + '"/>'
         print '<data:scalar name="' + self.dataNameT + '"/>'
 
-    def addMeshTags(self):
+    def getMeshTags(self):
         for interface in self.interfaces:
-            interface.addMeshTags()
+            interface.getMeshTags()
 
-    def addParticipantTag(self):
+    def getParticipantTag(self):
         print '<participant name="' + self.name + '"/>'
         for interface in self.interfaces:
-            interface.provideMeshes()
-            interface.partnerInterface.fromMeshes()
-            interface.addReadWriteMappingTags()
+            interface.getProvideMeshTags()
+            interface.partnerInterface.getFromMeshTag()
+            interface.getReadWriteMappingTags()
         print '</participant>'
 
     def getInterfacesWith(self, partner):
@@ -135,38 +135,57 @@ class CouplingScheme(object):
         self.participants = participants
         if not serial:
             scheme = "serial"
+        else:
+            scheme = "parallel"
         self.type = "explicit"
         self.scheme = scheme + "-" + self.type
 
-    def addCouplingScheme(self):
+    def getCouplingSchemeTag(self):
         print "<coupling-scheme:" + self.scheme + ">"
 
-    def addParticipants(self):
+    def getCouplingParticipantTags(self):
         print '<participants first="' + self.participants[0].name + '"' ' second="' + self.participants[1].name + '"/>'
 
-    def addExchangeTags(self):
+    def getExchangeTags(self):
         interfaces = self.participants[0].getInterfacesWith(self.participants[1])
         for interface in interfaces:
-            interface.addExchangeTags()
-            interface.partnerInterface.addExchangeTags()
-            interface.addPostProcessingData()
+            interface.getExchangeTags()
+            interface.partnerInterface.getExchangeTags()
+            interface.getPostProcessingDataTags()
 
 
 class ImplicitCouplingScheme(CouplingScheme):
     def __init__(self, timestep, maxTime, participants, serial=False):
-        super(ImplicitCouplingScheme, self).__init__(self, timestep, maxTime, participants, serial=False)
-    def addRelativeConvergenceMeasure(self):
+        super(ImplicitCouplingScheme, self).__init__(timestep, maxTime, participants, serial)
+    def getRelativeConvergenceMeasureTags(self):
         pass
-    def addMaxIterations(self):
+    def getMaxIterationsTags(self):
         pass
-    def addPostProcessingDataForParticipant(self, participant):
+    def getPostProcessingDataTagsForParticipantTag(self, participant):
         pass
 
-class MultiCouplingScheme(CouplingScheme):
-    def addParticipants(self):
-        if self.type == "implicit":
-            for participant in participants:
-                print '<participant name="' + participant.name + '"/>'
+class MultiCouplingScheme(ImplicitCouplingScheme):
+
+    def __init__(self, timestep, maxTime, participantPairs, serial=False):
+        self.participantPairs = participantPairs
+        self.participants = []
+        for pair in self.participantPairs:
+            self.participants.append(pair[0])
+            self.participants.append(pair[1])
+        self.participants = list(set(self.participants))
+        super(MultiCouplingScheme, self).__init__(timestep, maxTime, self.participants, False)
+
+    def getCouplingParticipantTags(self):
+        for participant in self.participants:
+            print '<participant name="' + participant.name + '"/>'
+
+    def getExchangeTags(self):
+        for pair in self.participantPairs:
+            interfaces = pair[0].getInterfacesWith(pair[1])
+            for interface in interfaces:
+                interface.getExchangeTags()
+                interface.partnerInterface.getExchangeTags()
+                interface.getPostProcessingDataTags()
 #
 
 innerFluid = OpenFOAMParticipant("Inner-Fluid")
@@ -185,13 +204,13 @@ innerSolidInterface.setPartnerInterface(innerFluidInterface)
 participants = [innerFluid, outerFluid, solid]
 
 for participant in participants:
-    participant.addDataTag()
+    participant.getDataTags()
 
 for participant in participants:
-    participant.addMeshTags()
+    participant.getMeshTags()
 
 for participant in participants:
-    participant.addParticipantTag()
+    participant.getParticipantTag()
 
 # Coupling graph
 couplings = [[solid, innerFluid], [outerFluid, solid]]
@@ -201,20 +220,53 @@ colors =  nx.coloring.greedy_color(graph, strategy=nx.coloring.strategy_largest_
 cycles = len(nx.cycle_basis(graph)) > 0
 
 ## Input
-steadyState = True
-defaultExplicit = True
+steadyState = False
+defaultExplicit = False
 defaultParallel = True
 
+## ===================
+## Rules
+## ===================
+
+# Use explicit in steady state simulations or if specified by user
 explicit = steadyState or defaultExplicit
-parallel = cycles or defaultParallel
+implicit = not explicit
+
+# Use parallel or multi if there are cyclic coupling dependecies
+parallelORmulti = (cycles or defaultParallel)
+# Use multi for parallel implicit coupling between more than two participants
+multi = parallelORmulti and implicit and len(participants) > 2
+# Use parallel coupling if there are two participants or if explicit coupling is used
+parallel = parallelORmulti and not multi
+# If not parallel nor multi, then use serial (= no cycles and default is serial)
+serial = not parallel and not multi
 
 timestep = 0.01
 maxTime = 1.0
 maxIterations = 30
 
-for coupling in couplings:
-    if colors[coupling[0]] == 1:
-        coupling.reverse()
-    couplingScheme = CouplingScheme(timestep, maxTime, coupling)
-    couplingScheme.addParticipants()
-    couplingScheme.addExchangeTags()
+# If multi, all couplings are treated together
+if multi:
+
+    couplingScheme = MultiCouplingScheme(timestep, maxTime, couplings)
+    couplingScheme.getCouplingParticipantTags()
+    couplingScheme.getExchangeTags()
+
+
+# If not multi, couplings are treated per pair
+else:
+
+    for participantsPair in couplings:
+
+        # Determine first and second participant
+        if colors[participantsPair[0]] == 1:
+            participantsPair.reverse()
+
+        if implicit:
+            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, participantsPair, serial=serial)
+        else:
+            couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=serial)
+
+        couplingScheme.getCouplingSchemeTag()
+        couplingScheme.getCouplingParticipantTags()
+        couplingScheme.getExchangeTags()
