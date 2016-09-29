@@ -30,7 +30,7 @@ innerSolidInterface.setPartnerInterface(innerFluidInterface)
 # TODO: automatically generate this
 couplings = [[solid, innerFluid], [solid, outerFluid]]
 
-# Common paramters
+# Common parameters
 
 timestep = 0.01
 maxTime = 1.0
@@ -52,18 +52,18 @@ config = CouplingConfiguration(
 preciceConfigurationTag = etree.Element("precice-configuration", nsmap=XMLNamespaces.nsmap)
 
 for participant in participants:
-    participant.addDataTags(preciceConfigurationTag)
+    participant.addDataTagsTo(preciceConfigurationTag)
 
 for participant in participants:
-    participant.addMeshTags(preciceConfigurationTag)
+    participant.addMeshTagsTo(preciceConfigurationTag)
 
 for participant in participants:
-    participant.addParticipantTag(preciceConfigurationTag)
+    participant.addParticipantTagTo(preciceConfigurationTag)
 
 if config.multi():
     # If multi, all couplings are treated together
     couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
-    couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
+    couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 else:
     # If not multi, couplings are treated per pair
@@ -75,6 +75,6 @@ else:
             couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=serial)
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=serial)
-        couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
+        couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 print etree.tostring(preciceConfigurationTag, pretty_print=True)
