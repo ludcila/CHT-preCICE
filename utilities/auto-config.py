@@ -139,6 +139,7 @@ class CouplingScheme(object):
         self.timestep = timestep
         self.maxTime = maxTime
         self.participants = participants
+        self.serial = serial
         if not serial:
             scheme = "serial"
         else:
@@ -172,33 +173,43 @@ class CouplingScheme(object):
 
 
 class ImplicitCouplingScheme(CouplingScheme):
-    def __init__(self, timestep, maxTime, participants, maxIterations=50, serial=False):
+    def __init__(self, timestep, maxTime, maxIterations, participants, serial=False):
         super(ImplicitCouplingScheme, self).__init__(timestep, maxTime, participants, serial)
         self.schemeName = "implicit"
         self.maxIterations = maxIterations
     def addCouplingSchemeTag(self, parent):
         couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTag(parent)
         self.addMaxIterationsTag(couplingSchemeTag)
-        ppTag = self.addPostProcessingTag(couplingSchemeTag)
+        postProcessingTag = self.addPostProcessingTag(couplingSchemeTag)
+        self.addPostProcessingDataTags(postProcessingTag)
     def getRelativeConvergenceMeasureTags(self):
         pass
     def addMaxIterationsTag(self, parent):
+        print self.maxIterations
         etree.SubElement(parent, "max-iterations", value=str(self.maxIterations))
     def addPostProcessingTag(self, parent):
         return etree.SubElement(parent, etree.QName(XMLNamespaces.postProcessing, "IQN-ILS"))
-    def addPostProcessingDataTags(self, participant):
-        pass
+    def addPostProcessingDataTags(self, parent):
+        if self.serial:
+            pass
+            # Apply post-processing only to the data from the second participant
+            # etree.SubElement(parent, "data", name=self.participants[1].dataNameT, mesh=self.participants[1].writeMesh) # check
+        else:
+            pass
+            # Apply post-processing to data from both participants
+            # etree.SubElement(parent, "data", name=self.participants[0].dataNameT, mesh=self.participants[0].writeMesh) # check
+            # etree.SubElement(parent, "data", name=self.participants[1].dataNameT, mesh=self.participants[1].writeMesh) # check
 
 class MultiCouplingScheme(ImplicitCouplingScheme):
 
-    def __init__(self, timestep, maxTime, participantPairs, serial=False):
+    def __init__(self, timestep, maxTime, maxIterations, participantPairs, serial=False):
         self.participantPairs = participantPairs
         self.participants = []
         for pair in self.participantPairs:
             self.participants.append(pair[0])
             self.participants.append(pair[1])
         self.participants = list(set(self.participants))
-        super(MultiCouplingScheme, self).__init__(timestep, maxTime, self.participants, False)
+        super(MultiCouplingScheme, self).__init__(timestep, maxTime, maxIterations, self.participants, False)
         self.schemeName="multi"
 
     def addCouplingParticipantTags(self, parent):
@@ -213,6 +224,60 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
                 interface.partnerInterface.addExchangeTags(parent)
                 interface.addPostProcessingDataTags(parent)
 #
+
+class CouplingConfiguration:
+
+    def __init__(self, couplings, steadyState, forceExplicit, forceParallel):
+        self.steadyState = steadyState
+        self.couplings = couplings
+        self.forceExplicit = forceExplicit
+        self.forceParallel = forceParallel
+        self.createGraph()
+        self.getParticipantsFromCoupling()
+
+    def createGraph(self):
+        self.graph = nx.Graph()
+        [self.graph.add_edge(pair[0], pair[1]) for pair in self.couplings]
+        self.colors =  nx.coloring.greedy_color(self.graph, strategy=nx.coloring.strategy_largest_first)
+
+    def hasCycles(self):
+        return len(nx.cycle_basis(self.graph)) > 0
+
+    def getColoring(self):
+        return self.colors
+
+    def getParticipantsFromCoupling(self):
+        self.participants = []
+        for pair in couplings:
+            self.participants.append(pair[0])
+            self.participants.append(pair[1])
+        self.participants = list(set(self.participants))
+
+    # Use explicit in steady state simulations or if specified by user
+    def explicit(self):
+        return self.steadyState or self.forceExplicit
+
+    # Use implicit if not using explicit
+    def implicit(self):
+        return not self.explicit()
+
+    # Use parallel or multi if there are cyclic coupling dependecies
+    def parallelOrMulti(self):
+        return self.hasCycles() or self.forceParallel
+
+    # Use multi for parallel implicit coupling between more than two participants
+    def multi(self):
+        return self.parallelOrMulti() and self.implicit() and len(self.participants) > 2
+
+    # Use parallel, for parallel coupling between two participants, or explicit coupling between more than two
+    def parallel(self):
+        return self.parallelOrMulti() and not self.multi()
+
+    # Use serial if not using multi or parallel
+    def serial(self):
+        return not self.multi() and not self.parallel()
+
+
 
 
 
@@ -250,55 +315,35 @@ for participant in participants:
     participant.addParticipantTag(preciceConfigurationTag)
 
 
+
 # Coupling graph
 couplings = [[solid, innerFluid], [solid, outerFluid]]
-graph = nx.Graph()
-[graph.add_edge(pair[0], pair[1]) for pair in couplings]
-colors =  nx.coloring.greedy_color(graph, strategy=nx.coloring.strategy_largest_first)
-cycles = len(nx.cycle_basis(graph)) > 0
 
-## Input
-steadyState = False
-defaultExplicit = False
-defaultParallel = True
-
-## ===================
-## Rules
-## ===================
-
-# Use explicit in steady state simulations or if specified by user
-explicit = steadyState or defaultExplicit
-implicit = not explicit
-
-# Use parallel or multi if there are cyclic coupling dependecies
-parallelORmulti = (cycles or defaultParallel)
-# Use multi for parallel implicit coupling between more than two participants
-multi = parallelORmulti and implicit and len(participants) > 2
-# Use parallel coupling if there are two participants or if explicit coupling is used
-parallel = parallelORmulti and not multi
-# If not parallel nor multi, then use serial (= no cycles and default is serial)
-serial = not parallel and not multi
+config = CouplingConfiguration(
+    couplings=couplings,
+    steadyState=False,
+    forceExplicit=False,
+    forceParallel=True
+)
 
 timestep = 0.01
 maxTime = 1.0
 maxIterations = 30
 
-multi = False
-
 
 # If multi, all couplings are treated together
-if multi:
-    couplingScheme = MultiCouplingScheme(timestep, maxTime, couplings)
+if config.multi():
+    couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
     couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
 
 # If not multi, couplings are treated per pair
 else:
     for participantsPair in couplings:
         # Determine first and second participant
-        if colors[participantsPair[0]] == 1:
+        if config.getColors()[participantsPair[0]] == 1:
             participantsPair.reverse()
-        if implicit:
-            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, participantsPair, serial=serial)
+        if config.implicit():
+            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=serial)
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=serial)
         couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
