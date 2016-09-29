@@ -1,5 +1,4 @@
 from lxml import etree
-from xmlns import *
 
 class CouplingScheme(object):
     def __init__(self, timestep, maxTime, participants, serial=False):
@@ -15,7 +14,7 @@ class CouplingScheme(object):
         self.schemeName = scheme + "-" + self.type
 
     def addCouplingSchemeTagTo(self, parent):
-        couplingSchemeTag = etree.SubElement(parent, etree.QName(XMLNamespaces.couplingScheme, self.schemeName))
+        couplingSchemeTag = etree.SubElement(parent, etree.QName("coupling-scheme", self.schemeName))
         self.addTimestepTagTo(couplingSchemeTag)
         self.addMaxTimeTagTo(couplingSchemeTag)
         self.addCouplingParticipantTagsTo(couplingSchemeTag)
@@ -60,7 +59,7 @@ class ImplicitCouplingScheme(CouplingScheme):
         etree.SubElement(parent, "max-iterations", value=str(self.maxIterations))
 
     def addPostProcessingTagTo(self, parent):
-        return etree.SubElement(parent, etree.QName(XMLNamespaces.postProcessing, "IQN-ILS"))
+        return etree.SubElement(parent, etree.QName("post-processing", "IQN-ILS"))
 
     def addPostProcessingDataTagsTo(self, parent):
         if self.serial:

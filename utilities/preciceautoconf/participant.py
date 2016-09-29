@@ -1,13 +1,14 @@
 from lxml import etree
 from interface import *
-from xmlns import *
 
 class ParticipantFactory:
-    def getParticipant(type, name):
+    def getParticipant( type, name):
         if type == "OpenFOAM":
             return OpenFOAMParticipant(name)
         elif type == "Code_Aster":
             return CodeAsterParticipant(name)
+
+    getParticipant=staticmethod(getParticipant)
 
 class Participant(object):
 
@@ -18,7 +19,7 @@ class Participant(object):
         self.dataNameHTC = "Heat-Transfer-Coefficient-" + self.name
 
     def addDataTagsTo(self, parent):
-        HTC = etree.SubElement(parent, etree.QName(XMLNamespaces.data, "scalar"), name=self.dataNameHTC)
+        HTC = etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameHTC)
 
     def addMeshTagsTo(self, parent):
         for interface in self.interfaces:

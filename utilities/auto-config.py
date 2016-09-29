@@ -8,15 +8,15 @@ from preciceautoconf.schemes import *
 
 participants = []
 
-innerFluid = OpenFOAMParticipant("Inner-Fluid")
+innerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Inner-Fluid")
 innerFluidInterface = innerFluid.addInterface()
 participants.append(innerFluid)
 
-outerFluid = OpenFOAMParticipant("Outer-Fluid")
+outerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Outer-Fluid")
 outerFluidInterface = outerFluid.addInterface()
 participants.append(outerFluid)
 
-solid = CodeAsterParticipant("Solid")
+solid = ParticipantFactory.getParticipant("Code_Aster", "Solid")
 outerSolidInterface = solid.addInterface()
 innerSolidInterface = solid.addInterface()
 participants.append(solid)
@@ -48,8 +48,13 @@ config = CouplingConfiguration(
 # --------------------------------------------------------------------------------
 #   Create XML tree
 # --------------------------------------------------------------------------------
-
-preciceConfigurationTag = etree.Element("precice-configuration", nsmap=XMLNamespaces.nsmap)
+nsmap = {
+    'data': "data",
+    'mapping': "mapping",
+    'coupling-scheme': "coupling-scheme",
+    'post-processing': "post-processing"
+}
+preciceConfigurationTag = etree.Element("precice-configuration", nsmap=nsmap)
 
 for participant in participants:
     participant.addDataTagsTo(preciceConfigurationTag)
@@ -72,9 +77,9 @@ else:
         if config.getColors()[participantsPair[0]] == 1:
             participantsPair.reverse()
         if config.implicit():
-            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=serial)
+            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=config.serial())
         else:
-            couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=serial)
+            couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=config.serial())
         couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 print etree.tostring(preciceConfigurationTag, pretty_print=True)

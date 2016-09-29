@@ -1,5 +1,4 @@
 from lxml import etree
-from xmlns import *
 
 class Interface(object):
 
@@ -29,7 +28,7 @@ class Interface(object):
         etree.SubElement(parent, "write-data", name=self.participant.dataNameHTC, mesh=self.writeMesh)
         etree.SubElement(parent, "read-data", name=self.participant.dataNameT, mesh=self.readMesh)
         etree.SubElement(parent, "read-data", name=self.participant.dataNameHTC, mesh=self.readMesh)
-        e = etree.SubElement(parent, etree.QName(XMLNamespaces.mapping, "nearest-neighbor"), direction="read", to=self.readMesh)
+        e = etree.SubElement(parent, etree.QName("mapping", "nearest-neighbor"), direction="read", to=self.readMesh)
         e.set("from", self.partnerInterface.writeMesh)
 
     def addExchangeTagsTo(self, parent):
