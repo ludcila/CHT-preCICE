@@ -1,5 +1,12 @@
+from lxml import etree
 import matplotlib.pyplot as plt
 import networkx as nx
+
+class XMLNamespaces:
+    data = "data"
+    mapping = "mapping"
+    couplingScheme = "coupling-scheme"
+    postProcessing = "post-processing"
 
 class Interface(object):
 
@@ -15,27 +22,31 @@ class Interface(object):
     def setMeshNames(self):
         pass
 
-    def getProvideMeshTags(self):
-        print '\t<use-mesh name="' + self.readMesh + '" provide="yes"/>'
+    def addProvideMeshTags(self, parent):
+        etree.SubElement(parent, "use-mesh", name=self.readMesh, provide="yes")
         if self.readMesh != self.writeMesh:
-            print '\t<use-mesh name="' + self.writeMesh + '" provide="yes"/>'
+            etree.SubElement(parent, "use-mesh", name=self.writeMesh, provide="yes")
 
-    def getFromMeshTag(self):
-        print '\t<use-mesh name="' + self.writeMesh + '" from="' + self.participant.name + '"/>'
+    def addFromMeshTag(self, parent):
+        e = etree.SubElement(parent, "use-mesh", name=self.writeMesh)
+        e.set("from", self.participant.name)
 
-    def getReadWriteMappingTags(self):
-        print '\t<write-data name="' + self.participant.dataNameT + '" mesh="' + self.writeMesh + '"/>'
-        print '\t<write-data name="' + self.participant.dataNameHTC + '" mesh="' + self.writeMesh + '"/>'
-        print '\t<read-data name="' + self.partnerInterface.participant.dataNameT + '" mesh="' + self.readMesh + '"/>'
-        print '\t<read-data name="' + self.partnerInterface.participant.dataNameHTC + '" mesh="' + self.readMesh + '"/>'
-        print '\t<mapping:nearest-neighbor direction="read" from="' + self.partnerInterface.writeMesh + '" to="' + self.readMesh + '"/>'
+    def addReadWriteMappingTags(self, parent):
+        etree.SubElement(parent, "write-data", name=self.participant.dataNameT, mesh=self.writeMesh)
+        etree.SubElement(parent, "write-data", name=self.participant.dataNameHTC, mesh=self.writeMesh)
+        etree.SubElement(parent, "read-data", name=self.participant.dataNameT, mesh=self.readMesh)
+        etree.SubElement(parent, "read-data", name=self.participant.dataNameHTC, mesh=self.readMesh)
+        e = etree.SubElement(parent, etree.QName(XMLNamespaces.mapping, "nearest-neighbor"), direction="read", to=self.readMesh)
+        e.set("from", self.partnerInterface.writeMesh)
 
-    def getExchangeTags(self, initialize=False):
+    def addExchangeTags(self, parent):
         # From me to partner
-        print '\t<exchange data="' + self.participant.dataNameT + '" mesh="' + self.writeMesh + '" from="' + self.participant.name + '" to="' + self.partnerInterface.participant.name + '"/>'
-        print '\t<exchange data="' + self.participant.dataNameHTC + '" mesh="' + self.writeMesh + '" from="' + self.participant.name + '" to="' + self.partnerInterface.participant.name + '"/>'
+        e = etree.SubElement(parent, "exchange", data=self.participant.dataNameT, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
+        e.set("from", self.participant.name)
+        e = etree.SubElement(parent, "exchange", data=self.participant.dataNameHTC, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
+        e.set("from", self.participant.name)
 
-    def getPostProcessingDataTags(self):
+    def addPostProcessingDataTags(self, parent):
         pass
 
 class OpenFOAMInterface(Interface):
@@ -43,13 +54,12 @@ class OpenFOAMInterface(Interface):
     def __init__(self, participant):
         super(OpenFOAMInterface, self).__init__(participant)
 
-    def getMeshTags(self):
-        print '<mesh name="' + self.mesh + '"/>'
-        print '\t<use-data name="' + self.participant.dataNameT + '"/>'
-        print '\t<use-data name="' + self.participant.dataNameHTC + '"/>'
-        print '\t<use-data name="' + self.partnerInterface.participant.dataNameT + '"/>'
-        print '\t<use-data name="' + self.partnerInterface.participant.dataNameHTC + '"/>'
-        print '<mesh/>'
+    def addMeshTags(self, parent):
+        mesh = etree.SubElement(parent, "mesh", name=self.mesh)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
 
     def setMeshNames(self):
         self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
@@ -61,15 +71,13 @@ class CodeAsterInterface(Interface):
     def __init__(self, participant):
         super(CodeAsterInterface, self).__init__(participant)
 
-    def getMeshTags(self):
-        print '<mesh name="' + self.writeMesh + '"/>'
-        print '\t<use-data name="' + self.participant.dataNameT + '"/>'
-        print '\t<use-data name="' + self.participant.dataNameHTC + '"/>'
-        print '<mesh/>'
-        print '<mesh name="' + self.readMesh + '"/>'
-        print '\t<use-data name="' + self.partnerInterface.participant.dataNameT + '"/>'
-        print '\t<use-data name="' + self.partnerInterface.participant.dataNameHTC + '"/>'
-        print '<mesh/>'
+    def addMeshTags(self, parent):
+        writeMesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
+        etree.SubElement(writeMesh, "use-data", name=self.participant.dataNameT)
+        etree.SubElement(writeMesh, "use-data", name=self.participant.dataNameHTC)
+        readMesh = etree.SubElement(parent, "mesh", name=self.readMesh)
+        etree.SubElement(readMesh, "use-data", name=self.partnerInterface.participant.dataNameT)
+        etree.SubElement(readMesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
 
     def setMeshNames(self):
         self.readMesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
@@ -83,21 +91,19 @@ class Participant(object):
         self.dataNameT = "Sink-Temperature-" + self.name
         self.dataNameHTC = "Heat-Transfer-Coefficient-" + self.name
 
-    def getDataTags(self):
-        print '<data:scalar name="' + self.dataNameHTC + '"/>'
-        print '<data:scalar name="' + self.dataNameT + '"/>'
+    def addDataTags(self, parent):
+        HTC = etree.SubElement(parent, etree.QName(XMLNamespaces.data, "scalar"), name=self.dataNameHTC)
 
-    def getMeshTags(self):
+    def addMeshTags(self, parent):
         for interface in self.interfaces:
-            interface.getMeshTags()
+            interface.addMeshTags(parent)
 
-    def getParticipantTag(self):
-        print '<participant name="' + self.name + '"/>'
+    def addParticipantTag(self, parent):
+        participant = etree.SubElement(parent, "participant", name=self.name)
         for interface in self.interfaces:
-            interface.getProvideMeshTags()
-            interface.partnerInterface.getFromMeshTag()
-            interface.getReadWriteMappingTags()
-        print '</participant>'
+            interface.addProvideMeshTags(participant)
+            interface.partnerInterface.addFromMeshTag(participant)
+            interface.addReadWriteMappingTags(participant)
 
     def getInterfacesWith(self, partner):
         interfaces = []
@@ -138,30 +144,49 @@ class CouplingScheme(object):
         else:
             scheme = "parallel"
         self.type = "explicit"
-        self.scheme = scheme + "-" + self.type
+        self.schemeName = scheme + "-" + self.type
 
-    def getCouplingSchemeTag(self):
-        print "<coupling-scheme:" + self.scheme + ">"
+    def addCouplingSchemeTag(self, parent):
+        couplingSchemeTag = etree.SubElement(parent, etree.QName(XMLNamespaces.couplingScheme, self.schemeName))
+        self.addTimestepTag(couplingSchemeTag)
+        self.addMaxTimeTag(couplingSchemeTag)
+        self.addCouplingParticipantTags(couplingSchemeTag)
+        self.addExchangeTags(couplingSchemeTag)
+        return couplingSchemeTag
 
-    def getCouplingParticipantTags(self):
-        print '<participants first="' + self.participants[0].name + '"' ' second="' + self.participants[1].name + '"/>'
+    def addTimestepTag(self, parent):
+        etree.SubElement(parent, "timestep-length", value=str(self.timestep))
 
-    def getExchangeTags(self):
+    def addMaxTimeTag(self, parent):
+        etree.SubElement(parent, "max-time", value=str(self.maxTime))
+
+    def addCouplingParticipantTags(self, parent):
+        etree.SubElement(parent, "participants", first=self.participants[0].name, second=self.participants[1].name)
+
+    def addExchangeTags(self, parent):
         interfaces = self.participants[0].getInterfacesWith(self.participants[1])
         for interface in interfaces:
-            interface.getExchangeTags()
-            interface.partnerInterface.getExchangeTags()
-            interface.getPostProcessingDataTags()
+            interface.addExchangeTags(parent)
+            interface.partnerInterface.addExchangeTags(parent)
+            interface.addPostProcessingDataTags(parent)
 
 
 class ImplicitCouplingScheme(CouplingScheme):
-    def __init__(self, timestep, maxTime, participants, serial=False):
+    def __init__(self, timestep, maxTime, participants, maxIterations=50, serial=False):
         super(ImplicitCouplingScheme, self).__init__(timestep, maxTime, participants, serial)
+        self.schemeName = "implicit"
+        self.maxIterations = maxIterations
+    def addCouplingSchemeTag(self, parent):
+        couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTag(parent)
+        self.addMaxIterationsTag(couplingSchemeTag)
+        ppTag = self.addPostProcessingTag(couplingSchemeTag)
     def getRelativeConvergenceMeasureTags(self):
         pass
-    def getMaxIterationsTags(self):
-        pass
-    def getPostProcessingDataTagsForParticipantTag(self, participant):
+    def addMaxIterationsTag(self, parent):
+        etree.SubElement(parent, "max-iterations", value=str(self.maxIterations))
+    def addPostProcessingTag(self, parent):
+        return etree.SubElement(parent, etree.QName(XMLNamespaces.postProcessing, "IQN-ILS"))
+    def addPostProcessingDataTags(self, participant):
         pass
 
 class MultiCouplingScheme(ImplicitCouplingScheme):
@@ -174,19 +199,22 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
             self.participants.append(pair[1])
         self.participants = list(set(self.participants))
         super(MultiCouplingScheme, self).__init__(timestep, maxTime, self.participants, False)
+        self.schemeName="multi"
 
-    def getCouplingParticipantTags(self):
+    def addCouplingParticipantTags(self, parent):
         for participant in self.participants:
-            print '<participant name="' + participant.name + '"/>'
+            etree.SubElement(parent, "participant", name=participant.name)
 
-    def getExchangeTags(self):
+    def addExchangeTags(self, parent):
         for pair in self.participantPairs:
             interfaces = pair[0].getInterfacesWith(pair[1])
             for interface in interfaces:
-                interface.getExchangeTags()
-                interface.partnerInterface.getExchangeTags()
-                interface.getPostProcessingDataTags()
+                interface.addExchangeTags(parent)
+                interface.partnerInterface.addExchangeTags(parent)
+                interface.addPostProcessingDataTags(parent)
 #
+
+
 
 innerFluid = OpenFOAMParticipant("Inner-Fluid")
 innerFluidInterface = innerFluid.addInterface()
@@ -201,19 +229,29 @@ innerSolidInterface = solid.addInterface()
 outerSolidInterface.setPartnerInterface(outerFluidInterface)
 innerSolidInterface.setPartnerInterface(innerFluidInterface)
 
-participants = [innerFluid, outerFluid, solid]
+
+nsmap = {
+    'data': XMLNamespaces.data,
+    'mapping': XMLNamespaces.mapping,
+    'coupling-scheme': XMLNamespaces.couplingScheme,
+    'post-processing': XMLNamespaces.postProcessing
+}
+preciceConfigurationTag = etree.Element("precice-configuration", nsmap=nsmap)
+
+participants = [innerFluid, solid, outerFluid]
 
 for participant in participants:
-    participant.getDataTags()
+    participant.addDataTags(preciceConfigurationTag)
 
 for participant in participants:
-    participant.getMeshTags()
+    participant.addMeshTags(preciceConfigurationTag)
 
 for participant in participants:
-    participant.getParticipantTag()
+    participant.addParticipantTag(preciceConfigurationTag)
+
 
 # Coupling graph
-couplings = [[solid, innerFluid], [outerFluid, solid]]
+couplings = [[solid, innerFluid], [solid, outerFluid]]
 graph = nx.Graph()
 [graph.add_edge(pair[0], pair[1]) for pair in couplings]
 colors =  nx.coloring.greedy_color(graph, strategy=nx.coloring.strategy_largest_first)
@@ -245,28 +283,24 @@ timestep = 0.01
 maxTime = 1.0
 maxIterations = 30
 
+multi = False
+
+
 # If multi, all couplings are treated together
 if multi:
-
     couplingScheme = MultiCouplingScheme(timestep, maxTime, couplings)
-    couplingScheme.getCouplingParticipantTags()
-    couplingScheme.getExchangeTags()
-
+    couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
 
 # If not multi, couplings are treated per pair
 else:
-
     for participantsPair in couplings:
-
         # Determine first and second participant
         if colors[participantsPair[0]] == 1:
             participantsPair.reverse()
-
         if implicit:
             couplingScheme = ImplicitCouplingScheme(timestep, maxTime, participantsPair, serial=serial)
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=serial)
+        couplingScheme.addCouplingSchemeTag(preciceConfigurationTag)
 
-        couplingScheme.getCouplingSchemeTag()
-        couplingScheme.getCouplingParticipantTags()
-        couplingScheme.getExchangeTags()
+print etree.tostring(preciceConfigurationTag, pretty_print=True)
