@@ -18,7 +18,7 @@ class CouplingConfiguration:
     def hasCycles(self):
         return len(nx.cycle_basis(self.graph)) > 0
 
-    def getColoring(self):
+    def getColors(self):
         return self.colors
 
     def getParticipantsFromCoupling(self):
