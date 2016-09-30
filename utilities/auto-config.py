@@ -8,7 +8,7 @@ from preciceautoconf.schemes import *
 
 participants = []
 
-innerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Inner-Fluid")
+innerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Inner-Fluid", domainDecomposed=True)
 innerFluidInterface = innerFluid.addInterface()
 participants.append(innerFluid)
 
@@ -16,7 +16,7 @@ outerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Outer-Fluid")
 outerFluidInterface = outerFluid.addInterface()
 participants.append(outerFluid)
 
-solid = ParticipantFactory.getParticipant("Code_Aster", "Solid")
+solid = ParticipantFactory.getParticipant("CalculiX", "Solid")
 outerSolidInterface = solid.addInterface()
 innerSolidInterface = solid.addInterface()
 participants.append(solid)
@@ -32,27 +32,29 @@ couplings = [[solid, innerFluid], [solid, outerFluid]]
 
 # Common parameters
 
-timestep = 0.01
-maxTime = 1.0
+timestep = 1
+maxTime = 500
 maxIterations = 30
 
 # Determine type of coupling configuration to be used
 
 config = CouplingConfiguration(
     couplings=couplings,
-    steadyState=False,
+    steadyState=True,
     forceExplicit=False,
-    forceParallel=True
+    forceParallel=False
 )
 
 # --------------------------------------------------------------------------------
 #   Create XML tree
 # --------------------------------------------------------------------------------
 nsmap = {
-    'data': "data",
-    'mapping': "mapping",
-    'coupling-scheme': "coupling-scheme",
-    'post-processing': "post-processing"
+    "data": "data",
+    "mapping": "mapping",
+    "coupling-scheme": "coupling-scheme",
+    "post-processing": "post-processing",
+    "m2n": "m2n",
+    "master": "master"
 }
 preciceConfigurationTag = etree.Element("precice-configuration", nsmap=nsmap)
 
@@ -68,6 +70,7 @@ for participant in participants:
 if config.multi():
     # If multi, all couplings are treated together
     couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
+    couplingScheme.addM2nTagTo(preciceConfigurationTag, "sockets")
     couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 else:
@@ -80,6 +83,7 @@ else:
             couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=config.serial())
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=config.serial())
+        couplingScheme.addM2nTagTo(preciceConfigurationTag, "sockets")
         couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 print etree.tostring(preciceConfigurationTag, pretty_print=True)
