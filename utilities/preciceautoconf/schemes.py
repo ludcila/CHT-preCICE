@@ -39,6 +39,12 @@ class CouplingScheme(object):
             interface.partnerInterface.addExchangeTagsTo(parent, initialize=True)
             interface.addPostProcessingDataTagsTo(parent)
 
+    def addM2nTagTo(self, parent, type):
+        e = etree.SubElement(parent, etree.QName("m2n", type), to=self.participants[1].name)
+        e.set("from", self.participants[0].name)
+        if self.participants[0].domainDecomposed or self.participants[1].domainDecomposed:
+            e.set("distribution-type", "scatter-gather")
+
 
 class ImplicitCouplingScheme(CouplingScheme):
 
@@ -98,3 +104,10 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
                 interface.addExchangeTagsTo(parent)
                 interface.partnerInterface.addExchangeTagsTo(parent)
                 interface.addPostProcessingDataTagsTo(parent)
+
+    def addM2nTagTo(self, parent, type):
+        for participants in self.participantPairs:
+            e = etree.SubElement(parent, etree.QName("m2n", type), to=participants[1].name)
+            e.set("from", participants[0].name)
+            if participants[0].domainDecomposed or participants[1].domainDecomposed:
+                e.set("distribution-type", "scatter-gather")
