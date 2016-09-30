@@ -1,10 +1,12 @@
 simulation:
+
     timestep: 10
     maxTime: 500
     steadyState: True
     forceExplicit: False
     forceParallel: False
     maxCouplingIterations: 30
+
 
 participants:
 
@@ -24,7 +26,9 @@ participants:
             - Solid-to-Inner-Fluid
             - Solid-to-Outer-Fluid
 
+
 couplings:
+    
     -
         - Solid-to-Inner-Fluid
         - Inner-Fluid-to-Solid

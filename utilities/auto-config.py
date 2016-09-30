@@ -7,12 +7,11 @@ from preciceautoconf.schemes import *
 
 # Create participants and couplings from YAML file
 
-participants = []
-interfacesMap = {}
-
 file = open("config.yml")
 input = yaml.load(file.read())
 
+participants = []
+interfacesMap = {}
 participantsList = input["participants"]
 for participantName in participantsList:
     participantData = participantsList[participantName]
@@ -29,7 +28,6 @@ for coupling in couplingsList:
     interface1.setPartnerInterface(interface2)
 
 couplings = []
-
 for i in range(len(participants)):
     for j in range(i, len(participants)):
         if participants[i].hasInterfacesWith(participants[j]):
@@ -53,6 +51,7 @@ config = CouplingConfiguration(
 # --------------------------------------------------------------------------------
 #   Create XML tree
 # --------------------------------------------------------------------------------
+
 nsmap = {
     "data": "data",
     "mapping": "mapping",
