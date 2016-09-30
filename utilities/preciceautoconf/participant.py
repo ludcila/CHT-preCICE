@@ -25,7 +25,8 @@ class Participant(object):
         self.dataNameHTC = "Heat-Transfer-Coefficient-" + self.name
 
     def addDataTagsTo(self, parent):
-        HTC = etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameHTC)
+        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameHTC)
+        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameT)
 
     def addMeshTagsTo(self, parent):
         for interface in self.interfaces:
