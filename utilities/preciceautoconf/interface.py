@@ -15,6 +15,13 @@ class Interface(object):
     def setMeshNames(self):
         pass
 
+    def addMeshTagsTo(self, parent):
+        mesh = etree.SubElement(parent, "mesh", name=self.mesh)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
+
     def addProvideMeshTagsTo(self, parent):
         etree.SubElement(parent, "use-mesh", name=self.readMesh, provide="yes")
         if self.readMesh != self.writeMesh:
@@ -60,26 +67,10 @@ class OpenFOAMInterface(Interface):
     def __init__(self, participant, name=None):
         super(OpenFOAMInterface, self).__init__(participant, name)
 
-    def addMeshTagsTo(self, parent):
-        mesh = etree.SubElement(parent, "mesh", name=self.mesh)
-        etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
-        etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
-        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
-        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
-
-
 class CalculiXInterface(Interface):
 
     def __init__(self, participant, name=None):
         super(CalculiXInterface, self).__init__(participant, name)
-
-    def addMeshTagsTo(self, parent):
-        mesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
-        etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
-        etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
-        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
-        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
-
 
 class CodeAsterInterface(Interface):
 
