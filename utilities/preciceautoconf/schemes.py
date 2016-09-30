@@ -33,8 +33,10 @@ class CouplingScheme(object):
     def addExchangeTagsTo(self, parent):
         interfaces = self.participants[0].getInterfacesWith(self.participants[1])
         for interface in interfaces:
-            interface.addExchangeTagsTo(parent)
-            interface.partnerInterface.addExchangeTagsTo(parent)
+            # First participant initializes the coupling data of the second participant only in a parallel scheme
+            interface.addExchangeTagsTo(parent, initialize=not self.serial)
+            # Second participant initializes the coupling data of the first participant
+            interface.partnerInterface.addExchangeTagsTo(parent, initialize=True)
             interface.addPostProcessingDataTagsTo(parent)
 
 

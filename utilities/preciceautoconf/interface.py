@@ -31,12 +31,16 @@ class Interface(object):
         e = etree.SubElement(parent, etree.QName("mapping", "nearest-neighbor"), direction="read", to=self.readMesh)
         e.set("from", self.partnerInterface.writeMesh)
 
-    def addExchangeTagsTo(self, parent):
+    def addExchangeTagsTo(self, parent, initialize=False):
         # From me to partner
         e = etree.SubElement(parent, "exchange", data=self.participant.dataNameT, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
         e.set("from", self.participant.name)
+        if initialize:
+            e.set("initialize", "yes")
         e = etree.SubElement(parent, "exchange", data=self.participant.dataNameHTC, mesh=self.writeMesh, to=self.partnerInterface.participant.name)
         e.set("from", self.participant.name)
+        if initialize:
+            e.set("initialize", "yes")
 
     def addPostProcessingDataTagsTo(self, parent):
         pass
