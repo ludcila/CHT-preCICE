@@ -1,37 +1,33 @@
-precice-config-file: precice-config.xml
+simulation:
+    timestep: 10
+    maxTime: 500
+    steadyState: True
+    forceExplicit: False
+    forceParallel: False
+    maxCouplingIterations: 30
 
 participants:
 
-  Water:
-    solver: OpenFOAM
-    interfaces:
-    - name: Water-to-Cold-Plate
-      patches:
-      - cold-top
-      - cold-bottom
-    - name: Water-to-Hot-Plate
-      patches:
-      - hot-top
-      - hot-bottom
-    
-  Cold-Plate:
-    solver: CalculiX
-    interfaces:
-    - name: Cold-Plate-to-Water
-      patches:
-      - interface
+    Inner-Fluid:
+        solver: OpenFOAM
+        interfaces:
+            - Inner-Fluid-to-Solid
 
-  Hot-Plate:
-    solver: CalculiX
-    interfaces:
-    - name: Hot-Plate-to-Water
-      patches:
-      - interface
-    
+    Outer-Fluid:
+        solver: OpenFOAM
+        interfaces:
+            - Outer-Fluid-to-Solid
+
+    Solid:
+        solver: CalculiX
+        interfaces:
+            - Solid-to-Inner-Fluid
+            - Solid-to-Outer-Fluid
+
 couplings:
--
-  A: Water-to-Cold-Plate
-  B: Cold-Plate-to-Water
--
-  A: Water-to-Hot-Plate
-  B: Hot-Plate-to-Water
+    -
+        - Solid-to-Inner-Fluid
+        - Inner-Fluid-to-Solid
+    -
+        - Solid-to-Outer-Fluid
+        - Outer-Fluid-to-Solid
