@@ -4,10 +4,7 @@ class Interface(object):
 
     def __init__(self, participant, name=None):
         self.participant = participant
-        if name is None:
-            self.name = self.participant.name
-        else:
-            self.name = name
+        self.name = name
 
     def setPartnerInterface(self, partnerInterface):
         self.partnerInterface = partnerInterface
@@ -51,7 +48,10 @@ class Interface(object):
 
     def setMeshNames(self):
         # By default, use the same read and write mesh
-        self.mesh = self.name + "-to-" + self.partnerInterface.name
+        if self.name:
+            self.mesh = self.name
+        else:
+            self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name
         self.readMesh = self.mesh
         self.writeMesh = self.mesh
 
@@ -97,5 +97,9 @@ class CodeAsterInterface(Interface):
     def setMeshNames(self):
         # For Robin-Robin coupling, Code_Aster has its read-data at the faces
         # and its write-data at the nodes
-        self.readMesh = self.name + "-to-" + self.partnerInterface.name + "-Faces"
-        self.writeMesh = self.name + "-to-" + self.partnerInterface.name + "-Nodes"
+        if self.name:
+            self.mesh = self.name
+        else:
+            self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name
+        self.readMesh = self.mesh + "-Faces"
+        self.writeMesh = self.mesh + "-Nodes"
