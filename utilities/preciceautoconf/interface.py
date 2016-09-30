@@ -13,7 +13,13 @@ class Interface(object):
         self.setMeshNames()
 
     def setMeshNames(self):
-        pass
+        # By default, use the same read and write mesh
+        if self.name:
+            self.mesh = self.name
+        else:
+            self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name
+        self.readMesh = self.mesh
+        self.writeMesh = self.mesh
 
     def addMeshTagsTo(self, parent):
         mesh = etree.SubElement(parent, "mesh", name=self.mesh)
@@ -52,15 +58,6 @@ class Interface(object):
 
     def addPostProcessingDataTagsTo(self, parent):
         pass
-
-    def setMeshNames(self):
-        # By default, use the same read and write mesh
-        if self.name:
-            self.mesh = self.name
-        else:
-            self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name
-        self.readMesh = self.mesh
-        self.writeMesh = self.mesh
 
 class OpenFOAMInterface(Interface):
 
