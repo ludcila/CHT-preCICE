@@ -54,10 +54,24 @@ class ImplicitCouplingScheme(CouplingScheme):
         self.maxIterations = maxIterations
 
     def addCouplingSchemeTagTo(self, parent):
-        couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTagTo(parent)
-        self.addMaxIterationsTagTo(couplingSchemeTag)
-        postProcessingTag = self.addPostProcessingTagTo(couplingSchemeTag)
-        self.addPostProcessingDataTagsTo(postProcessingTag)
+        # If there are multiple interfaces between the two participants,
+        # we generate a coupling-scheme tag for each interface,
+        # otherwise we will be able to apply post-processing only to one data
+        interfaces = self.participants[0].getInterfacesWith(self.participants[1])
+        for interface in interfaces:
+            couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTagTo(parent)
+            interface.addExchangeTagsTo(couplingSchemeTag)
+            interface.partnerInterface.addExchangeTagsTo(couplingSchemeTag)
+            self.addMaxIterationsTagTo(couplingSchemeTag)
+            postProcessingTag = self.addPostProcessingTagTo(couplingSchemeTag)
+            self.addPostProcessingDataTagsTo(postProcessingTag)
+
+    def addExchangeTagsTo(self, parent):
+        # Override addExchangeTagsTo from CouplingScheme which puts the exchange tags
+        # from all interface pairs under the same coupling-scheme tag
+        # For implicit coupling we will have a separate coupling-scheme tag for
+        # each interface pair, so that post-processing can be applied to all the data
+        pass
 
     def getRelativeConvergenceMeasureTagsTo(self):
         pass
@@ -93,16 +107,22 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
         super(MultiCouplingScheme, self).__init__(timestep, maxTime, maxIterations, self.participants, False)
         self.schemeName="multi"
 
+    def addCouplingSchemeTagTo(self, parent):
+        couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTagTo(parent)
+        self.addMaxIterationsTagTo(couplingSchemeTag)
+        postProcessingTag = self.addPostProcessingTagTo(couplingSchemeTag)
+        self.addPostProcessingDataTagsTo(postProcessingTag)
+
     def addCouplingParticipantTagsTo(self, parent):
         for participant in self.participants:
             etree.SubElement(parent, "participant", name=participant.name)
 
     def addExchangeTagsTo(self, parent):
-        for pair in self.participantPairs:
-            interfaces = pair[0].getInterfacesWith(pair[1])
+        for participants in self.participantPairs:
+            interfaces = participants[0].getInterfacesWith(participants[1])
             for interface in interfaces:
-                interface.addExchangeTagsTo(parent)
-                interface.partnerInterface.addExchangeTagsTo(parent)
+                interface.addExchangeTagsTo(parent, initialize=True)
+                interface.partnerInterface.addExchangeTagsTo(parent, initialize=True)
                 interface.addPostProcessingDataTagsTo(parent)
 
     def addM2nTagTo(self, parent, type="sockets"):
