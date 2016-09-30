@@ -70,7 +70,7 @@ for participant in participants:
 if config.multi():
     # If multi, all couplings are treated together
     couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
-    couplingScheme.addM2nTagTo(preciceConfigurationTag, "sockets")
+    couplingScheme.addM2nTagTo(preciceConfigurationTag)
     couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 else:
@@ -83,7 +83,7 @@ else:
             couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=config.serial())
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=config.serial())
-        couplingScheme.addM2nTagTo(preciceConfigurationTag, "sockets")
+        couplingScheme.addM2nTagTo(preciceConfigurationTag)
         couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 print etree.tostring(preciceConfigurationTag, pretty_print=True)
