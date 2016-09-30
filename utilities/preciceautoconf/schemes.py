@@ -6,7 +6,7 @@ class CouplingScheme(object):
         self.maxTime = maxTime
         self.participants = participants
         self.serial = serial
-        if not serial:
+        if serial:
             scheme = "serial"
         else:
             scheme = "parallel"
