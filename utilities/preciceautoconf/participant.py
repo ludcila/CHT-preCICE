@@ -49,6 +49,9 @@ class Participant(object):
                 interfaces.append(interface)
         return interfaces
 
+    def hasInterfacesWith(self, partner):
+        return len(self.getInterfacesWith(partner)) > 0
+
 
 class OpenFOAMParticipant(Participant):
 
