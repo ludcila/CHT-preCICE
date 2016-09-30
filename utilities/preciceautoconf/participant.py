@@ -1,12 +1,18 @@
+import sys
 from lxml import etree
 from interface import *
 
 class ParticipantFactory:
-    def getParticipant( type, name):
+    def getParticipant(type, name):
         if type == "OpenFOAM":
             return OpenFOAMParticipant(name)
         elif type == "Code_Aster":
             return CodeAsterParticipant(name)
+        elif type == "CalculiX":
+            return CalculiXParticipant(name)
+        else:
+            print "Participant of type", type, "is not implemented."
+            sys.exit(1)
 
     getParticipant=staticmethod(getParticipant)
 
@@ -39,6 +45,7 @@ class Participant(object):
                 interfaces.append(interface)
         return interfaces
 
+
 class OpenFOAMParticipant(Participant):
 
     def __init__(self, name):
@@ -49,6 +56,19 @@ class OpenFOAMParticipant(Participant):
         interface = OpenFOAMInterface(self)
         self.interfaces.append(interface)
         return interface
+
+
+class CalculiXParticipant(Participant):
+
+    def __init__(self, name):
+        super(CalculiXParticipant, self).__init__(name)
+        self.solverType = "CalculiX"
+
+    def addInterface(self):
+        interface = CalculiXInterface(self)
+        self.interfaces.append(interface)
+        return interface
+
 
 class CodeAsterParticipant(Participant):
 
