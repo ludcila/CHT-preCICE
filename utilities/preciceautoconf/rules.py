@@ -21,6 +21,10 @@ class CouplingConfiguration:
     def getColors(self):
         return self.colors
 
+    def sortParticipants(self, participants):
+        if self.getColors()[participants[0]] == 1:
+            participants.reverse()
+
     def getParticipantsFromCoupling(self):
         self.participants = []
         for pair in self.couplings:

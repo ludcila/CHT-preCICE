@@ -73,21 +73,29 @@ for participant in participants:
     participant.addParticipantTagTo(preciceConfigurationTag)
 
 if config.multi():
+
     # If multi, all couplings are treated together
     couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
+
+    # Add tags
     couplingScheme.addM2nTagTo(preciceConfigurationTag)
     couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
 else:
+
     # If not multi, couplings are treated per pair
     for participantsPair in couplings:
+
         # Determine first and second participant
-        if config.getColors()[participantsPair[0]] == 1:
-            participantsPair.reverse()
+        config.sortParticipants(participantsPair)
+
+        # Create implicit or explicit coupling scheme
         if config.implicit():
             couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=config.serial())
         else:
             couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=config.serial())
+
+        # Add tags
         couplingScheme.addM2nTagTo(preciceConfigurationTag)
         couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
 
