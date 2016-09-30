@@ -60,6 +60,24 @@ class OpenFOAMInterface(Interface):
         self.writeMesh = self.mesh
 
 
+class CalculiXInterface(Interface):
+
+    def __init__(self, participant):
+        super(CalculiXInterface, self).__init__(participant)
+
+    def addMeshTagsTo(self, parent):
+        mesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.participant.dataNameHTC)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
+        etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
+
+    def setMeshNames(self):
+        self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
+        self.readMesh = self.mesh
+        self.writeMesh = self.mesh
+
+
 class CodeAsterInterface(Interface):
 
     def __init__(self, participant):
