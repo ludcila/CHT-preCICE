@@ -39,7 +39,7 @@ class CouplingScheme(object):
             interface.partnerInterface.addExchangeTagsTo(parent, initialize=True)
             interface.addPostProcessingDataTagsTo(parent)
 
-    def addM2nTagTo(self, parent, type):
+    def addM2nTagTo(self, parent, type="sockets"):
         e = etree.SubElement(parent, etree.QName("m2n", type), to=self.participants[1].name)
         e.set("from", self.participants[0].name)
         if self.participants[0].domainDecomposed or self.participants[1].domainDecomposed:
@@ -105,7 +105,7 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
                 interface.partnerInterface.addExchangeTagsTo(parent)
                 interface.addPostProcessingDataTagsTo(parent)
 
-    def addM2nTagTo(self, parent, type):
+    def addM2nTagTo(self, parent, type="sockets"):
         for participants in self.participantPairs:
             e = etree.SubElement(parent, etree.QName("m2n", type), to=participants[1].name)
             e.set("from", participants[0].name)
