@@ -56,8 +56,8 @@ class OpenFOAMParticipant(Participant):
         super(OpenFOAMParticipant, self).__init__(name, domainDecomposed)
         self.solverType = "OpenFOAM"
 
-    def addInterface(self):
-        interface = OpenFOAMInterface(self)
+    def addInterface(self, name=None):
+        interface = OpenFOAMInterface(self, name)
         self.interfaces.append(interface)
         return interface
 
@@ -68,8 +68,8 @@ class CalculiXParticipant(Participant):
         super(CalculiXParticipant, self).__init__(name, domainDecomposed)
         self.solverType = "CalculiX"
 
-    def addInterface(self):
-        interface = CalculiXInterface(self)
+    def addInterface(self, name=None):
+        interface = CalculiXInterface(self, name)
         self.interfaces.append(interface)
         return interface
 
@@ -80,7 +80,7 @@ class CodeAsterParticipant(Participant):
         super(CodeAsterParticipant, self).__init__(name, domainDecomposed)
         self.solverType = "CodeAster"
 
-    def addInterface(self):
-        interface = CodeAsterInterface(self)
+    def addInterface(self, name=None):
+        interface = CodeAsterInterface(self, name)
         self.interfaces.append(interface)
         return interface
