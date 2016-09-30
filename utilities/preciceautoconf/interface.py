@@ -2,8 +2,12 @@ from lxml import etree
 
 class Interface(object):
 
-    def __init__(self, participant):
+    def __init__(self, participant, name=None):
         self.participant = participant
+        if name is None:
+            self.name = self.participant.name
+        else:
+            self.name = name
 
     def setPartnerInterface(self, partnerInterface):
         self.partnerInterface = partnerInterface
@@ -45,11 +49,16 @@ class Interface(object):
     def addPostProcessingDataTagsTo(self, parent):
         pass
 
+    def setMeshNames(self):
+        # By default, use the same read and write mesh
+        self.mesh = self.name + "-to-" + self.partnerInterface.name
+        self.readMesh = self.mesh
+        self.writeMesh = self.mesh
 
 class OpenFOAMInterface(Interface):
 
-    def __init__(self, participant):
-        super(OpenFOAMInterface, self).__init__(participant)
+    def __init__(self, participant, name=None):
+        super(OpenFOAMInterface, self).__init__(participant, name)
 
     def addMeshTagsTo(self, parent):
         mesh = etree.SubElement(parent, "mesh", name=self.mesh)
@@ -58,16 +67,11 @@ class OpenFOAMInterface(Interface):
         etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
         etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
 
-    def setMeshNames(self):
-        self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
-        self.readMesh = self.mesh
-        self.writeMesh = self.mesh
-
 
 class CalculiXInterface(Interface):
 
-    def __init__(self, participant):
-        super(CalculiXInterface, self).__init__(participant)
+    def __init__(self, participant, name=None):
+        super(CalculiXInterface, self).__init__(participant, name)
 
     def addMeshTagsTo(self, parent):
         mesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
@@ -76,16 +80,11 @@ class CalculiXInterface(Interface):
         etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameT)
         etree.SubElement(mesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
 
-    def setMeshNames(self):
-        self.mesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
-        self.readMesh = self.mesh
-        self.writeMesh = self.mesh
-
 
 class CodeAsterInterface(Interface):
 
-    def __init__(self, participant):
-        super(CodeAsterInterface, self).__init__(participant)
+    def __init__(self, participant, name=None):
+        super(CodeAsterInterface, self).__init__(participant, name)
 
     def addMeshTagsTo(self, parent):
         writeMesh = etree.SubElement(parent, "mesh", name=self.writeMesh)
@@ -96,5 +95,7 @@ class CodeAsterInterface(Interface):
         etree.SubElement(readMesh, "use-data", name=self.partnerInterface.participant.dataNameHTC)
 
     def setMeshNames(self):
-        self.readMesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Faces-Mesh"
-        self.writeMesh = self.participant.name + "-to-" + self.partnerInterface.participant.name + "-Nodes-Mesh"
+        # For Robin-Robin coupling, Code_Aster has its read-data at the faces
+        # and its write-data at the nodes
+        self.readMesh = self.name + "-to-" + self.partnerInterface.name + "-Faces"
+        self.writeMesh = self.name + "-to-" + self.partnerInterface.name + "-Nodes"
