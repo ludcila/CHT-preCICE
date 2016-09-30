@@ -7,14 +7,16 @@ class CouplingScheme(object):
         self.participants = participants
         self.serial = serial
         if serial:
-            scheme = "serial"
+            self.serialOrParallel = "serial"
         else:
-            scheme = "parallel"
-        self.type = "explicit"
-        self.schemeName = scheme + "-" + self.type
+            self.serialOrParallel = "parallel"
+        self.explicitOrImplicit = "explicit" # Base class is explicit
+
+    def getCouplingSchemeName(self):
+        return self.serialOrParallel + "-" + self.explicitOrImplicit
 
     def addCouplingSchemeTagTo(self, parent):
-        couplingSchemeTag = etree.SubElement(parent, etree.QName("coupling-scheme", self.schemeName))
+        couplingSchemeTag = etree.SubElement(parent, etree.QName("coupling-scheme", self.getCouplingSchemeName()))
         self.addTimestepTagTo(couplingSchemeTag)
         self.addMaxTimeTagTo(couplingSchemeTag)
         self.addCouplingParticipantTagsTo(couplingSchemeTag)
@@ -50,7 +52,7 @@ class ImplicitCouplingScheme(CouplingScheme):
 
     def __init__(self, timestep, maxTime, maxIterations, participants, serial=False):
         super(ImplicitCouplingScheme, self).__init__(timestep, maxTime, participants, serial)
-        self.schemeName = "implicit"
+        self.explicitOrImplicit = "implicit"
         self.maxIterations = maxIterations
 
     def addCouplingSchemeTagTo(self, parent):
@@ -106,6 +108,9 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
         self.participants = list(set(self.participants))
         super(MultiCouplingScheme, self).__init__(timestep, maxTime, maxIterations, self.participants, False)
         self.schemeName="multi"
+
+    def getCouplingSchemeName(self):
+        return "multi"
 
     def addCouplingSchemeTagTo(self, parent):
         couplingSchemeTag = super(ImplicitCouplingScheme, self).addCouplingSchemeTagTo(parent)
