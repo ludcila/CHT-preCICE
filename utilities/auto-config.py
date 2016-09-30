@@ -1,48 +1,53 @@
+import yaml
 from preciceautoconf.interface import *
 from preciceautoconf.participant import *
 from preciceautoconf.xmlns import *
 from preciceautoconf.rules import *
 from preciceautoconf.schemes import *
 
-# Create participants
+# Create participants and couplings from YAML file
 
 participants = []
+interfacesMap = {}
 
-innerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Inner-Fluid", domainDecomposed=True)
-innerFluidInterface = innerFluid.addInterface()
-participants.append(innerFluid)
+file = open("config.yml")
+input = yaml.load(file.read())
 
-outerFluid = ParticipantFactory.getParticipant("OpenFOAM", "Outer-Fluid")
-outerFluidInterface = outerFluid.addInterface()
-participants.append(outerFluid)
+participantsList = input["participants"]
+for participantName in participantsList:
+    participantData = participantsList[participantName]
+    participant = ParticipantFactory.getParticipant(participantData["solver"], participantName)
+    participants.append(participant)
+    for interfaceName in participantData["interfaces"]:
+        interface = participant.addInterface(interfaceName)
+        interfacesMap[interfaceName] = interface
 
-solid = ParticipantFactory.getParticipant("CalculiX", "Solid")
-outerSolidInterface = solid.addInterface()
-innerSolidInterface = solid.addInterface()
-participants.append(solid)
+couplingsList = input["couplings"]
+for coupling in couplingsList:
+    interface1 = interfacesMap[coupling[0]]
+    interface2 = interfacesMap[coupling[1]]
+    interface1.setPartnerInterface(interface2)
 
-# Set matching interfaces
+couplings = []
 
-outerSolidInterface.setPartnerInterface(outerFluidInterface)
-innerSolidInterface.setPartnerInterface(innerFluidInterface)
+for i in range(len(participants)):
+    for j in range(i, len(participants)):
+        if participants[i].hasInterfacesWith(participants[j]):
+            couplings.append([participants[i], participants[j]])
 
-# Create couplings
-# TODO: automatically generate this
-couplings = [[solid, innerFluid], [solid, outerFluid]]
+# Simulation parameters
 
-# Common parameters
-
-timestep = 1
-maxTime = 500
-maxIterations = 30
+timestep = input["simulation"]["timestep"]
+maxTime = input["simulation"]["maxTime"]
+maxIterations = input["simulation"]["maxCouplingIterations"]
 
 # Determine type of coupling configuration to be used
 
 config = CouplingConfiguration(
     couplings=couplings,
-    steadyState=True,
-    forceExplicit=False,
-    forceParallel=False
+    steadyState=input["simulation"]["steadyState"],
+    forceExplicit=input["simulation"]["forceExplicit"],
+    forceParallel=input["simulation"]["forceParallel"]
 )
 
 # --------------------------------------------------------------------------------
