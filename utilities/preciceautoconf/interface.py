@@ -61,10 +61,6 @@ class Interface(object):
         if initialize:
             e.set("initialize", "yes")
 
-    def add_post_processing_data_tags_to(self, parent):
-        pass
-
-
 class OpenFOAMInterface(Interface):
 
     def __init__(self, participant, name=None):
