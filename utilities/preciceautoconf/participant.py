@@ -1,11 +1,12 @@
 import sys
-from lxml import etree
 from interface import *
 
+
 class ParticipantFactory:
-    def getParticipant(type, name, domainDecomposed=False):
+
+    def get_participant(type, name, domain_decomposed=False):
         if type == "OpenFOAM":
-            return OpenFOAMParticipant(name, domainDecomposed)
+            return OpenFOAMParticipant(name, domain_decomposed)
         elif type == "Code_Aster":
             return CodeAsterParticipant(name)
         elif type == "CalculiX":
@@ -14,52 +15,53 @@ class ParticipantFactory:
             print "Participant of type", type, "is not implemented."
             sys.exit(1)
 
-    getParticipant=staticmethod(getParticipant)
+    get_participant = staticmethod(get_participant)
+
 
 class Participant(object):
 
-    def __init__(self, name, domainDecomposed=False):
+    def __init__(self, name, domain_decomposed=False):
         self.name = name
         self.interfaces = []
-        self.dataNameT = "Sink-Temperature-" + self.name
-        self.dataNameHTC = "Heat-Transfer-Coefficient-" + self.name
-        self.domainDecomposed = domainDecomposed
+        self.data_name_T = "Sink-Temperature-" + self.name
+        self.data_name_HTC = "Heat-Transfer-Coefficient-" + self.name
+        self.domain_decomposed = domain_decomposed
 
-    def addDataTagsTo(self, parent):
-        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameHTC)
-        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.dataNameT)
+    def add_data_tags_to(self, parent):
+        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.data_name_HTC)
+        etree.SubElement(parent, etree.QName("data", "scalar"), name=self.data_name_T)
 
-    def addMeshTagsTo(self, parent):
+    def add_mesh_tags_to(self, parent):
         for interface in self.interfaces:
-            interface.addMeshTagsTo(parent)
+            interface.add_mesh_tags_to(parent)
 
-    def addParticipantTagTo(self, parent):
+    def add_participant_tag_to(self, parent):
         participant = etree.SubElement(parent, "participant", name=self.name)
-        if self.domainDecomposed:
+        if self.domain_decomposed:
             etree.SubElement(participant, etree.QName("master", "mpi-single"))
         for interface in self.interfaces:
-            interface.addProvideMeshTagsTo(participant)
-            interface.partnerInterface.addFromMeshTagTo(participant)
-            interface.addReadWriteMappingTagsTo(participant)
+            interface.add_provide_mesh_tags_to(participant)
+            interface.partner_interface.add_from_mesh_tags_to(participant)
+            interface.add_read_write_mapping_tags_to(participant)
 
-    def getInterfacesWith(self, partner):
+    def get_interfaces_with(self, partner):
         interfaces = []
         for interface in self.interfaces:
-            if interface.partnerInterface.participant == partner:
+            if interface.partner_interface.participant == partner:
                 interfaces.append(interface)
         return interfaces
 
-    def hasInterfacesWith(self, partner):
-        return len(self.getInterfacesWith(partner)) > 0
+    def has_interfaces_with(self, partner):
+        return len(self.get_interfaces_with(partner)) > 0
 
 
 class OpenFOAMParticipant(Participant):
 
-    def __init__(self, name, domainDecomposed=False):
-        super(OpenFOAMParticipant, self).__init__(name, domainDecomposed)
-        self.solverType = "OpenFOAM"
+    def __init__(self, name, domain_decomposed=False):
+        super(OpenFOAMParticipant, self).__init__(name, domain_decomposed)
+        self.solver_type = "OpenFOAM"
 
-    def addInterface(self, name=None):
+    def add_interface(self, name=None):
         interface = OpenFOAMInterface(self, name)
         self.interfaces.append(interface)
         return interface
@@ -67,11 +69,11 @@ class OpenFOAMParticipant(Participant):
 
 class CalculiXParticipant(Participant):
 
-    def __init__(self, name, domainDecomposed=False):
-        super(CalculiXParticipant, self).__init__(name, domainDecomposed)
-        self.solverType = "CalculiX"
+    def __init__(self, name, domain_decomposed=False):
+        super(CalculiXParticipant, self).__init__(name, domain_decomposed)
+        self.solver_type = "CalculiX"
 
-    def addInterface(self, name=None):
+    def add_interface(self, name=None):
         interface = CalculiXInterface(self, name)
         self.interfaces.append(interface)
         return interface
@@ -79,11 +81,11 @@ class CalculiXParticipant(Participant):
 
 class CodeAsterParticipant(Participant):
 
-    def __init__(self, name, domainDecomposed=False):
-        super(CodeAsterParticipant, self).__init__(name, domainDecomposed)
-        self.solverType = "CodeAster"
+    def __init__(self, name, domain_decomposed=False):
+        super(CodeAsterParticipant, self).__init__(name, domain_decomposed)
+        self.solver_type = "CodeAster"
 
-    def addInterface(self, name=None):
+    def add_interface(self, name=None):
         interface = CodeAsterInterface(self, name)
         self.interfaces.append(interface)
         return interface

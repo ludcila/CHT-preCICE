@@ -1,51 +1,49 @@
 import yaml
-from preciceautoconf.interface import *
 from preciceautoconf.participant import *
-from preciceautoconf.xmlns import *
 from preciceautoconf.rules import *
 from preciceautoconf.schemes import *
 
 # Create participants and couplings from YAML file
 
-file = open("config.yml")
-input = yaml.load(file.read())
+config_file = open("config.yml")
+config = yaml.load(config_file.read())
 
 participants = []
-interfacesMap = {}
-participantsList = input["participants"]
-for participantName in participantsList:
-    participantData = participantsList[participantName]
-    participant = ParticipantFactory.getParticipant(participantData["solver"], participantName)
+interfaces_map = {}
+participants_list = config["participants"]
+for participant_name in participants_list:
+    participant_data = participants_list[participant_name]
+    participant = ParticipantFactory.get_participant(participant_data["solver"], participant_name)
     participants.append(participant)
-    for interfaceName in participantData["interfaces"]:
-        interface = participant.addInterface(interfaceName)
-        interfacesMap[interfaceName] = interface
+    for interface_name in participant_data["interfaces"]:
+        interface = participant.add_interface(interface_name)
+        interfaces_map[interface_name] = interface
 
-couplingsList = input["couplings"]
-for coupling in couplingsList:
-    interface1 = interfacesMap[coupling[0]]
-    interface2 = interfacesMap[coupling[1]]
-    interface1.setPartnerInterface(interface2)
+couplings_list = config["couplings"]
+for coupling in couplings_list:
+    interface1 = interfaces_map[coupling[0]]
+    interface2 = interfaces_map[coupling[1]]
+    interface1.set_partner_interface(interface2)
 
 couplings = []
 for i in range(len(participants)):
     for j in range(i, len(participants)):
-        if participants[i].hasInterfacesWith(participants[j]):
+        if participants[i].has_interfaces_with(participants[j]):
             couplings.append([participants[i], participants[j]])
 
 # Simulation parameters
 
-timestep = input["simulation"]["timestep"]
-maxTime = input["simulation"]["maxTime"]
-maxIterations = input["simulation"]["maxCouplingIterations"]
+time_step = config["simulation"]["time_step"]
+max_time = config["simulation"]["max_time"]
+max_iterations = config["simulation"]["max_coupling_iterations"]
 
 # Determine type of coupling configuration to be used
 
-config = CouplingConfiguration(
+coupling_config = CouplingConfiguration(
     couplings=couplings,
-    steadyState=input["simulation"]["steadyState"],
-    forceExplicit=input["simulation"]["forceExplicit"],
-    forceParallel=input["simulation"]["forceParallel"]
+    steady_state=config["simulation"]["steady_state"],
+    force_explicit=config["simulation"]["force_explicit"],
+    force_parallel=config["simulation"]["force_parallel"]
 )
 
 # --------------------------------------------------------------------------------
@@ -60,42 +58,43 @@ nsmap = {
     "m2n": "m2n",
     "master": "master"
 }
-preciceConfigurationTag = etree.Element("precice-configuration", nsmap=nsmap)
+precice_configuration_tag = etree.Element("precice-configuration", nsmap=nsmap)
 
 for participant in participants:
-    participant.addDataTagsTo(preciceConfigurationTag)
+    participant.add_data_tags_to(precice_configuration_tag)
 
 for participant in participants:
-    participant.addMeshTagsTo(preciceConfigurationTag)
+    participant.add_mesh_tags_to(precice_configuration_tag)
 
 for participant in participants:
-    participant.addParticipantTagTo(preciceConfigurationTag)
+    participant.add_participant_tag_to(precice_configuration_tag)
 
-if config.multi():
+if coupling_config.multi():
 
     # If multi, all couplings are treated together
-    couplingScheme = MultiCouplingScheme(timestep, maxTime, maxIterations, couplings)
+    couplingScheme = MultiCouplingScheme(time_step, max_time, max_iterations, couplings)
 
     # Add tags
-    couplingScheme.addM2nTagTo(preciceConfigurationTag)
-    couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
+    couplingScheme.add_m2n_tag_to(precice_configuration_tag)
+    couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
 
 else:
 
     # If not multi, couplings are treated per pair
-    for participantsPair in couplings:
+    for participants_pair in couplings:
 
         # Determine first and second participant
-        config.sortParticipants(participantsPair)
+        coupling_config.sort_participants(participants_pair)
 
         # Create implicit or explicit coupling scheme
-        if config.implicit():
-            couplingScheme = ImplicitCouplingScheme(timestep, maxTime, maxIterations, participantsPair, serial=config.serial())
+        if coupling_config.implicit():
+            couplingScheme = ImplicitCouplingScheme(time_step, max_time, max_iterations, participants_pair,
+                                                    serial=coupling_config.serial())
         else:
-            couplingScheme = CouplingScheme(timestep, maxTime, participantsPair, serial=config.serial())
+            couplingScheme = CouplingScheme(time_step, max_time, participants_pair, serial=coupling_config.serial())
 
         # Add tags
-        couplingScheme.addM2nTagTo(preciceConfigurationTag)
-        couplingScheme.addCouplingSchemeTagTo(preciceConfigurationTag)
+        couplingScheme.add_m2n_tag_to(precice_configuration_tag)
+        couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
 
-print etree.tostring(preciceConfigurationTag, pretty_print=True)
+print etree.tostring(precice_configuration_tag, pretty_print=True)
