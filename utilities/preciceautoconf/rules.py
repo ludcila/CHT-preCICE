@@ -3,7 +3,7 @@ import networkx as nx
 
 class CouplingConfiguration:
 
-    def __init__(self, couplings, steady_state, force_explicit, force_parallel):
+    def __init__(self, couplings, steady_state, force_explicit, force_parallel, time_step, max_time, max_iterations):
         self.steady_state = steady_state
         self.couplings = couplings
         self.force_explicit = force_explicit
@@ -11,6 +11,10 @@ class CouplingConfiguration:
         self.colors = None
         self.graph = None
         self.participants = None
+        self.time_step = time_step
+        self.max_time = max_time
+        self.max_iterations = max_iterations
+
         self.create_graph()
         self.get_participants_from_coupling()
 
@@ -37,25 +41,25 @@ class CouplingConfiguration:
         self.participants = list(set(self.participants))
 
     # Use explicit in steady state simulations or if specified by user
-    def explicit(self):
+    def is_explicit(self):
         return self.steady_state or self.force_explicit
 
     # Use implicit if not using explicit
-    def implicit(self):
-        return not self.explicit()
+    def is_implicit(self):
+        return not self.is_explicit()
 
     # Use parallel or multi if there are cyclic coupling dependencies
-    def parallel_or_multi(self):
+    def is_parallel_or_multi(self):
         return self.has_cycles() or self.force_parallel
 
     # Use multi for parallel implicit coupling between more than two participants
-    def multi(self):
-        return self.parallel_or_multi() and self.implicit() and len(self.participants) > 2
+    def is_multi(self):
+        return self.is_parallel_or_multi() and self.is_implicit() and len(self.participants) > 2
 
     # Use parallel, for parallel coupling between two participants, or explicit coupling between more than two
-    def parallel(self):
-        return self.parallel_or_multi() and not self.multi()
+    def is_parallel(self):
+        return self.is_parallel_or_multi() and not self.is_multi()
 
     # Use serial if not using multi or parallel
-    def serial(self):
-        return not self.multi() and not self.parallel()
+    def is_serial(self):
+        return not self.is_multi() and not self.is_parallel()

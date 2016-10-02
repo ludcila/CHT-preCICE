@@ -3,19 +3,21 @@ from lxml import etree
 
 class CouplingScheme(object):
     
-    def __init__(self, time_step, max_time, participants, serial=False):
-        self.time_step = time_step
-        self.max_time = max_time
+    def __init__(self, coupling_config, participants):
+        self.coupling_config = coupling_config
+        self.time_step = coupling_config.time_step
+        self.max_time = coupling_config.max_time
+        coupling_config.sort_participants(participants)
         self.participants = participants
-        self.serial = serial
-        if serial:
+        self.is_serial = coupling_config.is_serial()
+        if self.is_serial:
             self.serialOrParallel = "serial"
         else:
             self.serialOrParallel = "parallel"
-        self.explicitOrImplicit = "explicit" # Base class is explicit
+        self.explicit_or_implicit = "explicit" # Base class is explicit
 
     def get_coupling_scheme_name(self):
-        return self.serialOrParallel + "-" + self.explicitOrImplicit
+        return self.serialOrParallel + "-" + self.explicit_or_implicit
 
     def add_coupling_scheme_tag_to(self, parent):
         coupling_scheme_tag = etree.SubElement(parent, etree.QName("coupling-scheme", self.get_coupling_scheme_name()))
@@ -38,7 +40,7 @@ class CouplingScheme(object):
         interfaces = self.participants[0].get_interfaces_with(self.participants[1])
         for interface in interfaces:
             # First participant initializes the coupling data of the second participant only in a parallel scheme
-            interface.add_exchange_tags_to(parent, initialize=not self.serial)
+            interface.add_exchange_tags_to(parent, initialize=not self.is_serial)
             # Second participant initializes the coupling data of the first participant
             interface.partner_interface.add_exchange_tags_to(parent, initialize=True)
             interface.add_post_processing_data_tags_to(parent)
@@ -52,10 +54,10 @@ class CouplingScheme(object):
 
 class ImplicitCouplingScheme(CouplingScheme):
 
-    def __init__(self, time_step, max_time, max_iterations, participants, serial=False):
-        super(ImplicitCouplingScheme, self).__init__(time_step, max_time, participants, serial)
-        self.explicitOrImplicit = "implicit"
-        self.max_iterations = max_iterations
+    def __init__(self, coupling_config, participants):
+        super(ImplicitCouplingScheme, self).__init__(coupling_config, participants)
+        self.explicit_or_implicit = "implicit"
+        self.max_iterations = coupling_config.max_iterations
 
     def add_coupling_scheme_tag_to(self, parent):
         # If there are multiple interfaces between the two participants,
@@ -76,7 +78,7 @@ class ImplicitCouplingScheme(CouplingScheme):
         # each interface pair, so that post-processing can be applied to all the data
         pass
 
-    def getRelativeConvergenceMeasureTagsTo(self):
+    def get_relative_convergence_measures(self):
         pass
 
     def addmax_iterationsTagTo(self, parent):
@@ -88,7 +90,7 @@ class ImplicitCouplingScheme(CouplingScheme):
         post_processing.add_post_processing_tag_to(parent)
 
     def add_post_processing_data_tags_to(self, parent):
-        if self.serial:
+        if self.is_serial:
             pass
             # Apply post-processing only to the data from the second participant
             # etree.SubElement(parent, "data", name=self.participants[1].dataNameT, mesh=self.participants[1].writeMesh) # check
@@ -101,15 +103,15 @@ class ImplicitCouplingScheme(CouplingScheme):
 
 class MultiCouplingScheme(ImplicitCouplingScheme):
 
-    def __init__(self, time_step, max_time, max_iterations, participant_pairs, serial=False):
+    def __init__(self, coupling_config, participant_pairs):
         self.participant_pairs = participant_pairs
         self.participants = []
         for pair in self.participant_pairs:
             self.participants.append(pair[0])
             self.participants.append(pair[1])
         self.participants = list(set(self.participants))
-        super(MultiCouplingScheme, self).__init__(time_step, max_time, max_iterations, self.participants, False)
-        self.schemeName="multi"
+        super(MultiCouplingScheme, self).__init__(coupling_config, self.participants)
+        self.scheme_name = "multi"
 
     def get_coupling_scheme_name(self):
         return "multi"

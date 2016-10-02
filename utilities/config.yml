@@ -1,11 +1,11 @@
 simulation:
 
-    time_step: 10
-    max_time: 500
-    steady_state: False
-    force_explicit: False
-    force_parallel: False
-    max_coupling_iterations: 30
+    time-step: 10
+    max-time: 500
+    steady-state: True
+    force-explicit: False
+    force-parallel: True
+    max-coupling-iterations: 30
 
 
 participants:
@@ -13,25 +13,23 @@ participants:
     Inner-Fluid:
         solver: OpenFOAM
         interfaces:
-            - Inner-Fluid-to-Solid
+            - {name: Inner-Fluid-to-Solid, patches: [left-patch, right-patch]}
+        domain-decomposed: True
 
     Outer-Fluid:
         solver: OpenFOAM
         interfaces:
-            - Outer-Fluid-to-Solid
+            - {name: Outer-Fluid-to-Solid, patches: [interface]}
+        domain-decomposed: False
 
     Solid:
-        solver: CalculiX
+        solver: Code_Aster
         interfaces:
-            - Solid-to-Inner-Fluid
-            - Solid-to-Outer-Fluid
+            - {name: Solid-to-Inner-Fluid, patch: inner-interface}
+            - {name: Solid-to-Outer-Fluid, patch: outer-interface}
+        domain-decomposed: False
 
 
 couplings:
-
-    -
-        - Solid-to-Inner-Fluid
-        - Inner-Fluid-to-Solid
-    -
-        - Solid-to-Outer-Fluid
-        - Outer-Fluid-to-Solid
+    - [Solid-to-Inner-Fluid, Inner-Fluid-to-Solid]
+    - [Outer-Fluid-to-Solid, Solid-to-Outer-Fluid]

@@ -13,9 +13,12 @@ interfaces_map = {}
 participants_list = config["participants"]
 for participant_name in participants_list:
     participant_data = participants_list[participant_name]
-    participant = ParticipantFactory.get_participant(participant_data["solver"], participant_name)
+    participant = ParticipantFactory.get_participant(solver_type=participant_data["solver"],
+                                                     name=participant_name,
+                                                     domain_decomposed=participant_data["domain-decomposed"])
     participants.append(participant)
-    for interface_name in participant_data["interfaces"]:
+    for interface in participant_data["interfaces"]:
+        interface_name = interface["name"]
         interface = participant.add_interface(interface_name)
         interfaces_map[interface_name] = interface
 
@@ -31,19 +34,16 @@ for i in range(len(participants)):
         if participants[i].has_interfaces_with(participants[j]):
             couplings.append([participants[i], participants[j]])
 
-# Simulation parameters
-
-time_step = config["simulation"]["time_step"]
-max_time = config["simulation"]["max_time"]
-max_iterations = config["simulation"]["max_coupling_iterations"]
-
-# Determine type of coupling configuration to be used
+# Configure coupling
 
 coupling_config = CouplingConfiguration(
+    time_step=config["simulation"]["time-step"],
+    max_time=config["simulation"]["max-time"],
+    max_iterations=config["simulation"]["max-coupling-iterations"],
     couplings=couplings,
-    steady_state=config["simulation"]["steady_state"],
-    force_explicit=config["simulation"]["force_explicit"],
-    force_parallel=config["simulation"]["force_parallel"]
+    steady_state=config["simulation"]["steady-state"],
+    force_explicit=config["simulation"]["force-explicit"],
+    force_parallel=config["simulation"]["force-parallel"]
 )
 
 # --------------------------------------------------------------------------------
@@ -69,10 +69,10 @@ for participant in participants:
 for participant in participants:
     participant.add_participant_tag_to(precice_configuration_tag)
 
-if coupling_config.multi():
+if coupling_config.is_multi():
 
     # If multi, all couplings are treated together
-    couplingScheme = MultiCouplingScheme(time_step, max_time, max_iterations, couplings)
+    couplingScheme = MultiCouplingScheme(coupling_config, couplings)
 
     # Add tags
     couplingScheme.add_m2n_tag_to(precice_configuration_tag)
@@ -83,18 +83,21 @@ else:
     # If not multi, couplings are treated per pair
     for participants_pair in couplings:
 
-        # Determine first and second participant
-        coupling_config.sort_participants(participants_pair)
-
         # Create implicit or explicit coupling scheme
-        if coupling_config.implicit():
-            couplingScheme = ImplicitCouplingScheme(time_step, max_time, max_iterations, participants_pair,
-                                                    serial=coupling_config.serial())
+        if coupling_config.is_implicit():
+            couplingScheme = ImplicitCouplingScheme(coupling_config, participants_pair)
         else:
-            couplingScheme = CouplingScheme(time_step, max_time, participants_pair, serial=coupling_config.serial())
+            couplingScheme = CouplingScheme(coupling_config, participants_pair)
 
         # Add tags
         couplingScheme.add_m2n_tag_to(precice_configuration_tag)
         couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
 
 print etree.tostring(precice_configuration_tag, pretty_print=True)
+
+for participant in config["participants"]:
+    for interface in config["participants"][participant]["interfaces"]:
+        interface["read-mesh"] = interfaces_map[interface["name"]].read_mesh
+        interface["write-mesh"] = interfaces_map[interface["name"]].write_mesh
+
+print yaml.dump(config["participants"])

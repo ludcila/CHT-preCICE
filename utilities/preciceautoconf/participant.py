@@ -4,15 +4,15 @@ from interface import *
 
 class ParticipantFactory:
 
-    def get_participant(type, name, domain_decomposed=False):
-        if type == "OpenFOAM":
+    def get_participant(solver_type, name, domain_decomposed=False):
+        if solver_type == "OpenFOAM":
             return OpenFOAMParticipant(name, domain_decomposed)
-        elif type == "Code_Aster":
+        elif solver_type == "Code_Aster":
             return CodeAsterParticipant(name)
-        elif type == "CalculiX":
+        elif solver_type == "CalculiX":
             return CalculiXParticipant(name)
         else:
-            print "Participant of type", type, "is not implemented."
+            print "Participant of type", solver_type, "is not implemented."
             sys.exit(1)
 
     get_participant = staticmethod(get_participant)
