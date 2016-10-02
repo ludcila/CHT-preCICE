@@ -14,7 +14,7 @@ participants:
         solver: OpenFOAM
         interfaces:
             - {name: Inner-Fluid-to-Solid, patches: [left-patch, right-patch]}
-        domain-decomposed: True
+        domain-decomposed: False
 
     Outer-Fluid:
         solver: OpenFOAM
