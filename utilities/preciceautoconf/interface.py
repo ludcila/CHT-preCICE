@@ -45,9 +45,10 @@ class Interface(object):
     def add_read_write_mapping_tags_to(self, parent):
         etree.SubElement(parent, "write-data", name=self.participant.data_name_T, mesh=self.write_mesh)
         etree.SubElement(parent, "write-data", name=self.participant.data_name_HTC, mesh=self.write_mesh)
-        etree.SubElement(parent, "read-data", name=self.participant.data_name_T, mesh=self.read_mesh)
-        etree.SubElement(parent, "read-data", name=self.participant.data_name_HTC, mesh=self.read_mesh)
-        e = etree.SubElement(parent, etree.QName("mapping", "nearest-neighbor"), direction="read", to=self.read_mesh)
+        etree.SubElement(parent, "read-data", name=self.partner_interface.participant.data_name_T, mesh=self.read_mesh)
+        etree.SubElement(parent, "read-data", name=self.partner_interface.participant.data_name_HTC, mesh=self.read_mesh)
+        e = etree.SubElement(parent, etree.QName("mapping", "nearest-neighbor"),
+                             direction="read", to=self.read_mesh, constraint="consistent")
         e.set("from", self.partner_interface.write_mesh)
 
     def add_exchange_tags_to(self, parent, initialize=False):

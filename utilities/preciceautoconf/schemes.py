@@ -28,7 +28,7 @@ class CouplingScheme(object):
         return coupling_scheme_tag
 
     def add_time_step_tag_to(self, parent):
-        etree.SubElement(parent, "time_step-length", value=str(self.time_step))
+        etree.SubElement(parent, "timestep-length", value=str(self.time_step))
 
     def add_max_time_tag_to(self, parent):
         etree.SubElement(parent, "max-time", value=str(self.max_time))
@@ -67,6 +67,8 @@ class ImplicitCouplingScheme(CouplingScheme):
             coupling_scheme_tag = super(ImplicitCouplingScheme, self).add_coupling_scheme_tag_to(parent)
             interface.add_exchange_tags_to(coupling_scheme_tag, initialize=not self.is_serial)
             interface.partner_interface.add_exchange_tags_to(coupling_scheme_tag, initialize=True)
+            self.add_relative_convergence_measure_tags(coupling_scheme_tag, interface)
+            self.add_relative_convergence_measure_tags(coupling_scheme_tag, interface.partner_interface)
             self.add_max_iterations_tag_to(coupling_scheme_tag)
             self.add_post_processing_tag_to(coupling_scheme_tag, interface)
 
@@ -77,11 +79,14 @@ class ImplicitCouplingScheme(CouplingScheme):
         # each interface pair, so that post-processing can be applied to all the data
         pass
 
-    def get_relative_convergence_measures(self):
-        pass
+    def add_relative_convergence_measure_tags(self, parent, interface=None):
+        etree.SubElement(parent, "relative-convergence-measure",
+                         data=interface.participant.data_name_T,
+                         mesh=interface.write_mesh,
+                         suffices="0",
+                         limit="1e-6")
 
     def add_max_iterations_tag_to(self, parent):
-        print self.max_iterations
         etree.SubElement(parent, "max-iterations", value=str(self.max_iterations))
 
     def add_post_processing_tag_to(self, parent, interface=None):
@@ -90,7 +95,7 @@ class ImplicitCouplingScheme(CouplingScheme):
         if self.is_serial:
             post_processing.add_post_processing_data_tags_to(post_processing_tag, interface.partner_interface)
         else:
-            post_processing.add_post_processing_data_tags_to(post_processing_tag, interface.interface)
+            post_processing.add_post_processing_data_tags_to(post_processing_tag, interface)
             post_processing.add_post_processing_data_tags_to(post_processing_tag, interface.partner_interface)
 
 
@@ -147,23 +152,29 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
 
 class IQNILSPostProcessing:
 
-    def __init__(self, coupling_config, interface=None, participant_pairs=None, initial_relaxation=1.0, max_used_iterations=100):
+    def __init__(self, coupling_config, interface=None, participant_pairs=None,
+                 initial_relaxation=1.0, max_used_iterations=100, timesteps_reused=10):
         self.interface = interface
         self.participant_pairs = participant_pairs
         self.coupling_config = coupling_config
         self.initial_relaxation = initial_relaxation
         self.max_used_iterations = max_used_iterations
+        self.timesteps_reused = timesteps_reused
 
     def add_post_processing_tag_to(self, parent):
         e = etree.SubElement(parent, etree.QName("post-processing", "IQN-ILS"))
         self.add_initial_relaxation_tag_to(e)
         self.add_max_used_iterations_tag(e)
+        self.add_timesteps_reused_tag(e)
         self.add_filter_tag_to(e)
         self.add_preconditioner_tag_to(e)
         return e
 
     def add_max_used_iterations_tag(self, parent):
         etree.SubElement(parent, "max-used-iterations", value=str(self.max_used_iterations))
+
+    def add_timesteps_reused_tag(self, parent):
+        etree.SubElement(parent, "timesteps-reused", value=str(self.timesteps_reused))
 
     def add_initial_relaxation_tag_to(self, parent):
         etree.SubElement(parent, "initial-relaxation", value=str(self.initial_relaxation))
