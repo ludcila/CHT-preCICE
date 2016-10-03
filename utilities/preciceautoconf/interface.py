@@ -52,12 +52,14 @@ class Interface(object):
 
     def add_exchange_tags_to(self, parent, initialize=False):
         # From me to partner
-        e = etree.SubElement(parent, "exchange", data=self.participant.data_name_T, mesh=self.write_mesh, to=self.partner_interface.participant.name)
+        e = etree.SubElement(parent, "exchange", data=self.participant.data_name_T, mesh=self.write_mesh)
         e.set("from", self.participant.name)
+        e.set("to", self.partner_interface.participant.name)
         if initialize:
             e.set("initialize", "yes")
-        e = etree.SubElement(parent, "exchange", data=self.participant.data_name_HTC, mesh=self.write_mesh, to=self.partner_interface.participant.name)
+        e = etree.SubElement(parent, "exchange", data=self.participant.data_name_HTC, mesh=self.write_mesh)
         e.set("from", self.participant.name)
+        e.set("to", self.partner_interface.participant.name)
         if initialize:
             e.set("initialize", "yes")
 
