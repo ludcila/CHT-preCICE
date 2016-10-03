@@ -136,10 +136,10 @@ int main(int argc, char *argv[])
             } else if(dataName.compare("Heat-Flux") == 0) {
                 ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.find("kDelta-OF") == 0) {
+            } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
                 ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.find("kDelta-Temperature-OF") == 0) {
+            } else if(dataName.find("Sink-Temperature") == 0) {
                 ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else {
@@ -157,10 +157,10 @@ int main(int argc, char *argv[])
             } else if(dataName.compare("Heat-Flux") == 0) {
                 ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.find("kDelta-CCX") == 0) {
+            } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
                 ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.find("kDelta-Temperature-CCX") == 0) {
+            } else if(dataName.find("Sink-Temperature") == 0) {
                 ofcoupler::RefTemperatureBoundaryCondition * br = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else {
@@ -248,14 +248,6 @@ int main(int argc, char *argv[])
                 turbulence->alphat()().correctBoundaryConditions();
                 alphat_checkpoint = turbulence->alphat()();
             }
-            
-
-            if(solverDt.value() == preciceDt) {
-                std::cout << "No subcycling" << std::endl;
-            } else {
-                std::cout << "Subcycling" << std::endl;
-            }
-
             precice.fulfilledAction(cowic);
         }
 
@@ -328,16 +320,8 @@ int main(int argc, char *argv[])
                 turbulence->alphat()() = alphat_checkpoint;
                 turbulence->alphat()().correctBoundaryConditions();
             }
-            
-            if(noSubcycling) {
-                std::cout << "No subcycling" << std::endl;
-            } else {
-                std::cout << "Subcycling..." << std::endl;
-                // Reload all fields
-            }
 
             std::cout << "Reset time = " << couplingIterationTimeValue << " (" << couplingIterationTimeIndex << ")" << std::endl;
-
 
             precice.fulfilledAction(coric);
 
