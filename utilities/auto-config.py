@@ -5,13 +5,17 @@ from preciceautoconf.rules import *
 from preciceautoconf.schemes import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config-file", default="config.yml")
+parser.add_argument("--input-config", default="config.yml")
+parser.add_argument("--output-xml-config", default="precice-config.xml")
+parser.add_argument("--output-yml-config", default="config.yml.out")
 args = parser.parse_args()
-config_file_name = args.config_file
+input_file_name = args.input_config
+output_xml_file_name = args.output_xml_config
+output_yml_file_name = args.output_yml_config
 
 # Create participants and couplings from YAML file
 
-config_file = open(config_file_name)
+config_file = open(input_file_name)
 config = yaml.load(config_file.read())
 
 participants = []
@@ -53,7 +57,7 @@ coupling_config = CouplingConfiguration(
 )
 
 # --------------------------------------------------------------------------------
-#   Create XML tree
+#   Create XML file
 # --------------------------------------------------------------------------------
 
 nsmap = {
@@ -99,11 +103,33 @@ else:
         couplingScheme.add_m2n_tag_to(precice_configuration_tag)
         couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
 
-print etree.tostring(precice_configuration_tag, pretty_print=True)
+output_xml_file = open(output_xml_file_name, "w")
+output_xml_file.write(etree.tostring(precice_configuration_tag, pretty_print=True))
+output_xml_file.close()
 
+# --------------------------------------------------------------------------------
+#   Create YAML file
+# --------------------------------------------------------------------------------
+
+# To the original config.yml file, we append the mesh and data names
+config["precice-config-file"] = output_xml_file_name
 for participant in config["participants"]:
-    for interface in config["participants"][participant]["interfaces"]:
-        interface["read-mesh"] = interfaces_map[interface["name"]].read_mesh
-        interface["write-mesh"] = interfaces_map[interface["name"]].write_mesh
+    for interface_config in config["participants"][participant]["interfaces"]:
+        interface = interfaces_map[interface_config["name"]]
+        if interface.read_mesh == interface.write_mesh:
+            interface_config["mesh"] = interface.read_mesh
+        else:
+            interface_config["read-mesh"] = interface.read_mesh
+            interface_config["write-mesh"] = interface.write_mesh
+        interface_config["write-data"] = [interface.participant.data_name_T,
+                                          interface.participant.data_name_HTC]
+        interface_config["read-data"] = [interface.partner_interface.participant.data_name_T,
+                                         interface.partner_interface.participant.data_name_HTC]
 
-print yaml.dump(config["participants"])
+output_yml_file = open(output_yml_file_name, "w")
+output_yml_file.write(yaml.dump(config))
+output_yml_file.close()
+
+print "Input YML file:", input_file_name
+print "Output XML file:", output_xml_file_name
+print "Output YML file:", output_yml_file_name
