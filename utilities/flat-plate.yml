@@ -1,0 +1,27 @@
+simulation:
+
+    time-step: 0.01
+    max-time: 50
+    steady-state: False
+    force-explicit: False
+    force-parallel: True
+    max-coupling-iterations: 30
+
+
+participants:
+
+    Fluid:
+        solver: OpenFOAM
+        interfaces:
+            - {name: Fluid-to-Solid, patches: [interface]}
+        domain-decomposed: False
+
+    Solid:
+        solver: CalculiX
+        interfaces:
+            - {name: Solid-to-Fluid, patch: interface}
+        domain-decomposed: False
+
+
+couplings:
+    - [Fluid-to-Solid, Solid-to-Fluid]
