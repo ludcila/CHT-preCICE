@@ -35,7 +35,6 @@ EXE_LIBS = \
     -lboost_filesystem \
 	-lpython2.7 \
 	-L/usr/local/yaml-cpp/build \
-	-L$(HOME)/Thesis/OFCoupler/build \
 	-lyaml-cpp
 
 
