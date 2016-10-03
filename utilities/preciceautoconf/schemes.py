@@ -14,7 +14,7 @@ class CouplingScheme(object):
             self.serial_or_parallel = "serial"
         else:
             self.serial_or_parallel = "parallel"
-        self.explicit_or_implicit = "explicit" # Base class is explicit
+        self.explicit_or_implicit = "explicit"  # Base class is explicit
 
     def get_coupling_scheme_name(self):
         return self.serial_or_parallel + "-" + self.explicit_or_implicit
@@ -65,8 +65,8 @@ class ImplicitCouplingScheme(CouplingScheme):
         interfaces = self.participants[0].get_interfaces_with(self.participants[1])
         for interface in interfaces:
             coupling_scheme_tag = super(ImplicitCouplingScheme, self).add_coupling_scheme_tag_to(parent)
-            interface.add_exchange_tags_to(coupling_scheme_tag)
-            interface.partner_interface.add_exchange_tags_to(coupling_scheme_tag)
+            interface.add_exchange_tags_to(coupling_scheme_tag, initialize=not self.is_serial)
+            interface.partner_interface.add_exchange_tags_to(coupling_scheme_tag, initialize=True)
             self.add_max_iterations_tag_to(coupling_scheme_tag)
             self.add_post_processing_tag_to(coupling_scheme_tag, interface)
 
