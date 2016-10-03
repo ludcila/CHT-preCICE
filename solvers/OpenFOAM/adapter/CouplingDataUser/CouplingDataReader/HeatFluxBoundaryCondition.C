@@ -17,7 +17,7 @@ void ofcoupler::HeatFluxBoundaryCondition::read(double * dataBuffer)
         forAll(gradientPatch, i) {
             gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / _k;
         }
-        Info << gradientPatch << endl;
+        // Info << gradientPatch << endl;
 
     }
 

@@ -27,7 +27,7 @@ void ofcoupler::TemperatureBoundaryCondition::read(double * dataBuffer)
         }
         refCast<fixedValueFvPatchScalarField>(_T.boundaryField()[patchID]) == temperatureField;
 
-        Info << "Temperature" << temperatureField << endl;
+        // Info << "Temperature" << temperatureField << endl;
 
     }
 
