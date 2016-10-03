@@ -17,14 +17,11 @@ void ofcoupler::BuoyantPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
 
         int patchID = _patchIDs.at(k);
 
-        scalarField flux = - _turbulence->alphaEff()().boundaryField()[patchID]
-                * _thermo.Cp()().boundaryField()[patchID]
+        scalarField flux = - _turbulence->kappaEff()().boundaryField()[patchID]
                 * refCast<fixedValueFvPatchScalarField>(_T.boundaryField()[patchID]).snGrad();
-
-        std::cout << "Flux" << std::endl;
+                
         forAll(flux, i) {
             dataBuffer[bufferIndex++] = flux[i];
-            std::cout << flux[i] << std::endl;
         }
 
     }
