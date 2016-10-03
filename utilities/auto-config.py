@@ -69,15 +69,16 @@ nsmap = {
     "master": "master"
 }
 precice_configuration_tag = etree.Element("precice-configuration", nsmap=nsmap)
+solver_interface_tag = etree.SubElement(precice_configuration_tag, "solver-interface", dimensions="3")
 
 for participant in participants:
-    participant.add_data_tags_to(precice_configuration_tag)
+    participant.add_data_tags_to(solver_interface_tag)
 
 for participant in participants:
-    participant.add_mesh_tags_to(precice_configuration_tag)
+    participant.add_mesh_tags_to(solver_interface_tag)
 
 for participant in participants:
-    participant.add_participant_tag_to(precice_configuration_tag)
+    participant.add_participant_tag_to(solver_interface_tag)
 
 if coupling_config.is_multi():
 
@@ -85,8 +86,8 @@ if coupling_config.is_multi():
     couplingScheme = MultiCouplingScheme(coupling_config, couplings)
 
     # Add tags
-    couplingScheme.add_m2n_tag_to(precice_configuration_tag)
-    couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
+    couplingScheme.add_m2n_tag_to(solver_interface_tag)
+    couplingScheme.add_coupling_scheme_tag_to(solver_interface_tag)
 
 else:
 
@@ -100,8 +101,8 @@ else:
             couplingScheme = CouplingScheme(coupling_config, participants_pair)
 
         # Add tags
-        couplingScheme.add_m2n_tag_to(precice_configuration_tag)
-        couplingScheme.add_coupling_scheme_tag_to(precice_configuration_tag)
+        couplingScheme.add_m2n_tag_to(solver_interface_tag)
+        couplingScheme.add_coupling_scheme_tag_to(solver_interface_tag)
 
 output_xml_file = open(output_xml_file_name, "w")
 output_xml_file.write(etree.tostring(precice_configuration_tag, pretty_print=True))
