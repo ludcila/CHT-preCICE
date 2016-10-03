@@ -68,7 +68,10 @@ nsmap = {
     "m2n": "m2n",
     "master": "master"
 }
+
 precice_configuration_tag = etree.Element("precice-configuration", nsmap=nsmap)
+etree.SubElement(precice_configuration_tag, "log-filter", target="info", component="", switch="on")
+
 solver_interface_tag = etree.SubElement(precice_configuration_tag, "solver-interface", dimensions="3")
 
 for participant in participants:
@@ -104,8 +107,15 @@ else:
         couplingScheme.add_m2n_tag_to(solver_interface_tag)
         couplingScheme.add_coupling_scheme_tag_to(solver_interface_tag)
 
+xml_string = etree.tostring(precice_configuration_tag, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+# Remove xmlns:* attributes which are not recognized by preCICE
+from_index = xml_string.find("<precice-configuration")
+to_index = xml_string.find(">", from_index)
+xml_string = xml_string[0:from_index] + "<precice-configuration>" + xml_string[to_index+1:]
+
 output_xml_file = open(output_xml_file_name, "w")
-output_xml_file.write(etree.tostring(precice_configuration_tag, pretty_print=True))
+output_xml_file.write(xml_string)
 output_xml_file.close()
 
 # --------------------------------------------------------------------------------
