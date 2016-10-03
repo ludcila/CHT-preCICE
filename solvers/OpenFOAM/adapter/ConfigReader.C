@@ -7,28 +7,28 @@ void ofcoupler::ConfigReader::checkFields(std::string filename, YAML::Node & con
         std::cerr << "ERROR in " << filename << ": precice-config-file not specified\n";
         exit(1);
     }
-    if(!config[participantName]) {
+    if(!config["participants"][participantName]) {
         std::cerr << "ERROR in " << filename << ": participant " << participantName << " not found in the YAML config file\n";
         exit(1);
     } else {
-        if(!config[participantName]["coupled-surfaces"]) {
-            std::cerr << "ERROR in " << filename << ": coupled-surfaces not specified for participant\n" << participantName;
+        if(!config["participants"][participantName]["interfaces"]) {
+            std::cerr << "ERROR in " << filename << ": interfaces not specified for participant\n" << participantName;
             exit(1);
         } else {
-            for(int i = 0; i < config[participantName]["coupled-surfaces"].size(); i++) {
-                if(!config[participantName]["coupled-surfaces"][i]["mesh-name"]) {
-                    std::cerr << "ERROR in " << filename << ": mesh-name not specified\n";
+            for(int i = 0; i < config["participants"][participantName]["interfaces"].size(); i++) {
+                if(!config["participants"][participantName]["interfaces"][i]["mesh"]) {
+                    std::cerr << "ERROR in " << filename << ": mesh not specified\n";
                     exit(1);
                 }
-                if(!config[participantName]["coupled-surfaces"][i]["patch-names"]) {
-                    std::cerr << "ERROR in " << filename << ": patch-names not specified\n";
+                if(!config["participants"][participantName]["interfaces"][i]["patches"]) {
+                    std::cerr << "ERROR in " << filename << ": patches not specified\n";
                     exit(1);
                 }
-                if(!config[participantName]["coupled-surfaces"][i]["write-data"]) {
+                if(!config["participants"][participantName]["interfaces"][i]["write-data"]) {
                     std::cerr << "ERROR in " << filename << ": write-data not specified\n";
                     exit(1);
                 }
-                if(!config[participantName]["coupled-surfaces"][i]["read-data"]) {
+                if(!config["participants"][participantName]["interfaces"][i]["read-data"]) {
                     std::cerr << "ERROR in " << filename << ": read-data not specified\n";
                     exit(1);
                 }
@@ -46,22 +46,34 @@ ofcoupler::ConfigReader::ConfigReader(std::string configFile, std::string partic
 
     _preciceConfigFilename = config["precice-config-file"].as<std::string>();
 
-    YAML::Node configInterfaces = config[participantName]["coupled-surfaces"];
+    YAML::Node configInterfaces = config["participants"][participantName]["interfaces"];
 
     for(int i = 0; i < configInterfaces.size(); i++) {
         struct Interface interface;
-        interface.meshName = configInterfaces[i]["mesh-name"].as<std::string>();
-        for(int j = 0; j < configInterfaces[i]["patch-names"].size(); j++) {
-            interface.patchNames.push_back(configInterfaces[i]["patch-names"][j].as<std::string>());
+        interface.meshName = configInterfaces[i]["mesh"].as<std::string>();
+        for(int j = 0; j < configInterfaces[i]["patches"].size(); j++) {
+            interface.patchNames.push_back(configInterfaces[i]["patches"][j].as<std::string>());
         }
         if(configInterfaces[i]["write-data"]) {
-            for(int j = 0; j < configInterfaces[i]["write-data"].size(); j++) {
-                interface.writeData.push_back(configInterfaces[i]["write-data"][j].as<std::string>());
+            if(configInterfaces[i]["write-data"].size() > 0) {
+                // write-data is an array
+                for(int j = 0; j < configInterfaces[i]["write-data"].size(); j++) {
+                    interface.writeData.push_back(configInterfaces[i]["write-data"][j].as<std::string>());
+                }
+            } else {
+                // write-data is a string
+                interface.writeData.push_back(configInterfaces[i]["write-data"].as<std::string>());
             }
         }
         if(configInterfaces[i]["read-data"]) {
-            for(int j = 0; j < configInterfaces[i]["read-data"].size(); j++) {
-                interface.readData.push_back(configInterfaces[i]["read-data"][j].as<std::string>());
+            if(configInterfaces[i]["read-data"].size() > 0) {
+                // read-data is an array
+                for(int j = 0; j < configInterfaces[i]["read-data"].size(); j++) {
+                    interface.readData.push_back(configInterfaces[i]["read-data"][j].as<std::string>());
+                }
+            } else {
+                // read-data is a string
+                interface.readData.push_back(configInterfaces[i]["read-data"].as<std::string>());
             }
         }
         _interfaces.push_back(interface);
