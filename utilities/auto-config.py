@@ -1,11 +1,17 @@
 import yaml
+import argparse
 from preciceautoconf.participant import *
 from preciceautoconf.rules import *
 from preciceautoconf.schemes import *
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--config-file", default="config.yml")
+args = parser.parse_args()
+config_file_name = args.config_file
+
 # Create participants and couplings from YAML file
 
-config_file = open("config.yml")
+config_file = open(config_file_name)
 config = yaml.load(config_file.read())
 
 participants = []
