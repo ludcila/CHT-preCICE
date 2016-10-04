@@ -172,7 +172,7 @@ while precice.isCouplingOngoing():
                filename = "output-" + str(k) + ".rmed"
                DEFI_FICHIER(FICHIER=filename, UNITE=80)
                IMPR_RESU(FORMAT='MED', RESU=_F(RESULTAT=TEMP));
-               call(["mv", filename, settings["base-path"] + "/" + participant["output-directory"]])
+               call(["mv", filename, settings["base-path"] + "/" + participant["directory"]])
                DEFI_FICHIER(ACTION='LIBERER', UNITE=80)
                
         k = k + 1
