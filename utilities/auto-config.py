@@ -30,9 +30,7 @@ interfaces_map = {}
 participants_list = config["participants"]
 for participant_name in participants_list:
     participant_data = participants_list[participant_name]
-    participant = ParticipantFactory.get_participant(solver_type=participant_data["solver"],
-                                                     name=participant_name,
-                                                     domain_decomposed=participant_data["domain-decomposed"])
+    participant = ParticipantFactory.get_participant(name=participant_name, data=participant_data)
     participants.append(participant)
     for interface in participant_data["interfaces"]:
         interface_name = interface["name"]
@@ -167,3 +165,5 @@ for participant in participants:
         output_comm_file.close()
         logging.info("Output .comm file:\t" + output_comm_file_name)
         break
+
+s

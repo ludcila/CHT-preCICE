@@ -1,18 +1,19 @@
+import logging
 import sys
 from interface import *
 
 
 class ParticipantFactory:
 
-    def get_participant(solver_type, name, domain_decomposed=False):
-        if solver_type == "OpenFOAM":
-            return OpenFOAMParticipant(name, domain_decomposed)
-        elif solver_type == "Code_Aster":
-            return CodeAsterParticipant(name)
-        elif solver_type == "CalculiX":
-            return CalculiXParticipant(name)
+    def get_participant(name, data):
+        if data["solver"] == "OpenFOAM":
+            return OpenFOAMParticipant(name, data)
+        elif data["solver"] == "Code_Aster":
+            return CodeAsterParticipant(name, data)
+        elif data["solver"] == "CalculiX":
+            return CalculiXParticipant(name, data)
         else:
-            print "Participant of type", solver_type, "is not implemented."
+            print "Participant of type", data["solver"], "is not implemented."
             sys.exit(1)
 
     get_participant = staticmethod(get_participant)
@@ -20,12 +21,13 @@ class ParticipantFactory:
 
 class Participant(object):
 
-    def __init__(self, name, domain_decomposed=False):
+    def __init__(self, name, data):
         self.name = name
+        self.populate_data(data)
         self.interfaces = []
+        self.domain_decomposed = None
         self.data_name_T = "Sink-Temperature-" + self.name
         self.data_name_HTC = "Heat-Transfer-Coefficient-" + self.name
-        self.domain_decomposed = domain_decomposed
 
     def add_data_tags_to(self, parent):
         etree.SubElement(parent, etree.QName("data", "scalar"), name=self.data_name_HTC)
@@ -54,11 +56,21 @@ class Participant(object):
     def has_interfaces_with(self, partner):
         return len(self.get_interfaces_with(partner)) > 0
 
+    def populate_data(self, data):
+        # Check and populate basic data that all participants should have
+        try:
+            self.domain_decomposed = data["domain-decomposed"]
+            data["interfaces"]
+            data["directory"]
+        except Exception as e:
+            logging.error(str(e) + " attribute not provided for participant " + self.name)
+            sys.exit(1)
+
 
 class OpenFOAMParticipant(Participant):
 
-    def __init__(self, name, domain_decomposed=False):
-        super(OpenFOAMParticipant, self).__init__(name, domain_decomposed)
+    def __init__(self, name, data):
+        super(OpenFOAMParticipant, self).__init__(name, data)
         self.solver_type = "OpenFOAM"
 
     def add_interface(self, name=None):
@@ -69,8 +81,8 @@ class OpenFOAMParticipant(Participant):
 
 class CalculiXParticipant(Participant):
 
-    def __init__(self, name, domain_decomposed=False):
-        super(CalculiXParticipant, self).__init__(name, domain_decomposed)
+    def __init__(self, name, data):
+        super(CalculiXParticipant, self).__init__(name, data)
         self.solver_type = "CalculiX"
 
     def add_interface(self, name=None):
@@ -81,11 +93,26 @@ class CalculiXParticipant(Participant):
 
 class CodeAsterParticipant(Participant):
 
-    def __init__(self, name, domain_decomposed=False):
-        super(CodeAsterParticipant, self).__init__(name, domain_decomposed)
+    def __init__(self, name, data):
+        super(CodeAsterParticipant, self).__init__(name, data)
         self.solver_type = "Code_Aster"
 
     def add_interface(self, name=None):
         interface = CodeAsterInterface(self, name)
         self.interfaces.append(interface)
         return interface
+
+    def populate_data(self, data):
+
+        try:
+            data["non-linear"]
+        except Exception as e:
+            logging.error(str(e) + " attribute not provided for Code_Aster participant " + self.name)
+            sys.exit(1)
+
+        for interface in data["interfaces"]:
+            try:
+                    interface["material-id"]
+            except Exception as e:
+                logging.error(str(e) + " attribute not provided for an interface of Code_Aster participant " + self.name)
+                sys.exit(1)
