@@ -5,13 +5,13 @@ from interface import *
 
 class ParticipantFactory:
 
-    def get_participant(name, data):
+    def get_participant(name, data, steady_state=False):
         if data["solver"] == "OpenFOAM":
-            return OpenFOAMParticipant(name, data)
+            return OpenFOAMParticipant(name, data, steady_state)
         elif data["solver"] == "Code_Aster":
-            return CodeAsterParticipant(name, data)
+            return CodeAsterParticipant(name, data, steady_state)
         elif data["solver"] == "CalculiX":
-            return CalculiXParticipant(name, data)
+            return CalculiXParticipant(name, data, steady_state)
         else:
             logging.error("Participant of type", data["solver"], "is not implemented.")
             sys.exit(1)
@@ -21,11 +21,13 @@ class ParticipantFactory:
 
 class Participant(object):
 
-    def __init__(self, name, data):
+    def __init__(self, name, data, steady_state):
         self.name = name
-        self.populate_data(data)
+        self.steady_state = steady_state
         self.interfaces = []
+        self.directory = None
         self.domain_decomposed = None
+        self.populate_data(data)
         self.data_name_T = "Sink-Temperature-" + self.name
         self.data_name_HTC = "Heat-Transfer-Coefficient-" + self.name
 
@@ -60,8 +62,8 @@ class Participant(object):
         # Check and populate basic data that all participants should have
         try:
             self.domain_decomposed = data["domain-decomposed"]
+            self.directory = data["directory"]
             data["interfaces"]
-            data["directory"]
         except Exception as e:
             logging.error(str(e) + " attribute not provided for participant " + self.name)
             sys.exit(1)
@@ -69,8 +71,8 @@ class Participant(object):
 
 class OpenFOAMParticipant(Participant):
 
-    def __init__(self, name, data):
-        super(OpenFOAMParticipant, self).__init__(name, data)
+    def __init__(self, name, data, steady_state):
+        super(OpenFOAMParticipant, self).__init__(name, data, steady_state)
         self.solver_type = "OpenFOAM"
 
     def add_interface(self, name=None):
@@ -78,11 +80,18 @@ class OpenFOAMParticipant(Participant):
         self.interfaces.append(interface)
         return interface
 
+    def get_run_command(self):
+        if self.steady_state:
+            solver = "buoyantSimpleFoam_preCICE"
+        else:
+            solver = "buoyantPimpleFoam_preCICE"
+        return solver + " -case " + self.directory + " -precice-participant " + self.name  + " > " + self.name + ".log &"
+
 
 class CalculiXParticipant(Participant):
 
-    def __init__(self, name, data):
-        super(CalculiXParticipant, self).__init__(name, data)
+    def __init__(self, name, data, steady_state):
+        super(CalculiXParticipant, self).__init__(name, data, steady_state)
         self.solver_type = "CalculiX"
 
     def add_interface(self, name=None):
@@ -90,11 +99,15 @@ class CalculiXParticipant(Participant):
         self.interfaces.append(interface)
         return interface
 
+    def get_run_command(self):
+        # Todo: check default name of .inp file!
+        return "ccx -i " + self.directory + "/solid -precice-participant " + self.name + " > " + self.name + ".log &"
+
 
 class CodeAsterParticipant(Participant):
 
-    def __init__(self, name, data):
-        super(CodeAsterParticipant, self).__init__(name, data)
+    def __init__(self, name, data, steady_state):
+        super(CodeAsterParticipant, self).__init__(name, data, steady_state)
         self.solver_type = "Code_Aster"
 
     def add_interface(self, name=None):
@@ -118,3 +131,7 @@ class CodeAsterParticipant(Participant):
             except Exception as e:
                 logging.error(str(e) + " attribute not provided for an interface of Code_Aster participant " + self.name)
                 sys.exit(1)
+
+    def get_run_command(self):
+        # Todo: check default name of .export file!
+        return "export PRECICE_PARTICIPANT=" + self.name + "; as_run --run " + self.directory + "/solid.export > " + self.name + ".log &"
