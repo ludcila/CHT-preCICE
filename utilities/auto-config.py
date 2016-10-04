@@ -21,7 +21,7 @@ args = parser.parse_args()
 input_file_name = args.input_config
 output_xml_file_name = args.output_xml_config
 output_yml_file_name = args.output_yml_config
-output_comm_file_name = args.output_yml_config
+output_comm_file_name = args.output_comm_config
 output_sh_file_name = args.output_sh
 
 # Create participants and couplings from YAML file
