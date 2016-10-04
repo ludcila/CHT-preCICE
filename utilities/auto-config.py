@@ -9,14 +9,16 @@ from preciceautoconf.schemes import *
 log_level = getattr(logging, "INFO", None)
 logging.basicConfig(level=log_level)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--input-config", default="config.yml.org")
-parser.add_argument("--output-xml-config", default="precice-config.xml")
-parser.add_argument("--output-yml-config", default="config.yml")
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--input-config", default="config.yml.org", help="Name of the input YML file")
+parser.add_argument("--output-xml-config", default="precice-config.xml", help="Name of the output XML file")
+parser.add_argument("--output-yml-config", default="config.yml", help="Name of the output YML file")
+parser.add_argument("--output-comm-config", default="config.comm", help="Name of the output .comm file")
 args = parser.parse_args()
 input_file_name = args.input_config
 output_xml_file_name = args.output_xml_config
 output_yml_file_name = args.output_yml_config
+output_comm_file_name = args.output_yml_config
 
 # Create participants and couplings from YAML file
 
@@ -159,7 +161,6 @@ logging.info("Input XML file:\t" + output_xml_file_name)
 
 for participant in participants:
     if participant.solver_type == "Code_Aster":
-        output_comm_file_name = "config.comm"
         output_comm_file = open(output_comm_file_name, "w")
         output_comm_file.write("settings = \\\n")
         pprint.pprint(config, output_comm_file)
