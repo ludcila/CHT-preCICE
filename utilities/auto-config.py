@@ -28,6 +28,7 @@ output_sh_file_name = args.output_sh
 
 config_file = open(input_file_name)
 config = yaml.load(config_file.read())
+logging.info("Input YML file:\t" + input_file_name)
 
 participants = []
 interfaces_map = {}
@@ -130,6 +131,7 @@ xml_string = xml_string[0:from_index] + "<precice-configuration>" + xml_string[t
 output_xml_file = open(output_xml_file_name, "w")
 output_xml_file.write(xml_string)
 output_xml_file.close()
+logging.info("Output XML file:\t" + output_xml_file_name)
 
 # --------------------------------------------------------------------------------
 #   Create YAML file
@@ -153,11 +155,7 @@ for participant in config["participants"]:
 output_yml_file = open(output_yml_file_name, "w")
 output_yml_file.write(yaml.dump(config))
 output_yml_file.close()
-
-logging.info("Input YML file:\t" + input_file_name)
 logging.info("Output YML file:\t" + output_yml_file_name)
-logging.info("Output XML file:\t" + output_xml_file_name)
-
 
 # --------------------------------------------------------------------------------
 #   Create .comm file(s) for Code_Aster participant(s)
@@ -175,6 +173,7 @@ for participant in participants:
 # --------------------------------------------------------------------------------
 #   Create run.sh
 # --------------------------------------------------------------------------------
+
 output_sh_file = open(output_sh_file_name, "w")
 for participant in participants:
     output_sh_file.write(participant.get_run_command() + "\n")
