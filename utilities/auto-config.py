@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import logging
 import yaml
 import pprint
@@ -154,7 +156,7 @@ output_yml_file.close()
 
 logging.info("Input YML file:\t" + input_file_name)
 logging.info("Output YML file:\t" + output_yml_file_name)
-logging.info("Input XML file:\t" + output_xml_file_name)
+logging.info("Output XML file:\t" + output_xml_file_name)
 
 
 # --------------------------------------------------------------------------------
