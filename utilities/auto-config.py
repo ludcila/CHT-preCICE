@@ -10,9 +10,9 @@ log_level = getattr(logging, "INFO", None)
 logging.basicConfig(level=log_level)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--input-config", default="config.yml")
+parser.add_argument("--input-config", default="config.yml.org")
 parser.add_argument("--output-xml-config", default="precice-config.xml")
-parser.add_argument("--output-yml-config", default="config.yml.out")
+parser.add_argument("--output-yml-config", default="config.yml")
 args = parser.parse_args()
 input_file_name = args.input_config
 output_xml_file_name = args.output_xml_config
@@ -149,7 +149,7 @@ output_yml_file.write(yaml.dump(config))
 output_yml_file.close()
 
 logging.info("Input YML file:\t" + input_file_name)
-logging.info("Input YML file:\t" + output_yml_file_name)
+logging.info("Output YML file:\t" + output_yml_file_name)
 logging.info("Input XML file:\t" + output_xml_file_name)
 
 
