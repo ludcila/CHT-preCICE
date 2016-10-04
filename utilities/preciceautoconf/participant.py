@@ -83,7 +83,7 @@ class CodeAsterParticipant(Participant):
 
     def __init__(self, name, domain_decomposed=False):
         super(CodeAsterParticipant, self).__init__(name, domain_decomposed)
-        self.solver_type = "CodeAster"
+        self.solver_type = "Code_Aster"
 
     def add_interface(self, name=None):
         interface = CodeAsterInterface(self, name)
