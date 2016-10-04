@@ -175,7 +175,12 @@ for participant in participants:
 # --------------------------------------------------------------------------------
 
 output_sh_file = open(output_sh_file_name, "w")
+i = 0
 for participant in participants:
     output_sh_file.write(participant.get_run_command() + "\n")
+    output_sh_file.write("pid" + str(i) + "=$!\n\n")
+    i += 1
+for j in range(i):
+    output_sh_file.write("wait $pid" + str(j) + "\n")
 output_sh_file.close()
 logging.info("Output .sh file:\t" + output_sh_file_name)
