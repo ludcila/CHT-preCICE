@@ -1,8 +1,13 @@
+import logging
 import yaml
+import pprint
 import argparse
 from preciceautoconf.participant import *
 from preciceautoconf.rules import *
 from preciceautoconf.schemes import *
+
+log_level = getattr(logging, "INFO", None)
+logging.basicConfig(level=log_level)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input-config", default="config.yml")
@@ -89,7 +94,8 @@ if coupling_config.is_multi():
     couplingScheme = MultiCouplingScheme(coupling_config, couplings)
 
     # Add tags
-    couplingScheme.add_m2n_tag_to(solver_interface_tag)
+    couplingScheme.add_m2n_tag_to(solver_interface_tag,
+                                  exchange_directory="." if "base-path" not in config else config["base-path"])
     couplingScheme.add_coupling_scheme_tag_to(solver_interface_tag)
 
 else:
@@ -104,7 +110,8 @@ else:
             couplingScheme = CouplingScheme(coupling_config, participants_pair)
 
         # Add tags
-        couplingScheme.add_m2n_tag_to(solver_interface_tag)
+        couplingScheme.add_m2n_tag_to(solver_interface_tag,
+                                      exchange_directory="." if "base-path" not in config else config["base-path"])
         couplingScheme.add_coupling_scheme_tag_to(solver_interface_tag)
 
 xml_string = etree.tostring(precice_configuration_tag, pretty_print=True, xml_declaration=True, encoding="UTF-8")
@@ -141,6 +148,21 @@ output_yml_file = open(output_yml_file_name, "w")
 output_yml_file.write(yaml.dump(config))
 output_yml_file.close()
 
-print "Input YML file:", input_file_name
-print "Output XML file:", output_xml_file_name
-print "Output YML file:", output_yml_file_name
+logging.info("Input YML file:\t" + input_file_name)
+logging.info("Input YML file:\t" + output_yml_file_name)
+logging.info("Input XML file:\t" + output_xml_file_name)
+
+
+# --------------------------------------------------------------------------------
+#   Create .comm file(s) for Code_Aster participant(s)
+# --------------------------------------------------------------------------------
+
+for participant in participants:
+    if participant.solver_type == "Code_Aster":
+        output_comm_file_name = "config.comm"
+        output_comm_file = open(output_comm_file_name, "w")
+        output_comm_file.write("settings = \\\n")
+        pprint.pprint(config, output_comm_file)
+        output_comm_file.close()
+        logging.info("Output .comm file:\t" + output_comm_file_name)
+        break
