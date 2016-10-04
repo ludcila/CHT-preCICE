@@ -13,7 +13,7 @@ class ParticipantFactory:
         elif data["solver"] == "CalculiX":
             return CalculiXParticipant(name, data)
         else:
-            print "Participant of type", data["solver"], "is not implemented."
+            logging.error("Participant of type", data["solver"], "is not implemented.")
             sys.exit(1)
 
     get_participant = staticmethod(get_participant)
@@ -103,6 +103,8 @@ class CodeAsterParticipant(Participant):
         return interface
 
     def populate_data(self, data):
+
+        super(CodeAsterParticipant, self).populate_data(data)
 
         try:
             data["non-linear"]
