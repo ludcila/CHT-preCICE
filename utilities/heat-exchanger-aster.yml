@@ -1,0 +1,41 @@
+base-path: "/home/lcheung/Thesis/precice-cases/heat-exchanger-aster"
+
+simulation:
+
+    time-step: 1
+    max-time: 500
+    steady-state: True
+    force-explicit: False
+    force-parallel: True
+    max-coupling-iterations: 30
+
+    output-frequency: 10
+
+
+participants:
+
+    Inner-Fluid:
+        solver: OpenFOAM
+        interfaces:
+            - {name: Inner-Fluid-to-Solid, patches: [interface]}
+        domain-decomposed: False
+
+    Outer-Fluid:
+        solver: OpenFOAM
+        interfaces:
+            - {name: Outer-Fluid-to-Solid, patches: [interface]}
+        domain-decomposed: False
+
+    Solid:
+        solver: Code_Aster
+        non-linear: False
+        interfaces:
+            - {name: Solid-to-Inner-Fluid, patch: inner, material-id: 0}
+            - {name: Solid-to-Outer-Fluid, patch: outer, material-id: 0}
+        domain-decomposed: False
+        output-directory: solid
+
+
+couplings:
+    - [Inner-Fluid-to-Solid, Solid-to-Inner-Fluid]
+    - [Outer-Fluid-to-Solid, Solid-to-Outer-Fluid]
