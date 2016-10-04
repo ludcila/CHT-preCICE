@@ -44,9 +44,10 @@ class CouplingScheme(object):
             # Second participant initializes the coupling data of the first participant
             interface.partner_interface.add_exchange_tags_to(parent, initialize=True)
 
-    def add_m2n_tag_to(self, parent, type="sockets"):
+    def add_m2n_tag_to(self, parent, type="sockets", exchange_directory="."):
         e = etree.SubElement(parent, etree.QName("m2n", type), to=self.participants[1].name)
         e.set("from", self.participants[0].name)
+        e.set("exchange-directory", exchange_directory)
         if self.participants[0].domain_decomposed or self.participants[1].domain_decomposed:
             e.set("distribution-type", "scatter-gather")
 
@@ -133,10 +134,11 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
                 interface.add_exchange_tags_to(parent, initialize=True)
                 interface.partner_interface.add_exchange_tags_to(parent, initialize=True)
 
-    def add_m2n_tag_to(self, parent, type="sockets"):
+    def add_m2n_tag_to(self, parent, type="sockets", exchange_directory="."):
         for participants in self.participant_pairs:
             e = etree.SubElement(parent, etree.QName("m2n", type), to=participants[1].name)
             e.set("from", participants[0].name)
+            e.set("exchange-directory", exchange_directory)
             if participants[0].domain_decomposed or participants[1].domain_decomposed:
                 e.set("distribution-type", "scatter-gather")
 
