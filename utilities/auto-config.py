@@ -14,11 +14,13 @@ parser.add_argument("--input-config", default="config.yml.org", help="Name of th
 parser.add_argument("--output-xml-config", default="precice-config.xml", help="Name of the output XML file")
 parser.add_argument("--output-yml-config", default="config.yml", help="Name of the output YML file")
 parser.add_argument("--output-comm-config", default="config.comm", help="Name of the output .comm file")
+parser.add_argument("--output-sh", default="run.sh", help="Name of the output .sh file")
 args = parser.parse_args()
 input_file_name = args.input_config
 output_xml_file_name = args.output_xml_config
 output_yml_file_name = args.output_yml_config
 output_comm_file_name = args.output_yml_config
+output_sh_file_name = args.output_sh
 
 # Create participants and couplings from YAML file
 
@@ -30,7 +32,9 @@ interfaces_map = {}
 participants_list = config["participants"]
 for participant_name in participants_list:
     participant_data = participants_list[participant_name]
-    participant = ParticipantFactory.get_participant(name=participant_name, data=participant_data)
+    participant = ParticipantFactory.get_participant(name=participant_name,
+                                                     data=participant_data,
+                                                     steady_state=config["simulation"]["steady-state"])
     participants.append(participant)
     for interface in participant_data["interfaces"]:
         interface_name = interface["name"]
@@ -166,4 +170,11 @@ for participant in participants:
         logging.info("Output .comm file:\t" + output_comm_file_name)
         break
 
-s
+# --------------------------------------------------------------------------------
+#   Create run.sh
+# --------------------------------------------------------------------------------
+output_sh_file = open(output_sh_file_name, "w")
+for participant in participants:
+    output_sh_file.write(participant.get_run_command() + "\n")
+output_sh_file.close()
+logging.info("Output .sh file:\t" + output_sh_file_name)
