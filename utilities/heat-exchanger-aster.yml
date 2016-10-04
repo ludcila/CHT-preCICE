@@ -19,12 +19,14 @@ participants:
         interfaces:
             - {name: Inner-Fluid-to-Solid, patches: [interface]}
         domain-decomposed: False
+        directory: inner-fluid
 
     Outer-Fluid:
         solver: OpenFOAM
         interfaces:
             - {name: Outer-Fluid-to-Solid, patches: [interface]}
         domain-decomposed: False
+        directory: outer-fluid
 
     Solid:
         solver: Code_Aster
@@ -33,7 +35,7 @@ participants:
             - {name: Solid-to-Inner-Fluid, patch: inner, material-id: 0}
             - {name: Solid-to-Outer-Fluid, patch: outer, material-id: 0}
         domain-decomposed: False
-        output-directory: solid
+        directory: solid
 
 
 couplings:
