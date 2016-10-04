@@ -23,13 +23,18 @@ class CouplingConfiguration:
         [self.graph.add_edge(pair[0], pair[1]) for pair in self.couplings]
         self.colors = nx.coloring.greedy_color(self.graph, strategy=nx.coloring.strategy_largest_first)
 
+    # Cycles can cause deadlocks if the coupling scheme is not configured appropriately
+    # If there are cycles, parallel coupling will be used
     def has_cycles(self):
+        """Determines whether the coupling dependency graph contains cycles"""
         return len(nx.cycle_basis(self.graph)) > 0
 
     def get_colors(self):
+        """Returns the graph coloring"""
         return self.colors
 
     def sort_participants(self, participants):
+        """Determines first and second participant in the coupling, based on the graph coloring"""
         if self.get_colors()[participants[0]] == 1:
             participants.reverse()
 
