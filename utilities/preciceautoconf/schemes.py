@@ -122,6 +122,11 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
         coupling_scheme_tag = super(ImplicitCouplingScheme, self).add_coupling_scheme_tag_to(parent)
         self.add_max_iterations_tag_to(coupling_scheme_tag)
         self.add_post_processing_tag_to(coupling_scheme_tag)
+        for participants in self.participant_pairs:
+            interfaces = participants[0].get_interfaces_with(participants[1])
+            for interface in interfaces:
+                self.add_relative_convergence_measure_tags(coupling_scheme_tag, interface)
+                self.add_relative_convergence_measure_tags(coupling_scheme_tag, interface.partner_interface)
 
     def add_coupling_participant_tags_to(self, parent):
         for participant in self.participants:
