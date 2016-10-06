@@ -18,7 +18,7 @@
 !
       subroutine getflux(co,ntmat_,vold,
      &  cocon,ncocon,iset,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,nset,ielmat,mi,flux)
+     &  ialset,ielmat,mi,flux)
 !
 !     calculation and printout of the lift and drag forces
 !
@@ -29,7 +29,7 @@
       integer konl(20),ifaceq(8,6),nelem,ii,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,
+     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),
      &  mi(*),ielmat(mi(3),*),fidx
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),

@@ -95,6 +95,14 @@ ITG nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
 double fei[3],*xmodal=NULL,timepar[5],
     alpha,ttime=0.,qaold[2]={0.,0.},physcon[10]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
+/* 
+ * Additional variables for the coupling with preCICE 
+ * preCICE is used only if a participant name is provided as a command line argument!
+*/
+char preciceParticipantName[256] = "", preciceConfigFilename[256] = "config.yml";
+int preciceUsed = 0;
+
+
 #ifdef CALCULIX_MPI
 MPI_Init(&argc, &argv) ;
 MPI_Comm_rank(MPI_COMM_WORLD, &myid) ;
@@ -114,8 +122,18 @@ else{
   if(jin==0){strcpy(jobnamec,argv[1]);strcpy1(jobnamef,argv[1],132);}
 
   for(i=1;i<argc;i++){
-    if(strcmp1(argv[i],"-o")==0) {
-    strcpy(output,argv[i+1]);break;}
+	  if(strcmp1(argv[i],"-o")==0) {
+		strcpy(output,argv[i+1]);
+	  }
+	  // Get preCICE participantName
+	  if(strcmp1(argv[i],"-precice-participant")==0) {
+		strcpy(preciceParticipantName,argv[i+1]);
+		preciceUsed = 1;
+	  }
+	  // Overwrite YAML config file name
+	  if(strcmp1(argv[i],"-precice-config")==0) {
+		strcpy(preciceConfigFilename,argv[i+1]);
+	  }
   }
 }
 
@@ -133,7 +151,7 @@ printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Do 9. Jun 12:43:41 CEST 2016\n");
+printf("You are using an executable made on Di 10. Mai 14:57:10 CEST 2016\n");
 fflush(stdout);
 
 istep=0;
@@ -1039,6 +1057,51 @@ while(istat>=0) {
   /* nmethod=10: electromagnetic eigenvalue problems */
   /* nmethod=11: superelement creation */
   /* nmethod=12: sensitivity analysis  */
+  
+  if(preciceUsed) {
+	  
+	  int isStaticOrDynamic = (nmethod == 1) || (nmethod == 4);
+	  int isThermalAnalysis = ithermal[0] >= 2;
+	  
+	  if(isStaticOrDynamic && isThermalAnalysis) {
+		  
+		  printf("Starting CHT analysis via preCICE...\n");
+		  
+		  mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
+		  mpcinfo[3]=maxlenmpc;
+	  
+		  nonlingeo_precice(&co,&nk,&kon,&ipkon,&lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
+			   &ipompc,&nodempc,&coefmpc,&labmpc,&nmpc,nodeforc,ndirforc,xforc,
+				   &nforc,&nelemload,&sideload,xload,&nload, 
+			   nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,&ikmpc, 
+			   &ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
+			   alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
+				   t0,t1,t1old,ithermal,prestr,&iprestr, 
+			   &vold,iperturb,sti,nzs,&kode,filab,&idrct,jmax,
+			   jout,timepar,eme,xbounold,xforcold,xloadold,
+			   veold,accold,amname,amta,namta,
+			   &nam,iamforc,&iamload,iamt1,&alpha,
+				   &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
+			   &xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
+			   &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
+			   mpcinfo,output,
+				   shcon,nshcon,cocon,ncocon,physcon,&nflow,ctrl,
+				   set,&nset,istartset,iendset,ialset,&nprint,prlab,
+				   prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
+				   cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
+			   &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke,
+			   ics,&nintpoint,&mortar,
+			   &ifacecount,typeboun,&islavsurf,&pslavsurf,&clearini,&nmat,
+			   xmodal,&iaxial,&inext,preciceParticipantName,preciceConfigFilename);
+	  
+		  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
+			  maxlenmpc=mpcinfo[3];
+			  
+	  } else {
+		  printf("ERROR: Only thermal coupling is available with preCICE (use *HEAT TRANSFER)");
+		  exit(0);
+	  }
+  }
      
 
   if((nmethod<=1)||(nmethod==11)||((iperturb[0]>1)&&(nmethod<8)))

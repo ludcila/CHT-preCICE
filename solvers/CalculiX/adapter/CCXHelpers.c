@@ -71,11 +71,26 @@ void getNodeTemperatures(ITG * nodes, ITG numNodes, double * v, int mt, double *
 
 }
 
+/*
+int getNodesPerFace(char * lakon, int elementIdx) {
+	
+	int nodesPerFace;
+	if(strcmp1(&lakon[elementIdx * 8], "C3D4") == 0) {
+		nodesPerFace = 3;
+	} else if(strcmp1(&lakon[elementIdx * 8], "C3D10") == 0) {
+		nodesPerFace = 6;	
+	}
+	return nodesPerFace;
+	
+}	
+*/
+
 void getTetraFaceCenters(ITG * elements, ITG * faces, ITG numElements, ITG * kon, ITG * ipkon, double * co, double * faceCenters) {
 
 	// Assume all tetra elements -- maybe implement checking later...
 
 	// Node numbering for faces of tetrahedral elements (in the documentation the number is + 1)
+	// Numbering is the same for first and second order elements
 	int faceNodes[4][3] = { {0,1,2}, {0,3,1}, {1,3,2}, {2,3,0} };
 
 	ITG i, j;
@@ -105,6 +120,16 @@ void getTetraFaceCenters(ITG * elements, ITG * faces, ITG numElements, ITG * kon
 
 }
 
+/*
+void getSurfaceGaussPoints(int setID, ITG * co, ITG istartset, ITG iendset, ITG * ipkon, ITG * lakon, ITG * kon, ITG * ialset, double * coords) {
+	
+	int iset = setID + 1; // plus one because of fortran indices
+	FORTRAN(getgausspointscoords,(co,&iset,istartset,iendset,ipkon,lakon,kon,ialset, coords));
+
+}
+*/
+
+
 void getTetraFaceNodes(ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, int * tetraFaceNodes) {
 
 	// Assume all tetra elements -- maybe implement checking later...
@@ -118,7 +143,6 @@ void getTetraFaceNodes(ITG * elements, ITG * faces, ITG * nodes, ITG numElements
 
 		ITG faceIdx = faces[i] - 1;
 		ITG elementIdx = elements[i] - 1;
-		double x = 0, y = 0, z = 0;
 
 		for(j = 0; j < 3; j++) {
 

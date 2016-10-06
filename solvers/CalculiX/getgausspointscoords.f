@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine getkdeltatemp(co,ntmat_,vold,
-     &  cocon,ncocon,iset,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,ielmat,mi,kdelta,reftemp)
+      subroutine getgausspointscoords(co,
+     &  iset,istartset,iendset,ipkon,lakon,kon,
+     &  ialset)
 !
 !     calculation and printout of the lift and drag forces
 !
@@ -27,19 +27,18 @@
       character*8 lakonl,lakon(*)
 !
       integer konl(20),ifaceq(8,6),nelem,ii,i,j,i1,i2,j1,
-     &  ncocon(2,*),k1,jj,ig,ntmat_,nope,nopes,imat,
+     &  k1,jj,ig,nope,nopes,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,
-     &  mi(*),ielmat(mi(3),*),fidx
+     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),
+     &  fidx
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),
      &  vkl(0:3,3),t(3,3),div,
-     &  voldl(0:mi(2),20),cocon(0:6,ntmat_,*),xl2(3,8),xsj2(3),
-     &  shp2(7,8),vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
+     &  xl2(3,8),xsj2(3),
+     &  shp2(7,8),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
      &  xlocal20(3,9,6),xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),pres,
-     &  tf(0:3),tn,tt,dd,coords(3),cond, kdelta(*), reftemp(*), 
-     &  avgkdelta, avgreftemp
+     &  tf(0:3),tn,tt,dd,coords(3)
 !
       include "gauss.f"
       include "xlocal.f"
@@ -80,7 +79,6 @@
                ig=jface-10*nelem
                lakonl=lakon(nelem)
                indexe=ipkon(nelem)
-               imat=ielmat(1,nelem) ! what is this?
 !     
                if(lakonl(4:4).eq.'2') then
                   nope=20
@@ -132,15 +130,6 @@
                   enddo
                enddo
 !     
-!     temperature, velocity and auxiliary variables
-!     (rho*energy density, rho*velocity and rho)
-!     
-               do i1=1,nope
-                  do i2=0,mi(2)
-                     voldl(i2,i1)=vold(i2,konl(i1))
-                  enddo
-               enddo
-!     
 !     treatment of wedge faces
 !     
                if(lakonl(4:4).eq.'6') then
@@ -181,13 +170,6 @@
                   enddo
                endif
 !     
-
-
-
-!			very simple averaging over the integration points!!
-!			TODO: check whether this needs to be improved!
-               avgkdelta=0
-			   avgreftemp=0
 
 
                do i=1,mint2d
@@ -242,95 +224,12 @@
                         coords(j1)=coords(j1)+shp2(4,i1)*xl2(j1,i1)
                      enddo
                   enddo
-!     
-!     local coordinates of the surface integration
-!     point within the element local coordinate system
-!     
-                  if(lakonl(4:5).eq.'8R') then
-                     xi3d=xlocal8r(1,i,ig)
-                     et3d=xlocal8r(2,i,ig)
-                     ze3d=xlocal8r(3,i,ig)
-                     call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'8') then
-                     xi3d=xlocal8(1,i,ig)
-                     et3d=xlocal8(2,i,ig)
-                     ze3d=xlocal8(3,i,ig)
-                     call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:6).eq.'20R') then
-                     xi3d=xlocal8(1,i,ig)
-                     et3d=xlocal8(2,i,ig)
-                     ze3d=xlocal8(3,i,ig)
-                     call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'2') then
-                     xi3d=xlocal20(1,i,ig)
-                     et3d=xlocal20(2,i,ig)
-                     ze3d=xlocal20(3,i,ig)
-                     call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:5).eq.'10') then
-                     xi3d=xlocal10(1,i,ig)
-                     et3d=xlocal10(2,i,ig)
-                     ze3d=xlocal10(3,i,ig)
-                     call shape10tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'4') then
-                     xi3d=xlocal4(1,i,ig)
-                     et3d=xlocal4(2,i,ig)
-                     ze3d=xlocal4(3,i,ig)
-                     call shape4tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:5).eq.'15') then
-                     xi3d=xlocal15(1,i,ig)
-                     et3d=xlocal15(2,i,ig)
-                     ze3d=xlocal15(3,i,ig)
-                     call shape15w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'6') then
-                     xi3d=xlocal6(1,i,ig)
-                     et3d=xlocal6(2,i,ig)
-                     ze3d=xlocal6(3,i,ig)
-                     call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  endif
-!     
-!     calculating of
-!     the temperature temp
-!     in the integration point
-!     
+                  
+                  print *, coords(1), coords(2), coords(3)
 
-                  temp=0.d0
-                  do j1=1,3
-                     vkl(0,j1)=0.d0
-                  enddo
-                  do i1=1,nope
-                     temp=temp+shp(4,i1)*voldl(0,i1)
-                     do k1=1,3
-                        vkl(0,k1)=vkl(0,k1)+shp(k1,i1)*voldl(0,i1)
-                     enddo
-                  enddo
 !     
-!     material data (conductivity)
-!     
-                  call materialdata_cond(imat,ntmat_,temp,cocon,
-     &                    ncocon,cond)
-!     
-!     determining the stress 
-!     
-                  dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
-     &                    xsj2(3)*xsj2(3))
-!
-                  tf(0)=-cond*(vkl(0,1)*xsj2(1)+
-     &                            vkl(0,2)*xsj2(2)+
-     &                            vkl(0,3)*xsj2(3))
-                  f(0)=f(0)+tf(0)*weight
-                  tf(0)=tf(0)/dd
-!                  dd = .1;
-!				  print *, temp, tf(0), dd, temp+tf(0)/cond
-                  avgreftemp = avgreftemp + (temp + tf(0) / cond * dd)
-                  avgkdelta = avgkdelta + cond / dd
-!     
-!                  print *, fidx, avgreftemp, avgkdelta, tf(0), cond
                enddo
 			   
-               reftemp(fidx) = avgreftemp / mint2d
-               kdelta(fidx) = avgkdelta / mint2d
-			   
-               fidx=fidx+1
 			   
             enddo
 !

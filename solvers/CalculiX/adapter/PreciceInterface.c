@@ -8,9 +8,9 @@ void PreciceInterface_Setup(char * configFilename, char * participantName, struc
 {
 	char * preciceConfigFilename;
 
-	CoupledSurfaceConfig * coupledSurfaces;
+	InterfaceConfig * interfaces;
 
-	ConfigReader_Read(configFilename, participantName, &preciceConfigFilename, &coupledSurfaces, numPreciceInterfaces);
+	ConfigReader_Read("config.yml", participantName, &preciceConfigFilename, &interfaces, numPreciceInterfaces);
 	precicec_createSolverInterface(participantName, preciceConfigFilename, 0, 1);
 
 	*preciceInterfaces = (struct PreciceInterface **) malloc(*numPreciceInterfaces * sizeof(struct PreciceInterface *)); // TODO: free memory
@@ -18,64 +18,26 @@ void PreciceInterface_Setup(char * configFilename, char * participantName, struc
 	int i;
 	for(i = 0; i < *numPreciceInterfaces; i++) {
 		(*preciceInterfaces)[i] = malloc(sizeof(struct PreciceInterface));
-		PreciceInterface_CreateInterface((*preciceInterfaces)[i], ccx, coupledSurfaces[i]);
+		PreciceInterface_CreateInterface((*preciceInterfaces)[i], ccx, &interfaces[i]);
 	}
 }
 
-void PreciceInterface_CreateInterface(struct PreciceInterface * interface, struct CalculiXData ccx, const CoupledSurfaceConfig config) {
+void PreciceInterface_CreateInterface(struct PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config) {
 
-	interface->name = config.patchNames[0];
+	interface->name = config->patchName;
 
 	// Nodes mesh
-	interface->nodesMeshName = config.nodesMeshName;
-	interface->hasNodesMesh = config.hasNodesMesh;
+	interface->nodesMeshName = config->nodesMeshName;
 	PreciceInterface_ConfigureNodesMesh(interface, ccx);
 
 	// Face centers mesh
-	interface->faceCentersMeshName = config.facesMeshName;
-	interface->hasFaceCentersMesh = config.hasFacesMesh;
+	interface->faceCentersMeshName = config->facesMeshName;
 	PreciceInterface_ConfigureFaceCentersMesh(interface, ccx);
 
 	// Triangles of the nodes mesh (needs to be called after the face centers mesh is configured!)
 	PreciceInterface_ConfigureTetraFaces(interface, ccx);
 
-	// Configure read data (boundary conditions to be read from preCICE)
-	int i = 0;
-	for(i = 0; i < config.numReadData; i++) {
-		if(strcmp(config.readData[i], "Temperature") == 0) {
-			interface->xbounIndices = malloc(interface->numNodes * sizeof(int));
-			getXbounIndices(interface->nodeIDs, interface->numNodes, ccx.nboun, ccx.ikboun, ccx.ilboun, interface->xbounIndices);	
-		} else if(strcmp(config.readData[i], "Heat-Flux") == 0) {
-			interface->xloadIndices = malloc(interface->numElements * sizeof(int));
-			getXloadIndices("DFLUX", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
-		} else if(strcmp(config.readData[i], "Sink-Temperature") == 0 || strcmp(config.readData[i], "Heat-Transfer-Coefficient") == 0) {
-			interface->xloadIndices = malloc(interface->numElements * sizeof(int));
-			getXloadIndices("FILM", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
-		}
-	}
-	// Configure write data (boundary values to be sent to preCICE)
-	for(i = 0; i < config.numWriteData; i++) {
-		
-	}
-	
-	if(strcmp(config.readDataName, "Temperature") == 0) {
-		interface->readData = TEMPERATURE;
-	} else if(strcmp(config.readDataName, "Heat-Flux") == 0) {
-		interface->readData = HEAT_FLUX;
-	} else if(strcmp(config.readDataName, "Sink-Temperature") == 0) {
-		interface->readData = SINK_TEMPERATURE;
-	} else if(strcmp(config.readDataName, "kDelta-Temperature") == 0) {
-		interface->readData = KDELTA_TEMPERATURE;
-	}
-	
-	if(strcmp(config.writeDataName, "Temperature") == 0) {
-		interface->writeData = TEMPERATURE;
-	} else if(strcmp(config.writeDataName, "Heat-Flux") == 0) {
-		interface->writeData = HEAT_FLUX;
-	} else if(strcmp(config.writeDataName, "kDelta-Temperature") == 0) {
-		interface->writeData = KDELTA_TEMPERATURE;
-	}
-	PreciceInterface_ConfigureHeatTransferData(interface, ccx);
+	PreciceInterface_ConfigureHeatTransferData(interface, ccx, config);
 
 }
 
@@ -92,12 +54,10 @@ void PreciceInterface_ConfigureFaceCentersMesh(struct PreciceInterface * interfa
 	interface->faceCenterCoordinates = malloc(interface->numElements * 3 * sizeof(double));
 	getTetraFaceCenters(interface->elementIDs, interface->faceIDs, interface->numElements, ccx.kon, ccx.ipkon, ccx.co, interface->faceCenterCoordinates);
 
-	if(interface->hasFaceCentersMesh){
-		interface->faceCentersMeshID = precicec_getMeshID(interface->faceCentersMeshName);
-		interface->preciceFaceCenterIDs = malloc(interface->numElements * sizeof(int));
-		precicec_setMeshVertices(interface->faceCentersMeshID, interface->numElements, interface->faceCenterCoordinates, interface->preciceFaceCenterIDs);
-	}
-	
+	interface->faceCentersMeshID = precicec_getMeshID(interface->faceCentersMeshName);
+	interface->preciceFaceCenterIDs = malloc(interface->numElements * sizeof(int));
+	precicec_setMeshVertices(interface->faceCentersMeshID, interface->numElements, interface->faceCenterCoordinates, interface->preciceFaceCenterIDs);
+
 }
 
 void PreciceInterface_ConfigureNodesMesh(struct PreciceInterface * interface, struct CalculiXData ccx) {
@@ -109,60 +69,84 @@ void PreciceInterface_ConfigureNodesMesh(struct PreciceInterface * interface, st
 
 	interface->nodeCoordinates = malloc(interface->numNodes * 3 * sizeof(double));
 	getNodeCoordinates(interface->nodeIDs, interface->numNodes, ccx.co, interface->nodeCoordinates);
-
-	if(interface->hasNodesMesh) {
+	
+	if(interface->nodesMeshName != NULL) {
 		interface->nodesMeshID = precicec_getMeshID(interface->nodesMeshName);
 		interface->preciceNodeIDs = malloc(interface->numNodes * sizeof(int));
-		precicec_setMeshVertices(interface->nodesMeshID, interface->numNodes, interface->nodeCoordinates, interface->preciceNodeIDs);
+		precicec_setMeshVertices(interface->nodesMeshID, interface->numNodes, interface->nodeCoordinates, interface->preciceNodeIDs);		
 	}
 	
 }
 
 void PreciceInterface_ConfigureTetraFaces(struct PreciceInterface * interface, struct CalculiXData ccx) {
-	if(interface->nodesMeshName) {
+	int i;
+	if(interface->nodesMeshName != NULL) {
 		interface->triangles = malloc(interface->numElements * 3 * sizeof(ITG));
 		getTetraFaceNodes(interface->elementIDs, interface->faceIDs,  interface->nodeIDs, interface->numElements, interface->numNodes, ccx.kon, ccx.ipkon, interface->triangles);
-		int i;
 		for(i = 0; i < interface->numElements; i++) {
 			precicec_setMeshTriangleWithEdges(interface->nodesMeshID, interface->triangles[3*i], interface->triangles[3*i+1], interface->triangles[3*i+2]);
 		}
 	}
 }
 
-
-void PreciceInterface_ConfigureHeatTransferData(struct PreciceInterface * interface, struct CalculiXData ccx) {
+void PreciceInterface_ConfigureHeatTransferData(struct PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config) {
 	
 	interface->nodeData = malloc(interface->numNodes * sizeof(double));
 	interface->faceCenterData = malloc(interface->numElements * sizeof(double));
 	
-	// Get the indices where the boundary conditions must be set
-	if(interface->readData == TEMPERATURE) {
-	} else if(interface->readData == HEAT_FLUX) {
-	} else if(interface->readData == SINK_TEMPERATURE) {
-		interface->xloadIndices = malloc(interface->numElements * sizeof(int));
-		getXloadIndices("FILM", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
-	} else if(interface->readData == KDELTA_TEMPERATURE) {
-		interface->xloadIndices = malloc(interface->numElements * sizeof(int));
-		getXloadIndices("FILM", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
+	int i;
+	for(i = 0; i < config->numReadData; i++) {
+		if(strcmp(config->readDataNames[i], "Temperature") == 0) {
+			interface->readData = TEMPERATURE;
+			interface->xbounIndices = malloc(interface->numNodes * sizeof(int));
+			interface->temperatureDataID = precicec_getDataID("Temperature", interface->nodesMeshID);
+			getXbounIndices(interface->nodeIDs, interface->numNodes, ccx.nboun, ccx.ikboun, ccx.ilboun, interface->xbounIndices);	
+			printf("Read data '%s' found.\n", config->readDataNames[i]);
+			break;
+		} else if (strcmp(config->readDataNames[i], "Heat-Flux") == 0) {
+			interface->readData = HEAT_FLUX;
+			interface->xloadIndices = malloc(interface->numElements * sizeof(int));
+			getXloadIndices("DFLUX", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
+			interface->fluxDataID = precicec_getDataID("Heat-Flux", interface->faceCentersMeshID);
+			printf("Read data '%s' found.\n", config->readDataNames[i]);
+			break;
+		} else if (strcmp1(config->readDataNames[i], "Sink-Temperature-") == 0) {
+			interface->readData = KDELTA_TEMPERATURE;
+			interface->xloadIndices = malloc(interface->numElements * sizeof(int));
+			getXloadIndices("FILM", interface->elementIDs, interface->faceIDs, interface->numElements, ccx.nload, ccx.nelemload, ccx.sideload, interface->xloadIndices);
+			interface->kDeltaTemperatureReadDataID = precicec_getDataID(config->readDataNames[i], interface->faceCentersMeshID);
+			printf("Read data '%s' found.\n", config->readDataNames[i]);
+		} else if (strcmp1(config->readDataNames[i], "Heat-Transfer-Coefficient-") == 0) {
+			interface->kDeltaReadDataID = precicec_getDataID(config->readDataNames[i], interface->faceCentersMeshID);
+			printf("Read data '%s' found.\n", config->readDataNames[i]);
+		} else {
+			printf("ERROR: Read data '%s' does not exist!\n", config->readDataNames[i]);
+			exit(1);
+		}
 	}
 	
-	// Get data ID's from preCICE
-	if(interface->hasNodesMesh && precicec_hasData("Temperature", interface->nodesMeshID)) {
-		interface->temperatureDataID = precicec_getDataID("Temperature", interface->nodesMeshID);
-	}
-	if(interface->hasFaceCentersMesh && precicec_hasData("Heat-Flux", interface->faceCentersMeshID)) {
-		interface->fluxDataID = precicec_getDataID("Heat-Flux", interface->faceCentersMeshID);
-	}
-	if(interface->hasFaceCentersMesh && precicec_hasData("Sink-Temperature", interface->faceCentersMeshID)) {
-		interface->sinkTemperatureDataID = precicec_getDataID("Sink-Temperature", interface->faceCentersMeshID);
-	}
-	// TODO: find a smarter way to deal with this 
-	// (the adapter should not need to know who are the other participants)
-	if(interface->hasFaceCentersMesh && precicec_hasData("kDelta-CCX", interface->faceCentersMeshID)) {
-		interface->kDeltaWriteDataID = precicec_getDataID("kDelta-CCX", interface->faceCentersMeshID);
-		interface->kDeltaReadDataID = precicec_getDataID("kDelta-OF", interface->faceCentersMeshID);
-		interface->kDeltaTemperatureWriteDataID = precicec_getDataID("kDelta-Temperature-CCX", interface->faceCentersMeshID);
-		interface->kDeltaTemperatureReadDataID = precicec_getDataID("kDelta-Temperature-OF", interface->faceCentersMeshID);
+	for(i = 0; i < config->numWriteData; i++) {
+		if(strcmp(config->writeDataNames[i], "Temperature") == 0) {
+			interface->writeData = TEMPERATURE;
+			interface->temperatureDataID = precicec_getDataID("Temperature", interface->nodesMeshID);
+			printf("Write data '%s' found.\n", config->writeDataNames[i]);
+			break;
+		} else if (strcmp(config->writeDataNames[i], "Heat-Flux") == 0) {
+			interface->writeData = HEAT_FLUX;
+			interface->fluxDataID = precicec_getDataID("Heat-Flux", interface->faceCentersMeshID);
+			printf("Write data '%s' found.\n", config->writeDataNames[i]);
+			break;
+		} else if (strcmp1(config->writeDataNames[i], "Sink-Temperature-") == 0) {
+			interface->writeData = KDELTA_TEMPERATURE;
+			interface->kDeltaTemperatureWriteDataID = precicec_getDataID(config->writeDataNames[i], interface->faceCentersMeshID);
+			printf("Write data '%s' found.\n", config->writeDataNames[i]);
+		} else if (strcmp1(config->writeDataNames[i], "Heat-Transfer-Coefficient-") == 0) {
+			interface->kDeltaWriteDataID = precicec_getDataID(config->writeDataNames[i], interface->faceCentersMeshID);
+			printf("Write data '%s' found.\n", config->writeDataNames[i]);
+		} else {
+			printf("ERROR: Write data '%s' does not exist!\n", config->writeDataNames[i]);
+			exit(1);
+		}
 	}
 	
 }

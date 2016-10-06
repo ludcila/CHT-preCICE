@@ -14,6 +14,7 @@ typedef struct CalculiXData {
 	ITG * ialset;
 	ITG * istartset;
 	ITG * iendset;
+	char ** lakon;
 	ITG * kon;
 	ITG * ipkon;
 	ITG nset;
@@ -45,7 +46,6 @@ typedef struct PreciceInterface {
 	int * preciceNodeIDs;
 	int nodesMeshID;
 	char * nodesMeshName;
-	int hasNodesMesh;
 
 	int numElements;
 	int * elementIDs;
@@ -56,7 +56,6 @@ typedef struct PreciceInterface {
 	char * faceCentersMeshName;
 	int * preciceFaceCenterIDs;
 	int * triangles;
-	int hasFaceCentersMesh;
 
 	double * nodeData;
 	double * faceCenterData;
@@ -79,11 +78,11 @@ typedef struct PreciceInterface {
 } PreciceInterface;
 
 void PreciceInterface_Setup(char * configFilename, char * participantName, struct CalculiXData ccx, PreciceInterface *** preciceInterfaces, int *numPreciceInterfaces);
-void PreciceInterface_CreateInterface(PreciceInterface * interface, struct CalculiXData ccx, const CoupledSurfaceConfig config);
+void PreciceInterface_CreateInterface(PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config);
 void PreciceInterface_ConfigureFaceCentersMesh(PreciceInterface * interface, struct CalculiXData ccx);
 void PreciceInterface_ConfigureNodesMesh(PreciceInterface * interface, struct CalculiXData ccx);
 void PreciceInterface_ConfigureTetraFaces(PreciceInterface * interface, struct CalculiXData ccx);
-void PreciceInterface_ConfigureHeatTransferData(PreciceInterface * interface, struct CalculiXData ccx);
+void PreciceInterface_ConfigureHeatTransferData(PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config);
 void PreciceInterface_AdjustSolverTimestep(double precice_dt, double tper, double * dtheta, double * solver_dt);
 void PreciceInterface_WriteIterationCheckpoint(struct CalculiXData * ccx, double * v);
 void PreciceInterface_ReadIterationCheckpoint(CalculiXData * ccx, double * v);

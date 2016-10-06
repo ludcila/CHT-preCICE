@@ -2,51 +2,64 @@
 #include "yaml-cpp/yaml.h"
 #include <iostream>
 #include <string.h>
+#include <algorithm>
 
-void test() {
-	std::cout << "Hey!" << std::endl;
-}
-
-void ConfigReader_Read(char * configFilename, char * participantName, char ** preciceConfigFilename, CoupledSurfaceConfig ** coupledSurfaces, int * numCoupledSurfaces) {
+void ConfigReader_Read(char * configFilename, char * participantName, char ** preciceConfigFilename, InterfaceConfig ** interfaces, int * numInterface) {
 
 	YAML::Node config = YAML::LoadFile(configFilename);
 
 	*preciceConfigFilename = strdup(config["precice-config-file"].as<std::string>().c_str());
 
-	*numCoupledSurfaces = config[participantName]["coupled-surfaces"].size();
-	*coupledSurfaces = (CoupledSurfaceConfig*) malloc(sizeof(CoupledSurfaceConfig) * *numCoupledSurfaces);
+	*numInterface = config["participants"][participantName]["interfaces"].size();
+	*interfaces = (InterfaceConfig*) malloc(sizeof(InterfaceConfig) * *numInterface);
 
-	for(int i = 0; i < *numCoupledSurfaces; i++) {
+	for(int i = 0; i < *numInterface; i++) {
 
-		if(config[participantName]["coupled-surfaces"][i]["faces-mesh-name"]) {
-			(*coupledSurfaces)[i].facesMeshName = strdup(config[participantName]["coupled-surfaces"][i]["faces-mesh-name"].as<std::string>().c_str());
-			(*coupledSurfaces)[i].hasFacesMesh = 1;
+		if(config["participants"][participantName]["interfaces"][i]["nodes-mesh"]) {
+			(*interfaces)[i].nodesMeshName = strdup(config["participants"][participantName]["interfaces"][i]["nodes-mesh"].as<std::string>().c_str());
 		} else {
-			(*coupledSurfaces)[i].facesMeshName = NULL;
-			(*coupledSurfaces)[i].hasFacesMesh = 0;
+			(*interfaces)[i].nodesMeshName = NULL;
 		}
-		if(config[participantName]["coupled-surfaces"][i]["nodes-mesh-name"]) {
-			(*coupledSurfaces)[i].nodesMeshName = strdup(config[participantName]["coupled-surfaces"][i]["nodes-mesh-name"].as<std::string>().c_str());	
-			(*coupledSurfaces)[i].hasNodesMesh = 1;
+		if(config["participants"][participantName]["interfaces"][i]["faces-mesh"]) {
+			(*interfaces)[i].facesMeshName = strdup(config["participants"][participantName]["interfaces"][i]["faces-mesh"].as<std::string>().c_str());	
 		} else {
-			(*coupledSurfaces)[i].nodesMeshName = NULL;
-			(*coupledSurfaces)[i].hasNodesMesh = 0;
+			(*interfaces)[i].facesMeshName = NULL;
 		}
-		(*coupledSurfaces)[i].numPatches = config[participantName]["coupled-surfaces"][i]["patch-names"].size();
-		(*coupledSurfaces)[i].patchNames = (char **) malloc(sizeof(char*) * (*coupledSurfaces)[i].numPatches);
-		(*coupledSurfaces)[i].numWriteData = config[participantName]["coupled-surfaces"][i]["write-data"].size();
-		(*coupledSurfaces)[i].writeData = (char **) malloc(sizeof(char*) * (*coupledSurfaces)[i].numWriteData);
-		(*coupledSurfaces)[i].numReadData = config[participantName]["coupled-surfaces"][i]["read-data"].size();
-		(*coupledSurfaces)[i].readData = (char **) malloc(sizeof(char*) * (*coupledSurfaces)[i].numReadData);
+		if(config["participants"][participantName]["interfaces"][i]["mesh"]) {
+			(*interfaces)[i].facesMeshName = strdup(config["participants"][participantName]["interfaces"][i]["mesh"].as<std::string>().c_str());	
+		}
 		
-		for(int j = 0; j < (*coupledSurfaces)[i].numPatches; j++) {
-			(*coupledSurfaces)[i].patchNames[j] = strdup(config[participantName]["coupled-surfaces"][i]["patch-names"][j].as<std::string>().c_str());
+		std::string patchName = config["participants"][participantName]["interfaces"][i]["patch"].as<std::string>();
+		std::transform(patchName.begin(), patchName.end(), patchName.begin(), toupper);
+		(*interfaces)[i].patchName = strdup(patchName.c_str());
+		
+		(*interfaces)[i].numWriteData = config["participants"][participantName]["interfaces"][i]["write-data"].size();
+		(*interfaces)[i].numReadData = config["participants"][participantName]["interfaces"][i]["read-data"].size();
+		
+		if((*interfaces)[i].numWriteData == 0) {
+			// write-data is a string
+			(*interfaces)[i].numWriteData = 1;
+			(*interfaces)[i].writeDataNames = (char **) malloc(sizeof(char*) * (*interfaces)[i].numWriteData);
+			(*interfaces)[i].writeDataNames[0] = strdup(config["participants"][participantName]["interfaces"][i]["write-data"].as<std::string>().c_str());
+		} else {
+			// write-data is an array
+			(*interfaces)[i].writeDataNames = (char **) malloc(sizeof(char*) * (*interfaces)[i].numWriteData);
+			for(int j = 0; j < (*interfaces)[i].numWriteData; j++) {
+				(*interfaces)[i].writeDataNames[j] = strdup(config["participants"][participantName]["interfaces"][i]["write-data"][j].as<std::string>().c_str());
+			}
 		}
-		for(int j = 0; j < (*coupledSurfaces)[i].numWriteData; j++) {
-			(*coupledSurfaces)[i].writeData[j] = strdup(config[participantName]["coupled-surfaces"][i]["write-data"][j].as<std::string>().c_str());
-		}
-		for(int j = 0; j < (*coupledSurfaces)[i].numReadData; j++) {
-			(*coupledSurfaces)[i].readData[j] = strdup(config[participantName]["coupled-surfaces"][i]["read-data"][j].as<std::string>().c_str());
+		
+		if((*interfaces)[i].numReadData == 0) {
+			// read-data is a string
+			(*interfaces)[i].numReadData = 1;
+			(*interfaces)[i].readDataNames = (char **) malloc(sizeof(char*) * (*interfaces)[i].numReadData);
+			(*interfaces)[i].readDataNames[0] = strdup(config["participants"][participantName]["interfaces"][i]["read-data"].as<std::string>().c_str());
+		} else {
+			// read-data is an array
+			(*interfaces)[i].readDataNames = (char **) malloc(sizeof(char*) * (*interfaces)[i].numReadData);
+			for(int j = 0; j < (*interfaces)[i].numReadData; j++) {
+				(*interfaces)[i].readDataNames[j] = strdup(config["participants"][participantName]["interfaces"][i]["read-data"][j].as<std::string>().c_str());
+			}
 		}
 
 	}

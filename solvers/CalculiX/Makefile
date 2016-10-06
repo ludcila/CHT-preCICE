@@ -29,21 +29,21 @@ LIBS = \
        -lmpi \
        -lyaml \
        -L/usr/local/yaml-cpp/build \
-       -lyaml-cpp       
-       
+       -lyaml-cpp
+
 
 # Compilers and flags
 CFLAGS = -g -Wall -std=c++11 -O0 -fopenmp $(INCLUDES) -DARCH="Linux" -DSPOOLES -DARPACK -DMATRIXSTORAGE
 FFLAGS = -g -Wall -O0 -fopenmp $(INCLUDES)
 CC = mpicc
 FC = gfortran
-	
+
 # Include a list of all the source files
 include $(CCX)/Makefile.inc
 SCCXMAIN = ccx_2.10.c
 
 # Append additional sources
-SCCXC += Helpers.c CCXHelpers.c PreciceInterface.c
+SCCXC += nonlingeo_precice.c Helpers.c CCXHelpers.c PreciceInterface.c
 SCCXF += getflux.f getkdeltatemp.f
 
 
@@ -57,7 +57,7 @@ $(OBJDIR)/%.o : adapter/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 $(OBJDIR)/%.o : adapter/%.cpp
 	g++ -std=c++11 -I/usr/local/yaml-cpp/include -c $< -o $@ $(LIBS)
-	
+
 # Source files in the $(CCX) folder
 $(OBJDIR)/%.o : $(CCX)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -77,9 +77,9 @@ $(OBJDIR)/ccx_preCICE: $(OBJDIR) $(OCCXMAIN) $(OBJDIR)/ccx_2.10.a
 
 $(OBJDIR)/ccx_2.10.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
-	
+
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
-                                                                               
+
 clean:
 	rm -f $(OBJDIR)/*.o $(OBJDIR)/ccx_2.10.a $(OBJDIR)/ccx_preCICE
