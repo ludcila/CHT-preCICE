@@ -46,6 +46,7 @@ Description
 #include <vector>
 #include <algorithm>
 #include "yaml-cpp/yaml.h"
+#include "adapter/Checkpoint.h"
 #include "adapter/ConfigReader.h"
 #include "adapter/Coupler.h"
 #include "adapter/CoupledSurface.h"
@@ -170,33 +171,32 @@ int main(int argc, char *argv[])
         }
         
     }
-    
-    scalar couplingIterationTimeValue;
-    label couplingIterationTimeIndex;
 
     // Chekpointing
-    volVectorField U_checkpoint = U;
-    volScalarField p_checkpoint = p;
-    volScalarField p_rgh_checkpoint = p_rgh;
-    volScalarField rho_checkpoint = rho;
-    volScalarField T_checkpoint = thermo.T();
-    volScalarField he_checkpoint = thermo.he();
-    volScalarField hc_checkpoint = thermo.hc()();
-    volScalarField tp_checkpoint = thermo.p();
-    volScalarField K_checkpoint = K;
-    surfaceScalarField phi_checkpoint = phi;
-    volScalarField dpdt_checkpoint = dpdt;
-    volScalarField k_checkpoint = turbulence->k();
-    volScalarField epsilon_checkpoint = turbulence->epsilon();
-    volScalarField nut_checkpoint = turbulence->nut();
-    volScalarField alphat_checkpoint = turbulence->alphat();
-    volScalarField mut_checkpoint = turbulence->mut();
+    ofcoupler::Checkpoint chkpt(runTime);
+    chkpt.addVolVectorField(U);
+    chkpt.addVolScalarField(p);
+    chkpt.addVolScalarField(p_rgh);
+    chkpt.addVolScalarField(rho);
+    chkpt.addVolScalarField(thermo.T());
+    chkpt.addVolScalarField(thermo.he());
+    //chkpt.addVolScalarField(thermo.hc()());
+    chkpt.addVolScalarField(thermo.p());
+    chkpt.addVolScalarField(K);
+    chkpt.addVolScalarField(dpdt);
+    if(turbulenceUsed) {
+        chkpt.addVolScalarField(turbulence->k()());
+        chkpt.addVolScalarField(turbulence->epsilon()());
+        chkpt.addVolScalarField(turbulence->nut()());
+        chkpt.addVolScalarField(turbulence->alphat()());
+        // chkpt.addVolScalarField(turbulence->mut()());
+    }
+    chkpt.addSurfaceScalarField(phi);
 
     /* =========================== preCICE initialize =========================== */
 
     const std::string& coric = precice::constants::actionReadIterationCheckpoint();
     const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
-
 
     double preciceDt = precice.initialize();
     if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
@@ -225,29 +225,7 @@ int main(int argc, char *argv[])
         if(precice.isActionRequired(cowic)){
 
             std::cout << "<<<<<< Write checkpoint required" << std::endl;
-
-            couplingIterationTimeIndex = runTime.timeIndex();
-            couplingIterationTimeValue = runTime.value();
-            
-            U_checkpoint = U;
-            p_checkpoint = p;
-            p_rgh_checkpoint = p_rgh;
-            rho_checkpoint = rho;
-            T_checkpoint = thermo.T();
-            he_checkpoint = thermo.he();
-            hc_checkpoint = thermo.hc()();
-            tp_checkpoint = thermo.p();
-            K_checkpoint = K;
-            phi_checkpoint = phi;
-            dpdt_checkpoint = dpdt;
-            if(turbulenceUsed) {
-                k_checkpoint = turbulence->k()();
-                epsilon_checkpoint = turbulence->epsilon()();
-                nut_checkpoint = turbulence->nut()();
-                mut_checkpoint = turbulence->mut()();
-                turbulence->alphat()().correctBoundaryConditions();
-                alphat_checkpoint = turbulence->alphat()();
-            }
+            chkpt.write();
             precice.fulfilledAction(cowic);
         }
 
@@ -296,32 +274,11 @@ int main(int argc, char *argv[])
         if(precice.isActionRequired(coric)) {
 
             std::cout << ">>>>>> Read checkpoint required" << std::endl;
-            bool noSubcycling = runTime.timeIndex() - couplingIterationTimeIndex == 1;
-
-            // Set the time before copying the fields, in order to have the correct oldTime() field
-            runTime.setTime(couplingIterationTimeValue, couplingIterationTimeIndex);
             
-            U = U_checkpoint;
-            p = p_checkpoint;
-            rho = rho_checkpoint;
-            p_rgh = p_rgh_checkpoint;
-            thermo.T() = T_checkpoint;
-            thermo.he() = he_checkpoint;
-            thermo.hc()() = hc_checkpoint;
-            thermo.p() = tp_checkpoint;
-            K = K_checkpoint;
-            phi = phi_checkpoint;
-            dpdt = dpdt_checkpoint;
+            chkpt.read();
             if(turbulenceUsed) {
-                turbulence->k()() = k_checkpoint;
-                turbulence->epsilon()() = epsilon_checkpoint;
-                turbulence->nut()() = nut_checkpoint;
-                turbulence->mut()() = mut_checkpoint;
-                turbulence->alphat()() = alphat_checkpoint;
                 turbulence->alphat()().correctBoundaryConditions();
             }
-
-            std::cout << "Reset time = " << couplingIterationTimeValue << " (" << couplingIterationTimeIndex << ")" << std::endl;
 
             precice.fulfilledAction(coric);
 
