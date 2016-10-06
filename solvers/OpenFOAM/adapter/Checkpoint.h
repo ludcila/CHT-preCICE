@@ -20,8 +20,9 @@ protected:
     Foam::Time & _runTime;
     void _storeTime();
     void _reloadTime();
+    bool _enabled;
 public:
-    Checkpoint(Foam::Time & runTime);
+    Checkpoint(Foam::Time & runTime, bool checkpointingEnabled);
     void addVolScalarField(volScalarField & field);
     void addVolVectorField(volVectorField & field);
     void addSurfaceScalarField(surfaceScalarField & field);
