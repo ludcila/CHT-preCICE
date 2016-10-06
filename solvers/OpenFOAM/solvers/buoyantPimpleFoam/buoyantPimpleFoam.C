@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
     
     argList::addOption("precice-participant", "string", "name of preCICE participant");
     argList::addOption("precice-config", "string", "name of preCICE config file");
+    argList::addBoolOption("disable-checkpointing", "disable checkpointing");
 
     #include "addRegionOption.H"
 
@@ -111,6 +112,7 @@ int main(int argc, char *argv[])
     
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
     std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
+    bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
     ofcoupler::ConfigReader config(preciceConfig, participantName);
     
     int mpiUsed, rank = 0, size = 1;
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
     }
 
     // Chekpointing
-    ofcoupler::Checkpoint chkpt(runTime);
+    ofcoupler::Checkpoint chkpt(runTime, checkpointingEnabled);
     chkpt.addVolVectorField(U);
     chkpt.addVolScalarField(p);
     chkpt.addVolScalarField(p_rgh);
@@ -276,7 +278,7 @@ int main(int argc, char *argv[])
             std::cout << ">>>>>> Read checkpoint required" << std::endl;
             
             chkpt.read();
-            if(turbulenceUsed) {
+            if(turbulenceUsed && checkpointingEnabled) {
                 turbulence->alphat()().correctBoundaryConditions();
             }
 
