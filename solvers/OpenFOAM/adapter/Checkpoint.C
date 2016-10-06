@@ -1,7 +1,8 @@
 #include "Checkpoint.h"
 
-ofcoupler::Checkpoint::Checkpoint(Foam::Time & runTime) :
-    _runTime(runTime)
+ofcoupler::Checkpoint::Checkpoint(Foam::Time & runTime, bool checkpointingEnabled = true) :
+    _runTime(runTime),
+    _enabled(checkpointingEnabled)
 {
     
 }
@@ -15,16 +16,20 @@ void ofcoupler::Checkpoint::addVolScalarField(volScalarField & field)
 
 void ofcoupler::Checkpoint::addVolVectorField(volVectorField & field)
 {
-    volVectorField * copy = new volVectorField(field);
-    _volVectorFields.push_back(&field);
-    _volVectorFieldCopies.push_back(copy);
+    if(_enabled) {
+        volVectorField * copy = new volVectorField(field);
+        _volVectorFields.push_back(&field);
+        _volVectorFieldCopies.push_back(copy);
+    }
 }
 
 void ofcoupler::Checkpoint::addSurfaceScalarField(surfaceScalarField &field)
 {
-    surfaceScalarField * copy = new surfaceScalarField(field);
-    _surfaceScalarFields.push_back(&field);
-    _surfaceScalarFieldCopies.push_back(copy);
+    if(_enabled) {
+        surfaceScalarField * copy = new surfaceScalarField(field);
+        _surfaceScalarFields.push_back(&field);
+        _surfaceScalarFieldCopies.push_back(copy);
+    }
 }
 
 void ofcoupler::Checkpoint::write()
