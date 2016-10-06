@@ -40,7 +40,7 @@
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 
-void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lakonp,
+void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lakonp,
 			   ITG * ne,
 			   ITG * nodeboun, ITG * ndirboun, double * xboun, ITG * nboun,
 			   ITG ** ipompcp, ITG ** nodempcp, double ** coefmpcp, char ** labmpcp,
@@ -84,7 +84,7 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 			   ITG * nslavs, double * thicke, ITG * ics,
 			   ITG * nintpoint, ITG * mortar, ITG * ifacecount, char * typeboun,
 			   ITG ** islavsurfp, double ** pslavsurfp, double ** clearinip,
-			   ITG * nmat, double * xmodal, ITG * iaxial, ITG * inext)
+			   ITG * nmat, double * xmodal, ITG * iaxial, ITG * inext, char * preciceParticipantName, char * preciceConfigFilename)
 {
 	char description[13] = "            ", *lakon = NULL, jobnamef[396] = "",
 			*sideface = NULL, *labmpc = NULL, fnffrd[132] = "", *lakonf = NULL,
@@ -236,19 +236,19 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 		.dtheta = &dtheta
 	};
 
-	char * participantName = "CCX"; // TODO: read from somewhere
-
 	int numPreciceInterfaces;
 	PreciceInterface ** preciceInterfaces;
-	PreciceInterface_Setup("config.yml", participantName, ccxData, &preciceInterfaces, &numPreciceInterfaces);
+	
+	printf("Setting up preCICE participant %s, using config file: %s\n", preciceParticipantName, preciceConfigFilename);
+	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, ccxData, &preciceInterfaces, &numPreciceInterfaces);
 
 	/* Data variables */
 
 	/* Additional variables for solver coupling */
 	double precice_dt, solver_dt;
 	double coupling_init_theta, coupling_init_dtheta;
-	NNEW(ccxData.coupling_init_v, double, mt ** nk);
-
+	NNEW(ccxData.coupling_init_v, double, mt ** nk);	
+	
 	printf("Before init\n");
 
 	precice_dt = precicec_initialize();
@@ -257,13 +257,48 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 	// Initialize data
 	if(precicec_isActionRequired("write-initial-data")) {
 		for(i = 0; i < numPreciceInterfaces; i++) {
-			getNodeTemperatures(preciceInterfaces[i]->nodeIDs, preciceInterfaces[i]->numNodes, v, mt, preciceInterfaces[i]->nodeData);
-			precicec_writeBlockScalarData(preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData);
-			precicec_fulfilledAction("write-initial-data");
+			if(preciceInterfaces[i]->writeData == TEMPERATURE) {
+				getNodeTemperatures(preciceInterfaces[i]->nodeIDs, preciceInterfaces[i]->numNodes, vold, mt, preciceInterfaces[i]->nodeData);
+				precicec_writeBlockScalarData(preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData);
+			} else if(preciceInterfaces[i]->writeData == HEAT_FLUX) {	
+				int iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				FORTRAN(getflux,(co,ntmat_,vold,cocon,ncocon,&iset,istartset,iendset,ipkon,lakon,kon,
+					ialset,ielmat,mi,preciceInterfaces[i]->faceCenterData));
+				precicec_writeBlockScalarData(preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+			} else if(preciceInterfaces[i]->writeData == KDELTA_TEMPERATURE) {	
+				int iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				double * myKDelta = malloc(preciceInterfaces[i]->numElements * sizeof(double));
+				double * T = malloc(preciceInterfaces[i]->numElements * sizeof(double));
+				FORTRAN(getkdeltatemp,(co,ntmat_,vold,cocon,ncocon,&iset,istartset,iendset,ipkon,lakon,kon,
+					ialset,ielmat,mi,myKDelta,T));
+				precicec_writeBlockScalarData(preciceInterfaces[i]->kDeltaWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, myKDelta);
+				precicec_writeBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, T);
+			}
 		}
+		precicec_fulfilledAction("write-initial-data");
 	}
+	precicec_initializeData();
+	// Todo: move this into a function
 	if(precicec_isReadDataAvailable()) {
-
+		for(i = 0; i < numPreciceInterfaces; i++) {
+			if(preciceInterfaces[i]->readData == TEMPERATURE) {
+				precicec_readBlockScalarData(preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData);
+				setNodeTemperatures(preciceInterfaces[i]->nodeData, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->xbounIndices, xboun);
+			} else if(preciceInterfaces[i]->readData == HEAT_FLUX) {
+				precicec_readBlockScalarData(preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 0);
+			} else if(preciceInterfaces[i]->readData == SINK_TEMPERATURE) {
+				precicec_readBlockScalarData(preciceInterfaces[i]->sinkTemperatureDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
+			} else if(preciceInterfaces[i]->readData == KDELTA_TEMPERATURE) {
+				// Get sink temperature and set in xload
+				precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
+				// Get nbrKDelta, compute heat transfer coefficient h and set in xload
+				precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 0);
+			} 
+		}
 	}
 
 	if(*ithermal == 4) {
@@ -1092,10 +1127,18 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 
 		memcpy(&sideloadref[0], &sideload[0], sizeof(char) * 20 * *nload);
 	}
-
+	
 	while(precicec_isCouplingOngoing()) { //	while((1. - theta > 1.e-6) || (negpres == 1)) {
-
+		
 		PreciceInterface_AdjustSolverTimestep(precice_dt, *tper, &dtheta, &solver_dt);
+		if(*nmethod == 1) {
+			theta = 0;
+			*tper = 1;
+			solver_dt = 1;
+			dtheta = 1;
+			precice_dt = 1;
+//			printf("heyyy");
+		}
 		
 		if(precicec_isReadDataAvailable()) {
 			for(i = 0; i < numPreciceInterfaces; i++) {
@@ -1112,26 +1155,15 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 					// Get sink temperature and set in xload
 					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
 					setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
+					double * buffer = malloc(preciceInterfaces[i]->numElements * sizeof(double));
 					// Get nbrKDelta, compute heat transfer coefficient h and set in xload
-					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
-					double * myKDelta = malloc(preciceInterfaces[i]->numElements * sizeof(double));
-					double * h = malloc(preciceInterfaces[i]->numElements * sizeof(double));
-					double * T = malloc(preciceInterfaces[i]->numElements * sizeof(double));
-					double * nbrKDelta = preciceInterfaces[i]->faceCenterData;
-					int iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
-					FORTRAN(getkdeltatemp,(co,ntmat_,vold,cocon,ncocon,&iset,istartset,iendset,ipkon,lakon,kon,
-						ialset,nset,ielmat,mi,myKDelta,T));
-					for(j = 0; j < preciceInterfaces[i]->numElements; j++) {
-						// h[j] =	.5*(nbrKDelta[j] * myKDelta[j]) / (nbrKDelta[j] + .5*myKDelta[j]);
-						// h[j] =	(nbrKDelta[j] * myKDelta[j]) / (nbrKDelta[j] + myKDelta[j]);
-						h[j] = nbrKDelta[j];
-						// printf("%d) works=%f, nbrKDelta=%f, myKDelta=%f\n", j, h[j], nbrKDelta[j], myKDelta[j]);
-						
-					}
-					setXload(xload, preciceInterfaces[i]->xloadIndices, h, preciceInterfaces[i]->numElements, 0);
-					free(myKDelta);
-					free(h);
-					free(T);
+					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, buffer);
+					setXload(xload, preciceInterfaces[i]->xloadIndices, buffer, preciceInterfaces[i]->numElements, 0);
+//					printf("From interface %d\n", i);
+//					for(j = 0; j < preciceInterfaces[i]->numElements; j++) {
+//						printf("%d) T=%f, h=%f\n", j, preciceInterfaces[i]->faceCenterData[j], buffer[j]);
+//					}
+					free(buffer);
 				} 
 			}
 		}
@@ -2656,25 +2688,28 @@ void nonlingeo(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char ** lako
 					} else if(preciceInterfaces[i]->writeData == HEAT_FLUX) {	
 						int iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
 						FORTRAN(getflux,(co,ntmat_,vold,cocon,ncocon,&iset,istartset,iendset,ipkon,lakon,kon,
-							ialset,nset,ielmat,mi,preciceInterfaces[i]->faceCenterData));
+							ialset,ielmat,mi,preciceInterfaces[i]->faceCenterData));
 						precicec_writeBlockScalarData(preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
 					} else if(preciceInterfaces[i]->writeData == KDELTA_TEMPERATURE) {	
 						int iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
 						double * myKDelta = malloc(preciceInterfaces[i]->numElements * sizeof(double));
 						double * T = malloc(preciceInterfaces[i]->numElements * sizeof(double));
 						FORTRAN(getkdeltatemp,(co,ntmat_,vold,cocon,ncocon,&iset,istartset,iendset,ipkon,lakon,kon,
-							ialset,nset,ielmat,mi,myKDelta,T));
+							ialset,ielmat,mi,myKDelta,T));
 						precicec_writeBlockScalarData(preciceInterfaces[i]->kDeltaWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, myKDelta);
 						precicec_writeBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, T);
 					}
 				}
 			}
 			
+			printf("Solver dt = %f\n", solver_dt);
 			precice_dt = precicec_advance(solver_dt);
 			
 			if(precicec_isActionRequired("read-iteration-checkpoint")) {
-				PreciceInterface_ReadIterationCheckpoint(&ccxData, vold);
-				icutb++;
+				if(*nmethod == 4) {
+					PreciceInterface_ReadIterationCheckpoint(&ccxData, vold);
+					icutb++;
+				}
 				precicec_fulfilledAction("read-iteration-checkpoint");
 			}
 
