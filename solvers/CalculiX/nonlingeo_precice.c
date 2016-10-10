@@ -277,7 +277,7 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 		}
 		precicec_fulfilledAction("write-initial-data");
 	}
-	precicec_initializeData();
+	precicec_initialize_data();
 	// Todo: move this into a function
 	if(precicec_isReadDataAvailable()) {
 		for(i = 0; i < numPreciceInterfaces; i++) {
