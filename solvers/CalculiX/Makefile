@@ -27,7 +27,6 @@ LIBS = \
        -lmpi_cxx \
        -lm \
        -lmpi \
-       -lyaml \
        -L/usr/local/yaml-cpp/build \
        -lyaml-cpp
 
