@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import logging
 import yaml
 import pprint
@@ -29,6 +30,9 @@ output_sh_file_name = args.output_sh
 config_file = open(input_file_name)
 config = yaml.load(config_file.read())
 logging.info("Input YML file:\t" + input_file_name)
+
+if "base-path" not in config:
+    config["base-path"] = os.getcwd()
 
 participants = []
 interfaces_map = {}
@@ -82,7 +86,8 @@ nsmap = {
 }
 
 precice_configuration_tag = etree.Element("precice-configuration", nsmap=nsmap)
-etree.SubElement(precice_configuration_tag, "log-filter", target="info", component="", switch="on")
+log_tag = etree.SubElement(precice_configuration_tag, "log")
+sink_tag = etree.SubElement(log_tag, "sink", type="stream", output="stdout", enabled="true")
 
 solver_interface_tag = etree.SubElement(precice_configuration_tag, "solver-interface", dimensions="3")
 
