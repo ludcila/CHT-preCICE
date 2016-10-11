@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# script template to run Code_Aster using MPI
+#
+#
+# This template contains following Python strings formatting keys :
+#
+#     cmd_to_run         : Code_Aster command line
+#     mpi_get_procid_cmd : command to retreive processor ID
+#
+# automatically generated for job number #%(num_job)s
+#
+
+ASRUN_PROCID=`%(mpi_get_procid_cmd)s`
+
+if [ -z "$ASRUN_PROCID" ]; then
+   echo "Processor ID is not defined !"
+   exit 4
+fi
+
+ASRUN_TMPDIR=%(local_wrkdir)s/proc.$ASRUN_PROCID
+
+if [ $ASRUN_PROCID -ne 0 ]; then
+   if [ -e $ASRUN_TMPDIR ]; then
+      rm -rf $ASRUN_TMPDIR
+   fi
+fi
+
+if [ ! -d %(local_wrkdir)s ]; then
+   mkdir -p %(local_wrkdir)s
+fi
+
+if [ $ASRUN_PROCID -eq 0 ]; then
+	rm -rf $ASRUN_TMPDIR/fort.*
+	rsync -rv %(wrkdir)s/* $ASRUN_TMPDIR
+else
+	rsync -rv --exclude=fort.20 --exclude=elem.1 %(wrkdir)s/* $ASRUN_TMPDIR
+	ln -s %(wrkdir)s/elem.1 $ASRUN_TMPDIR/elem.1 
+	ln -s %(wrkdir)s/fort.20 $ASRUN_TMPDIR/fort.20
+	if [ -e %(local_wrkdir)s/proc.0/glob.* ]; then
+      	   cp -r %(local_wrkdir)s/proc.0/glob.* $ASRUN_TMPDIR/.
+   	fi
+	if [ -e %(local_wrkdir)s/proc.0/vola.* ]; then
+      	   cp -r %(local_wrkdir)s/proc.0/vola.* $ASRUN_TMPDIR/.
+   	fi
+	if [ -e %(local_wrkdir)s/proc.0/pick.* ]; then
+      	   cp -r %(local_wrkdir)s/proc.0/pick.* $ASRUN_TMPDIR/.
+   	fi
+	if [ -e %(local_wrkdir)s/proc.0/REPE_OUT ]; then
+      	   cp -r %(local_wrkdir)s/proc.0/REPE_OUT $ASRUN_TMPDIR/.
+   	fi
+fi
+if [ $? -ne 0 ]; then
+    echo "non zero exit status for : %(cp_cmd)s %(wrkdir)s $ASRUN_TMPDIR"
+    exit 4
+fi
+chmod 0700 $ASRUN_TMPDIR
+
+cd $ASRUN_TMPDIR
+%(cmd_to_run)s
+iret=$?
+
+if [ -f info_cpu ]; then
+   infos=`cat info_cpu`
+   echo "PROC=$ASRUN_PROCID INFO_CPU=$infos"
+fi
+
+if [ $ASRUN_PROCID -eq 0 ]; then
+   echo "%(content_after_msg)s $ASRUN_TMPDIR :"
+   ls -la . REPE_OUT
+
+   rm -rf %(wrkdir)s/*
+   ln -s $ASRUN_TMPDIR/* %(wrkdir)s/
+   kret=$?
+   if [ $kret -gt $iret ]; then
+      iret=$kret
+   fi
+fi
+
+exit $iret
+
