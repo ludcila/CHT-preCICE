@@ -48,8 +48,7 @@ class CouplingScheme(object):
         e = etree.SubElement(parent, etree.QName("m2n", type), to=self.participants[1].name)
         e.set("from", self.participants[0].name)
         e.set("exchange-directory", exchange_directory)
-        if self.participants[0].domain_decomposed or self.participants[1].domain_decomposed:
-            e.set("distribution-type", "scatter-gather")
+        e.set("distribution-type", "gather-scatter")
 
 
 class ImplicitCouplingScheme(CouplingScheme):
@@ -144,8 +143,7 @@ class MultiCouplingScheme(ImplicitCouplingScheme):
             e = etree.SubElement(parent, etree.QName("m2n", type), to=participants[1].name)
             e.set("from", participants[0].name)
             e.set("exchange-directory", exchange_directory)
-            if participants[0].domain_decomposed or participants[1].domain_decomposed:
-                e.set("distribution-type", "scatter-gather")
+            e.set("distribution-type", "gather-scatter")
 
     def add_post_processing_tag_to(self, parent, interface=None):
         post_processing = IQNILSPostProcessing(self.coupling_config)
