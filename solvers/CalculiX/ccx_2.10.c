@@ -1104,7 +1104,7 @@ while(istat>=0) {
   }
      
 
-  if((nmethod<=1)||(nmethod==11)||((iperturb[0]>1)&&(nmethod<8)))
+  else if((nmethod<=1)||(nmethod==11)||((iperturb[0]>1)&&(nmethod<8)))
     {
 	if(iperturb[0]<2){
 	
