@@ -32,8 +32,10 @@ LIBS = \
 
 
 # Compilers and flags
-CFLAGS = -g -Wall -std=c++11 -O0 -fopenmp $(INCLUDES) -DARCH="Linux" -DSPOOLES -DARPACK -DMATRIXSTORAGE
-FFLAGS = -g -Wall -O0 -fopenmp $(INCLUDES)
+#CFLAGS = -g -Wall -std=c++11 -O0 -fopenmp $(INCLUDES) -DARCH="Linux" -DSPOOLES -DARPACK -DMATRIXSTORAGE
+#FFLAGS = -g -Wall -O0 -fopenmp $(INCLUDES)
+CFLAGS = -Wall -O3 -std=c++11 -fopenmp $(INCLUDES) -DARCH="Linux" -DSPOOLES -DARPACK -DMATRIXSTORAGE
+FFLAGS = -Wall -O3 -fopenmp $(INCLUDES)
 CC = mpicc
 FC = gfortran
 
