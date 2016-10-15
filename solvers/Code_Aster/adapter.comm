@@ -2,7 +2,8 @@ DEBUT(PAR_LOT='NON');
 
 from subprocess import call
 import sys
-sys.path.insert(0, "/home/lcheung/Thesis/CHT-preCICE/solvers/Code_Aster")
+adapter_root = os.getenv('ASTER_ADAPTER_ROOT')
+sys.path.insert(0, adapter_root)
 from adapter import *
 
 # Get participant name from environment variable
