@@ -16,22 +16,15 @@ import PySolverInterface
 from PySolverInterface import *
 
 class Adapter:
-    
-    precice = None
-    numInterfaces = 0
-    interfaces = []
-    LOADS = []
-    MESH = None
-    MODEL = None
-    MAT = None
-    isNonLinear = False
-    
+
     def __init__(self, precice, participantName, config, MESH, MODEL, MAT, isNonLinear=False):
+        self.interfaces = []
         self.numInterfaces = len(config)
         self.precice = precice
         self.MESH = MESH
         self.MODEL = MODEL
         self.MAT = MAT
+        self.LOADS = []
         self.isNonLinear = isNonLinear
         self.participantName = participantName
         self.configure(config)
@@ -61,68 +54,60 @@ class Adapter:
             for interface in self.interfaces:
                 interface.readAndUpdateBCs()
 
-class Interface:
-    
-    precice = None
 
-    mesh = None
-    
-    groupName = ""
-    groupName = ""
-    
-    facesMeshName = ""
-    nodesMeshName = ""
-    
-    nodes = []
-    faces = []
-    connectivity = []
-    nodeCoordinates = []
-    faceCenterCoordinates = []
-    normals = None
-    
-    isNonLinear = False
-    conductivity = None
-    isConductivityInitialized = False
-    delta = 1e-5
-    
-    preciceNodeIndices = []
-    preciceFaceCenterIndices = []
-    
-    preciceFaceCentersMeshID = 0
-    preciceNodesMeshID = 0
-    
-    readHCoeffDataID = 0
-    readTempDataID = 0
-    writeHCoeffDataID = 0
-    writeTempDataID = 0
-    
-    readTemp = []
-    readHCoeff = []
-    writeTemp = []
-    writeHCoeff = []
-    
-    readDataSize = 0
-    writeDataSize = 0
-    
-    MESH = None
-    MODEL = None
-    LOAD = None
-    LOADS = []
-    
-    # Shifted mesh (contains only the interface, and is shifted by delta in the direction opposite to the normal)
-    SHMESH = None
-    
+class Interface:
+
     def __init__(self, precice, participantName, names, MESH, SHMESH, MODEL, MAT, isNonLinear = False):
+
         self.precice = precice
         self.participantName = participantName
+
+        self.groupName = ""
+        self.facesMeshName = ""
+        self.nodesMeshName = ""
+
+        self.nodes = []
+        self.faces = []
+        self.connectivity = []
+        self.nodeCoordinates = []
+        self.faceCenterCoordinates = []
+        self.normals = None
+
+        self.isNonLinear = isNonLinear
+        self.conductivity = None
+        self.isConductivityInitialized = False
+        self.delta = 1e-5
+
+        self.preciceNodeIndices = []
+        self.preciceFaceCenterIndices = []
+
+        self.preciceFaceCentersMeshID = 0
+        self.preciceNodesMeshID = 0
+
+        self.readHCoeffDataID = 0
+        self.readTempDataID = 0
+        self.writeHCoeffDataID = 0
+        self.writeTempDataID = 0
+
+        self.readTemp = []
+        self.readHCoeff = []
+        self.writeTemp = []
+        self.writeHCoeff = []
+
+        self.readDataSize = 0
+        self.writeDataSize = 0
+
         self.MESH = MESH
+        # Shifted mesh (contains only the interface, and is shifted by delta in the direction opposite to the normal)
         self.SHMESH = SHMESH
         self.MODEL = MODEL
         self.MAT = MAT
+        self.LOAD = None
+        self.LOADS = []
         self.mesh = MAIL_PY()
         self.mesh.FromAster(MESH)
+
         self.configure(names)
-        self.isNonLinear = isNonLinear
     
     def configure(self, names):
 
@@ -153,7 +138,6 @@ class Interface:
         self.readHCoeff = np.zeros(self.readDataSize)
         self.readTemp = np.zeros(self.readDataSize)
 
-    
     def computeNormals(self):
         # Get normals at the nodes
         DUMMY = AFFE_MODELE(
@@ -163,7 +147,7 @@ class Interface:
                 'PHENOMENE': 'THERMIQUE',
                 'MODELISATION': '3D',
             },
-        );
+        )
         N = CREA_CHAMP(
             MODELE=DUMMY,
             TYPE_CHAM='NOEU_GEOM_R',
@@ -229,8 +213,7 @@ class Interface:
             for j in range(len(self.faces))
         ]
         return BCs
-    
-    
+
     def updateBCs(self, temp, hCoeff):
             
         self.LOAD.sdj.CHTH.T_EXT.VALE.changeJeveuxValues(len(temp),
@@ -264,7 +247,7 @@ class Interface:
         # Heat transfer coefficient
         self.updateConductivity(writeTemp)
         writeHCoeff = np.array(self.conductivity) / self.delta
-        
+
         return writeTemp, writeHCoeff
     
     def setLoad(self, LOAD):
