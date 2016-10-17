@@ -23,10 +23,12 @@ class Participant(object):
 
     def __init__(self, name, data, steady_state):
         self.name = name
+        self.solver_type = None
         self.steady_state = steady_state
         self.interfaces = []
         self.directory = None
         self.domain_decomposed = None
+        self.num_processes = 1
         self.populate_data(data)
         self.data_name_T = "Sink-Temperature-" + self.name
         self.data_name_HTC = "Heat-Transfer-Coefficient-" + self.name
@@ -59,8 +61,10 @@ class Participant(object):
         return len(self.get_interfaces_with(partner)) > 0
 
     def populate_data(self, data):
+
         # Check and populate basic data that all participants should have
         try:
+            self.solver_type = data["solver"]
             self.domain_decomposed = data["domain-decomposed"]
             self.directory = data["directory"]
             data["interfaces"]
@@ -68,12 +72,23 @@ class Participant(object):
             logging.error(str(e) + " attribute not provided for participant " + self.name)
             sys.exit(1)
 
+        if self.domain_decomposed:
+            # Check whether domain decomposition is supported by this participant
+            if not self.is_domain_decomposition_supported():
+                logging.error("Domain decomposition is not supported for solver type " + self.solver_type)
+                sys.exit(1)
+            # Check whether the number of processes is specified
+            try:
+                self.num_processes = data["nprocs"]
+            except Exception as e:
+                logging.error(str(e) + " attribute must be provided for participant " + self.name + " if domain-decomposed is True")
+                sys.exit(1)
+
 
 class OpenFOAMParticipant(Participant):
 
     def __init__(self, name, data, steady_state):
         super(OpenFOAMParticipant, self).__init__(name, data, steady_state)
-        self.solver_type = "OpenFOAM"
 
     def add_interface(self, name=None):
         interface = OpenFOAMInterface(self, name)
@@ -85,14 +100,26 @@ class OpenFOAMParticipant(Participant):
             solver = "buoyantSimpleFoam_preCICE"
         else:
             solver = "buoyantPimpleFoam_preCICE"
-        return solver + " -case " + self.directory + " -precice-participant " + self.name  + " > " + self.name + ".log &"
+        cmd_str = solver + " -case " + self.directory + " -precice-participant " + self.name
+        log_str = " > " + self.name + ".log &"
+        if self.domain_decomposed:
+            par_prepend = "mpirun -np " + str(self.num_processes) + " "
+            par_append = " -parallel"
+        else:
+            par_prepend = ""
+            par_append = ""
+        return par_prepend + cmd_str + par_append + log_str
+
+    def is_domain_decomposition_supported():
+        return True
+
+    is_domain_decomposition_supported = staticmethod(is_domain_decomposition_supported)
 
 
 class CalculiXParticipant(Participant):
 
     def __init__(self, name, data, steady_state):
         super(CalculiXParticipant, self).__init__(name, data, steady_state)
-        self.solver_type = "CalculiX"
 
     def add_interface(self, name=None):
         interface = CalculiXInterface(self, name)
@@ -103,12 +130,16 @@ class CalculiXParticipant(Participant):
         # Todo: check default name of .inp file!
         return "ccx_preCICE -i " + self.directory + "/solid -precice-participant " + self.name + " > " + self.name + ".log &"
 
+    def is_domain_decomposition_supported():
+        return False
+
+    is_domain_decomposition_supported = staticmethod(is_domain_decomposition_supported)
+
 
 class CodeAsterParticipant(Participant):
 
     def __init__(self, name, data, steady_state):
         super(CodeAsterParticipant, self).__init__(name, data, steady_state)
-        self.solver_type = "Code_Aster"
 
     def add_interface(self, name=None):
         interface = CodeAsterInterface(self, name)
@@ -135,3 +166,8 @@ class CodeAsterParticipant(Participant):
     def get_run_command(self):
         # Todo: check default name of .export file!
         return "export PRECICE_PARTICIPANT=" + self.name + "; as_run --run " + self.directory + "/solid.export > " + self.name + ".log &"
+
+    def is_domain_decomposition_supported():
+        return False
+
+    is_domain_decomposition_supported = staticmethod(is_domain_decomposition_supported)
