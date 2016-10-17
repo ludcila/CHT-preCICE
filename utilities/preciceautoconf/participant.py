@@ -101,7 +101,7 @@ class CalculiXParticipant(Participant):
 
     def get_run_command(self):
         # Todo: check default name of .inp file!
-        return "ccx -i " + self.directory + "/solid -precice-participant " + self.name + " > " + self.name + ".log &"
+        return "ccx_preCICE -i " + self.directory + "/solid -precice-participant " + self.name + " > " + self.name + ".log &"
 
 
 class CodeAsterParticipant(Participant):
