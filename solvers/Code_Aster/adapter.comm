@@ -65,6 +65,8 @@ precice.initializeData()
 k = 0
 time = 0.0
 
+ICOND = {'CHAM_NO': INIT_T}
+
 while precice.isCouplingOngoing():
 
     # ======================================================================================
