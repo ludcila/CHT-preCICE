@@ -1,8 +1,7 @@
-CoupledSurface.C
+Interface.C
 
-Coupler.C
+Adapter.C
 ConfigReader.C
-Checkpoint.C
 CouplingDataUser/CouplingDataUser.C
 
 CouplingDataUser/CouplingDataReader/CouplingDataReader.C

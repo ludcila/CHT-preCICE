@@ -10,14 +10,20 @@ namespace adapter
 class TemperatureBoundaryValues : public CouplingDataWriter
 {
 protected:
-    volScalarField & _T;
-public:
-    TemperatureBoundaryValues(volScalarField & T);
 
-    // CouplingDataWriter interface
+	volScalarField & _T;
+
 public:
-    void write(double * dataBuffer);
+
+	TemperatureBoundaryValues( volScalarField & T );
+
+	// CouplingDataWriter interface
+
+public:
+
+	void write( double * dataBuffer );
 };
+
 }
 
 #endif // TEMPERATUREBOUNDARYVALUES_H

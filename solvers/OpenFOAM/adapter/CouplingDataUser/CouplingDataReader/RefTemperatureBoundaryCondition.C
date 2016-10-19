@@ -11,7 +11,7 @@ void adapter::RefTemperatureBoundaryCondition::read(double * dataBuffer)
     
     int bufferIndex = 0;
 
-    for(int k = 0; k < _patchIDs.size(); k++) {
+    for(uint k = 0; k < _patchIDs.size(); k++) {
 
         int patchID = _patchIDs.at(k);
         
