@@ -101,21 +101,21 @@ int main(int argc, char *argv[])
 
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
-    adapter::Adapter coupler(precice, mesh, "buoyantBoussinesqPimpleFoam");
+    adapter::Adapter adapter(precice, mesh, runTime, "buoyantBoussinesqPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         
-        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & interface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
 
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
                 adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
-                coupledSurface.addCouplingDataWriter(dataName, bw);
+                interface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.compare("Heat-Flux") == 0) {
                 adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
-                coupledSurface.addCouplingDataWriter(dataName, bw);
+                interface.addCouplingDataWriter(dataName, bw);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;
                 return 1;
@@ -127,10 +127,10 @@ int main(int argc, char *argv[])
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
                 adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
-                coupledSurface.addCouplingDataReader(dataName, br);
+                interface.addCouplingDataReader(dataName, br);
             } else if(dataName.compare("Heat-Flux") == 0) {
                 adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
-                coupledSurface.addCouplingDataReader(dataName, br);
+                interface.addCouplingDataReader(dataName, br);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;
                 return 1;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
             precice.fulfilledAction(cowic);
         }
 
-        coupler.receiveCouplingData();
+        adapter.receiveCouplingData();
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
         /* =========================== preCICE write data =========================== */
 
 
-        coupler.sendCouplingData();
+        adapter.sendCouplingData();
 
         precice_dt = precice.advance(precice_dt);
 

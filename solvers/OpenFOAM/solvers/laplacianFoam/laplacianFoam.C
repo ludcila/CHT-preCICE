@@ -66,11 +66,11 @@ int main(int argc, char *argv[])
     adapter::ConfigReader config("config.yml", participantName);
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
-    adapter::Adapter coupler(precice, mesh, "laplacianFoam");
+    adapter::Adapter adapter(precice, mesh, runTime, "laplacianFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
-        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
             std::string dataName = config.interfaces().at(i).data.at(j).name;
             std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             precice.fulfilledAction(cowic);
         }
 
-        coupler.receiveCouplingData();
+        adapter.receiveCouplingData();
 
         /* =========================== solve =========================== */
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
         /* =========================== preCICE write data =========================== */
 
-        coupler.sendCouplingData();
+        adapter.sendCouplingData();
 
         precice_dt = precice.advance(precice_dt);
 
