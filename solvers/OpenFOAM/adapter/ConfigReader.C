@@ -1,10 +1,10 @@
 #include "ConfigReader.h"
 
-
 void ofcoupler::ConfigReader::checkFields(std::string filename, YAML::Node & config, std::string participantName)
 {
+    
     if(!config["precice-config-file"]) {
-        std::cerr << "ERROR in " << filename << ": precice-config-file not specified\n";
+        BOOST_LOG_TRIVIAL(error) << "precice-config-file not specified in " << filename;
         exit(1);
     }
     if(!config["participants"][participantName]) {
