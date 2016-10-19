@@ -43,7 +43,7 @@ Description
 #include <vector>
 #include <algorithm>
 #include "adapter/ConfigReader.h"
-#include "adapter/Coupler.h"
+#include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
@@ -55,10 +55,9 @@ Description
 
 int main(int argc, char *argv[])
 {
+    
     argList::addOption("precice-participant", "string", "name of preCICE participant");
     argList::addOption("precice-config", "string", "name of preCICE config file");
-    
-    
 
     #include "setRootCase.H"
     #include "createTime.H"
@@ -76,7 +75,7 @@ int main(int argc, char *argv[])
     
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
     std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
-    ofcoupler::ConfigReader config(preciceConfig, participantName);
+    adapter::ConfigReader config(preciceConfig, participantName);
     
     int mpiUsed, rank = 0, size = 1;
     MPI_Initialized(&mpiUsed);
@@ -88,17 +87,17 @@ int main(int argc, char *argv[])
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
     precice.configure(config.preciceConfigFilename());
-    ofcoupler::Coupler coupler(precice, mesh, "buoyantSimpleFoam");
+    adapter::Adapter coupler(precice, mesh, "buoyantSimpleFoam");
 
 
     for(int i = 0; i < config.interfaces().size(); i++) {        
-        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                coupledSurface.addCouplingDataWriter(dataName, new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
+                coupledSurface.addCouplingDataWriter(dataName, new adapter::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
-                coupledSurface.addCouplingDataWriter(dataName, new ofcoupler::RefTemperatureBoundaryValues(thermo.T()));
+                coupledSurface.addCouplingDataWriter(dataName, new adapter::RefTemperatureBoundaryValues(thermo.T()));
             } else {
                 std::cout << "Error: " << dataName << " is not valid" << std::endl;
                 return 1;
@@ -107,9 +106,9 @@ int main(int argc, char *argv[])
         for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
             std::string dataName = config.interfaces().at(i).readData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                coupledSurface.addCouplingDataReader(dataName, new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
+                coupledSurface.addCouplingDataReader(dataName, new adapter::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
-                coupledSurface.addCouplingDataReader(dataName, new ofcoupler::RefTemperatureBoundaryCondition(thermo.T()));
+                coupledSurface.addCouplingDataReader(dataName, new adapter::RefTemperatureBoundaryCondition(thermo.T()));
             } else {
                 std::cout << "Error: " << dataName << " is not valid" << std::endl;
                 return 1;
@@ -120,7 +119,6 @@ int main(int argc, char *argv[])
     
     const std::string& coric = precice::constants::actionReadIterationCheckpoint();
     const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
-
 
     double preciceDt = precice.initialize();
     if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
@@ -159,7 +157,9 @@ int main(int argc, char *argv[])
         runTime.write(); // write anyway!
         
         if(precice.isActionRequired(coric)) {
+            
             precice.fulfilledAction(coric);
+            
         } else {
 
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

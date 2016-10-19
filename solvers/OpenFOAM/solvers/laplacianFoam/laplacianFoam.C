@@ -35,7 +35,7 @@ Description
 #include "precice/SolverInterface.hpp"
 #include "fixedGradientFvPatchFields.H"
 #include "adapter/ConfigReader.h"
-#include "adapter/Coupler.h"
+#include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/HeatFluxBoundaryValues.h"
@@ -63,29 +63,29 @@ int main(int argc, char *argv[])
     }
     
     std::string participantName = runTime.caseName().components().first();
-    ofcoupler::ConfigReader config("config.yml", participantName);
+    adapter::ConfigReader config("config.yml", participantName);
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
-    ofcoupler::Coupler coupler(precice, mesh, "laplacianFoam");
+    adapter::Adapter coupler(precice, mesh, "laplacianFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
-        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
             std::string dataName = config.interfaces().at(i).data.at(j).name;
             std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
             if(dataName.compare("Temperature") == 0 && dataDirection.compare("out") == 0) {
-                ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(T);
+                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.compare("Temperature") == 0 && dataDirection.compare("in") == 0) {
-                ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(T);
+                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
                 coupledSurface.addCouplingDataReader(dataName, br);
             }
             if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("in") == 0) {
-                ofcoupler::HeatFluxBoundaryCondition * br = new ofcoupler::HeatFluxBoundaryCondition(T, k.value());
+                adapter::HeatFluxBoundaryCondition * br = new adapter::HeatFluxBoundaryCondition(T, k.value());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("out") == 0) {
-                ofcoupler::HeatFluxBoundaryValues * bw = new ofcoupler::HeatFluxBoundaryValues(T, k.value());
+                adapter::HeatFluxBoundaryValues * bw = new adapter::HeatFluxBoundaryValues(T, k.value());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             }
         }

@@ -5,7 +5,7 @@
 #include "fixedGradientFvPatchFields.H"
 #include "CouplingDataReader.h"
 
-namespace ofcoupler
+namespace adapter
 {
 class HeatFluxBoundaryCondition : public CouplingDataReader
 {

@@ -1,41 +1,41 @@
 #include "CouplingDataUser.h"
 
-ofcoupler::CouplingDataUser::CouplingDataUser()
+adapter::CouplingDataUser::CouplingDataUser()
 {
 
 }
 
-std::string ofcoupler::CouplingDataUser::direction() { return _direction; }
+std::string adapter::CouplingDataUser::direction() { return _direction; }
 
-std::string ofcoupler::CouplingDataUser::dataType() { return _dataType; }
+std::string adapter::CouplingDataUser::dataType() { return _dataType; }
 
-bool ofcoupler::CouplingDataUser::hasVectorData()
+bool adapter::CouplingDataUser::hasVectorData()
 {
     return false; // TODO
 }
 
-bool ofcoupler::CouplingDataUser::hasScalarData()
+bool adapter::CouplingDataUser::hasScalarData()
 {
     return true; // TODO
 }
 
-void ofcoupler::CouplingDataUser::setSize(int size)
+void adapter::CouplingDataUser::setSize(int size)
 {
     _bufferSize = size;
 }
 
-void ofcoupler::CouplingDataUser::setPatchIDs(std::vector<int> patchIDs)
+void adapter::CouplingDataUser::setPatchIDs(std::vector<int> patchIDs)
 {
     _patchIDs = patchIDs;
 }
 
 
-void ofcoupler::CouplingDataUser::setDataID(int dataID)
+void adapter::CouplingDataUser::setDataID(int dataID)
 {
     _dataID = dataID;
 }
 
-int ofcoupler::CouplingDataUser::dataID()
+int adapter::CouplingDataUser::dataID()
 {
     return _dataID;
 }

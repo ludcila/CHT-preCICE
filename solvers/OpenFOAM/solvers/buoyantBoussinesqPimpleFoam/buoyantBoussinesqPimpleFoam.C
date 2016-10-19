@@ -56,7 +56,7 @@ Description
 #include "precice/SolverInterface.hpp"
 #include <sstream>
 #include "adapter/ConfigReader.h"
-#include "adapter/Coupler.h"
+#include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.h"
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
     std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
-    ofcoupler::ConfigReader config(preciceConfig, participantName);
+    adapter::ConfigReader config(preciceConfig, participantName);
 
     int mpiUsed, rank = 0, size = 1;
     MPI_Initialized(&mpiUsed);
@@ -101,20 +101,20 @@ int main(int argc, char *argv[])
 
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
-    ofcoupler::Coupler coupler(precice, mesh, "buoyantBoussinesqPimpleFoam");
+    adapter::Adapter coupler(precice, mesh, "buoyantBoussinesqPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         
-        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
 
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
-                ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(T);
+                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.compare("Heat-Flux") == 0) {
-                ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
+                adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;
@@ -126,10 +126,10 @@ int main(int argc, char *argv[])
             std::string dataName = config.interfaces().at(i).readData.at(j);
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
-                ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(T);
+                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.compare("Heat-Flux") == 0) {
-                ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
+                adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;

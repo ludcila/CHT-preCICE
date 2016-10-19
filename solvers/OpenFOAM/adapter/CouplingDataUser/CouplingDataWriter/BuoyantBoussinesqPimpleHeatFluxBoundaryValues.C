@@ -1,6 +1,6 @@
 #include "BuoyantBoussinesqPimpleHeatFluxBoundaryValues.h"
 
-ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp) :
+adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp) :
     _T(T),
     _turbulence(turbulence),
     _alphat(alphat),
@@ -11,7 +11,7 @@ ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::BuoyantBoussinesqPimpl
 
 }
 
-void ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
+void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
 {
     int bufferIndex = 0;
     for(int k = 0; k < _patchIDs.size(); k++) {

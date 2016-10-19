@@ -1,6 +1,6 @@
 #include "CouplingDataReader.h"
 
-ofcoupler::CouplingDataReader::CouplingDataReader()
+adapter::CouplingDataReader::CouplingDataReader()
 {
 
 }

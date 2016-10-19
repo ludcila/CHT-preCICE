@@ -1,5 +1,5 @@
-#ifndef COUPLEDSURFACE_H
-#define COUPLEDSURFACE_H
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
 #include <string>
 #include <vector>
@@ -9,10 +9,10 @@
 #include "precice/SolverInterface.hpp"
 
 
-namespace ofcoupler
+namespace adapter
 {
 
-class CoupledSurface
+class Interface
 {
 protected:
     precice::SolverInterface & _precice;
@@ -29,7 +29,7 @@ protected:
     void _configureMesh(fvMesh & mesh);
     void _configureBufferUser(CouplingDataUser & bufferUser);
 public:
-    CoupledSurface(precice::SolverInterface & precice, fvMesh & mesh, std::string meshName, std::vector<std::string> patchNames);
+    Interface(precice::SolverInterface & precice, fvMesh & mesh, std::string meshName, std::vector<std::string> patchNames);
     void receiveData();
     void sendData();
     void addCouplingDataWriter(std::string dataName, CouplingDataWriter * couplingDataWriter);
@@ -38,4 +38,4 @@ public:
 
 }
 
-#endif // COUPLEDSURFACE_H
+#endif // INTERFACE_H

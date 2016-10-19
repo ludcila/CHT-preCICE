@@ -6,7 +6,7 @@
 #include "turbulentFluidThermoModel.H"
 #include "CouplingDataWriter.h"
 
-namespace ofcoupler
+namespace adapter
 {
 
 class BuoyantPimpleHeatFluxBoundaryValues : public CouplingDataWriter

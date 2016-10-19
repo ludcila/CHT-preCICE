@@ -1,7 +1,7 @@
 #include "BuoyantPimpleHeatFluxBoundaryCondition.h"
 
 
-ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCondition(volScalarField &T, rhoThermo &thermo, autoPtr<compressible::turbulenceModel> &turbulence) :
+adapter::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCondition(volScalarField &T, rhoThermo &thermo, autoPtr<compressible::turbulenceModel> &turbulence) :
     _T(T),
     _thermo(thermo),
     _turbulence(turbulence)
@@ -9,7 +9,7 @@ ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundary
 
 }
 
-void ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition::read(double *dataBuffer)
+void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read(double *dataBuffer)
 {
     int bufferIndex = 0;
 

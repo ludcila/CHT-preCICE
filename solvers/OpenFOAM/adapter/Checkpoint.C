@@ -1,20 +1,20 @@
 #include "Checkpoint.h"
 
-ofcoupler::Checkpoint::Checkpoint(Foam::Time & runTime, bool checkpointingEnabled = true) :
+adapter::Checkpoint::Checkpoint(Foam::Time & runTime, bool checkpointingEnabled = true) :
     _runTime(runTime),
     _enabled(checkpointingEnabled)
 {
     
 }
 
-void ofcoupler::Checkpoint::addVolScalarField(volScalarField & field)
+void adapter::Checkpoint::addVolScalarField(volScalarField & field)
 {
     volScalarField * copy = new volScalarField(field);
     _volScalarFields.push_back(&field);
     _volScalarFieldCopies.push_back(copy);
 }
 
-void ofcoupler::Checkpoint::addVolVectorField(volVectorField & field)
+void adapter::Checkpoint::addVolVectorField(volVectorField & field)
 {
     if(_enabled) {
         volVectorField * copy = new volVectorField(field);
@@ -23,7 +23,7 @@ void ofcoupler::Checkpoint::addVolVectorField(volVectorField & field)
     }
 }
 
-void ofcoupler::Checkpoint::addSurfaceScalarField(surfaceScalarField &field)
+void adapter::Checkpoint::addSurfaceScalarField(surfaceScalarField &field)
 {
     if(_enabled) {
         surfaceScalarField * copy = new surfaceScalarField(field);
@@ -32,7 +32,7 @@ void ofcoupler::Checkpoint::addSurfaceScalarField(surfaceScalarField &field)
     }
 }
 
-void ofcoupler::Checkpoint::write()
+void adapter::Checkpoint::write()
 {
     
     _storeTime();
@@ -49,7 +49,7 @@ void ofcoupler::Checkpoint::write()
 
 }
 
-void ofcoupler::Checkpoint::read()
+void adapter::Checkpoint::read()
 {
     
     _reloadTime();
@@ -65,13 +65,13 @@ void ofcoupler::Checkpoint::read()
     }
 }
 
-void ofcoupler::Checkpoint::_storeTime()
+void adapter::Checkpoint::_storeTime()
 {
     _couplingIterationTimeIndex = _runTime.timeIndex();
     _couplingIterationTimeValue = _runTime.value();
 }
 
-void ofcoupler::Checkpoint::_reloadTime()
+void adapter::Checkpoint::_reloadTime()
 {
     _runTime.setTime(_couplingIterationTimeValue, _couplingIterationTimeIndex);
     std::cout << "Reset time = " << _couplingIterationTimeValue << " (" << _couplingIterationTimeIndex << ")" << std::endl;

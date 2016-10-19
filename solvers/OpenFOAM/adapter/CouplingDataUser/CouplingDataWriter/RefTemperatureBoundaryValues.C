@@ -1,13 +1,13 @@
 #include "RefTemperatureBoundaryValues.h"
 
 
-ofcoupler::RefTemperatureBoundaryValues::RefTemperatureBoundaryValues(volScalarField & T) :
+adapter::RefTemperatureBoundaryValues::RefTemperatureBoundaryValues(volScalarField & T) :
     _T(T)
 {
     
 }
 
-void ofcoupler::RefTemperatureBoundaryValues::write(double *dataBuffer)
+void adapter::RefTemperatureBoundaryValues::write(double *dataBuffer)
 {
     int bufferIndex = 0;
 

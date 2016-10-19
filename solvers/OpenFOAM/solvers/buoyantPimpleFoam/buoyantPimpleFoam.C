@@ -48,8 +48,8 @@ Description
 #include "yaml-cpp/yaml.h"
 #include "adapter/Checkpoint.h"
 #include "adapter/ConfigReader.h"
-#include "adapter/Coupler.h"
-#include "adapter/CoupledSurface.h"
+#include "adapter/Adapter.h"
+#include "adapter/Interface.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
     std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
-    ofcoupler::ConfigReader config(preciceConfig, participantName);
+    adapter::ConfigReader config(preciceConfig, participantName);
     
     int mpiUsed, rank = 0, size = 1;
     MPI_Initialized(&mpiUsed);
@@ -124,26 +124,26 @@ int main(int argc, char *argv[])
 
     precice::SolverInterface precice(participantName, rank, size);
     precice.configure(config.preciceConfigFilename());
-    ofcoupler::Coupler coupler(precice, mesh, "buoyantPimpleFoam");
+    adapter::Adapter coupler(precice, mesh, "buoyantPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
-        ofcoupler::CoupledSurface & coupledSurface = coupler.addNewCoupledSurface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
-                ofcoupler::TemperatureBoundaryValues * bw = new ofcoupler::TemperatureBoundaryValues(thermo.T());
+                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(thermo.T());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.compare("Heat-Flux") == 0) {
-                ofcoupler::BuoyantPimpleHeatFluxBoundaryValues * bw = new ofcoupler::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
+                adapter::BuoyantPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new ofcoupler::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
+                adapter::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new adapter::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("Sink-Temperature") == 0) {
-                ofcoupler::RefTemperatureBoundaryValues * bw = new ofcoupler::RefTemperatureBoundaryValues(thermo.T());
+                adapter::RefTemperatureBoundaryValues * bw = new adapter::RefTemperatureBoundaryValues(thermo.T());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;
@@ -155,16 +155,16 @@ int main(int argc, char *argv[])
             std::string dataName = config.interfaces().at(i).readData.at(j);
             std::cout << dataName << std::endl;
             if(dataName.compare("Temperature") == 0) {
-                ofcoupler::TemperatureBoundaryCondition * br = new ofcoupler::TemperatureBoundaryCondition(thermo.T());
+                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(thermo.T());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.compare("Heat-Flux") == 0) {
-                ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition * br = new ofcoupler::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
+                adapter::BuoyantPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new ofcoupler::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
+                adapter::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new adapter::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("Sink-Temperature") == 0) {
-                ofcoupler::RefTemperatureBoundaryCondition * br = new ofcoupler::RefTemperatureBoundaryCondition(thermo.T());
+                adapter::RefTemperatureBoundaryCondition * br = new adapter::RefTemperatureBoundaryCondition(thermo.T());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
     }
 
     // Chekpointing
-    ofcoupler::Checkpoint chkpt(runTime, checkpointingEnabled);
+    adapter::Checkpoint chkpt(runTime, checkpointingEnabled);
     chkpt.addVolVectorField(U);
     chkpt.addVolScalarField(p);
     chkpt.addVolScalarField(p_rgh);

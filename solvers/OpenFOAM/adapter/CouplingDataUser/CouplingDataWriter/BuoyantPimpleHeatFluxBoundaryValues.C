@@ -1,7 +1,7 @@
 #include "BuoyantPimpleHeatFluxBoundaryValues.h"
 
 
-ofcoupler::BuoyantPimpleHeatFluxBoundaryValues::BuoyantPimpleHeatFluxBoundaryValues(volScalarField &T, rhoThermo &thermo, autoPtr<compressible::turbulenceModel> &turbulence) :
+adapter::BuoyantPimpleHeatFluxBoundaryValues::BuoyantPimpleHeatFluxBoundaryValues(volScalarField &T, rhoThermo &thermo, autoPtr<compressible::turbulenceModel> &turbulence) :
     _T(T),
     _thermo(thermo),
     _turbulence(turbulence)
@@ -10,7 +10,7 @@ ofcoupler::BuoyantPimpleHeatFluxBoundaryValues::BuoyantPimpleHeatFluxBoundaryVal
 }
 
 
-void ofcoupler::BuoyantPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
+void adapter::BuoyantPimpleHeatFluxBoundaryValues::write(double * dataBuffer)
 {
     int bufferIndex = 0;
     for(int k = 0; k < _patchIDs.size(); k++) {

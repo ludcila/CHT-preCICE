@@ -6,7 +6,7 @@
 #include "turbulentTransportModel.H"
 #include "fixedGradientFvPatchFields.H"
 
-namespace ofcoupler
+namespace adapter
 {
 class BuoyantBoussinesqPimpleHeatFluxBoundaryCondition : public CouplingDataReader
 {

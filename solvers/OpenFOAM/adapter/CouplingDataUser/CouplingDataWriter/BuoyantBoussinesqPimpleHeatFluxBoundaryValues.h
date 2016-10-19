@@ -6,7 +6,7 @@
 #include "CouplingDataWriter.h"
 
 
-namespace ofcoupler
+namespace adapter
 {
 class BuoyantBoussinesqPimpleHeatFluxBoundaryValues : public CouplingDataWriter
 {

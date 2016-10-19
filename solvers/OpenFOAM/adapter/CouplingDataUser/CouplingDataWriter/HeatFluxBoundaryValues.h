@@ -4,7 +4,7 @@
 #include "fvCFD.H"
 #include "CouplingDataWriter.h"
 
-namespace ofcoupler
+namespace adapter
 {
 class HeatFluxBoundaryValues : public CouplingDataWriter
 {

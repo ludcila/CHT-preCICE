@@ -1,12 +1,12 @@
 #include "RefTemperatureBoundaryCondition.h"
 
-ofcoupler::RefTemperatureBoundaryCondition::RefTemperatureBoundaryCondition(volScalarField &T) :
+adapter::RefTemperatureBoundaryCondition::RefTemperatureBoundaryCondition(volScalarField &T) :
     _T(T)
 {
     
 }
 
-void ofcoupler::RefTemperatureBoundaryCondition::read(double * dataBuffer)
+void adapter::RefTemperatureBoundaryCondition::read(double * dataBuffer)
 {
     
     int bufferIndex = 0;
