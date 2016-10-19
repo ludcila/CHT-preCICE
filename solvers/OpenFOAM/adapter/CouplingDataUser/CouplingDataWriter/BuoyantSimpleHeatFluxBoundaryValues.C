@@ -1,7 +1,7 @@
 #include "BuoyantSimpleHeatFluxBoundaryValues.h"
 
 
-ofcoupler::BuoyantSimpleHeatFluxBoundaryValues::BuoyantSimpleHeatFluxBoundaryValues(volScalarField & T, rhoThermo & thermo, autoPtr<compressible::RASModel> & turbulence) :
+adapter::BuoyantSimpleHeatFluxBoundaryValues::BuoyantSimpleHeatFluxBoundaryValues(volScalarField & T, rhoThermo & thermo, autoPtr<compressible::RASModel> & turbulence) :
     _T(T),
     _thermo(thermo),
     _turbulence(turbulence)
@@ -9,7 +9,7 @@ ofcoupler::BuoyantSimpleHeatFluxBoundaryValues::BuoyantSimpleHeatFluxBoundaryVal
 
 }
 
-void ofcoupler::BuoyantSimpleHeatFluxBoundaryValues::write(double * dataBuffer)
+void adapter::BuoyantSimpleHeatFluxBoundaryValues::write(double * dataBuffer)
 {
 
     int bufferIndex = 0;

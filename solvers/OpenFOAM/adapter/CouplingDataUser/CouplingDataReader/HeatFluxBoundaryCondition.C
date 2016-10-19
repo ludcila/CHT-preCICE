@@ -1,12 +1,12 @@
 #include "HeatFluxBoundaryCondition.h"
 
-ofcoupler::HeatFluxBoundaryCondition::HeatFluxBoundaryCondition(volScalarField & T, double k) :
+adapter::HeatFluxBoundaryCondition::HeatFluxBoundaryCondition(volScalarField & T, double k) :
     _T(T),
     _k(k)
 {
 }
 
-void ofcoupler::HeatFluxBoundaryCondition::read(double * dataBuffer)
+void adapter::HeatFluxBoundaryCondition::read(double * dataBuffer)
 {
     int bufferIndex = 0;
 

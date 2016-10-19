@@ -8,7 +8,7 @@
 #include "CouplingDataWriter.h"
 
 
-namespace ofcoupler
+namespace adapter
 {
 
 class BuoyantPimpleSinkTemperatureBoundaryValues : public CouplingDataWriter

@@ -1,6 +1,6 @@
-#include "CoupledSurface.h"
+#include "Interface.h"
 
-ofcoupler::CoupledSurface::CoupledSurface(precice::SolverInterface & precice, fvMesh & mesh, std::string meshName, std::vector<std::string> patchNames) :
+adapter::Interface::Interface(precice::SolverInterface & precice, fvMesh & mesh, std::string meshName, std::vector<std::string> patchNames) :
     _precice(precice),
     _meshName(meshName),
     _patchNames(patchNames),
@@ -15,7 +15,7 @@ ofcoupler::CoupledSurface::CoupledSurface(precice::SolverInterface & precice, fv
     _dataBuffer = new double[_numDataLocations](); // TODO: check if it is vector data and allocate appropriately
 }
 
-void ofcoupler::CoupledSurface::_configureMesh(fvMesh & mesh) {
+void adapter::Interface::_configureMesh(fvMesh & mesh) {
 
     for(int k = 0; k < _patchIDs.size(); k++) {
         _numDataLocations += mesh.boundaryMesh()[_patchIDs.at(k)].faceCentres().size();
@@ -36,24 +36,24 @@ void ofcoupler::CoupledSurface::_configureMesh(fvMesh & mesh) {
 
 }
 
-void ofcoupler::CoupledSurface::addCouplingDataWriter(std::string dataName, CouplingDataWriter * couplingDataWriter)
+void adapter::Interface::addCouplingDataWriter(std::string dataName, CouplingDataWriter * couplingDataWriter)
 {
     couplingDataWriter->setDataID(_precice.getDataID(dataName, _meshID));
     couplingDataWriter->setPatchIDs(_patchIDs);
     _couplingDataWriters.push_back(couplingDataWriter);
 }
 
-void ofcoupler::CoupledSurface::addCouplingDataReader(std::string dataName, ofcoupler::CouplingDataReader * couplingDataReader)
+void adapter::Interface::addCouplingDataReader(std::string dataName, adapter::CouplingDataReader * couplingDataReader)
 {
     couplingDataReader->setDataID(_precice.getDataID(dataName, _meshID));
     couplingDataReader->setPatchIDs(_patchIDs);
     _couplingDataReaders.push_back(couplingDataReader);
 }
 
-void ofcoupler::CoupledSurface::receiveData() {
+void adapter::Interface::receiveData() {
     if(_precice.isReadDataAvailable()) {
         for(int i = 0; i < _couplingDataReaders.size(); i++) {
-            ofcoupler::CouplingDataReader * couplingDataReader = _couplingDataReaders.at(i);
+            adapter::CouplingDataReader * couplingDataReader = _couplingDataReaders.at(i);
             if(couplingDataReader->hasVectorData()) {
                 _precice.readBlockVectorData(couplingDataReader->dataID(), _numDataLocations, _vertexIDs, _dataBuffer);
             } else {
@@ -64,9 +64,9 @@ void ofcoupler::CoupledSurface::receiveData() {
     }
 }
 
-void ofcoupler::CoupledSurface::sendData() {
+void adapter::Interface::sendData() {
     for(int i = 0; i < _couplingDataWriters.size(); i++) {
-        ofcoupler::CouplingDataWriter * couplingDataWriter = _couplingDataWriters.at(i);
+        adapter::CouplingDataWriter * couplingDataWriter = _couplingDataWriters.at(i);
         couplingDataWriter->write(_dataBuffer);
         if(couplingDataWriter->hasVectorData()) {
             _precice.writeBlockVectorData(couplingDataWriter->dataID(), _numDataLocations, _vertexIDs, _dataBuffer);

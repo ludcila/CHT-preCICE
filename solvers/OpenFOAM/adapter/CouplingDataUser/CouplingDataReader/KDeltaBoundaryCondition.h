@@ -7,7 +7,7 @@
 #include "turbulentFluidThermoModel.H"
 
 
-namespace ofcoupler
+namespace adapter
 {
 template<typename autoPtrTurb>
 class KDeltaBoundaryCondition : public CouplingDataReader

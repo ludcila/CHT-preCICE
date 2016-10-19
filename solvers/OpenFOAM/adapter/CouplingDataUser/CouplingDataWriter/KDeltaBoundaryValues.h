@@ -5,7 +5,7 @@
 #include "CouplingDataWriter.h"
 #include "turbulentFluidThermoModel.H"
 
-namespace ofcoupler
+namespace adapter
 {
 
 template<typename autoPtrTurb>

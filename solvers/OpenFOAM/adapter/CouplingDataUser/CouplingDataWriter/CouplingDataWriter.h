@@ -4,7 +4,7 @@
 #include "../CouplingDataUser.h"
 
 
-namespace ofcoupler
+namespace adapter
 {
 class CouplingDataWriter : public CouplingDataUser
 {

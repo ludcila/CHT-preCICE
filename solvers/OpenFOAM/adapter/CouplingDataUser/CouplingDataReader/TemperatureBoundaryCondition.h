@@ -4,7 +4,7 @@
 #include "CouplingDataReader.h"
 #include "fvCFD.H"
 
-namespace ofcoupler
+namespace adapter
 {
 
 class TemperatureBoundaryCondition : public CouplingDataReader

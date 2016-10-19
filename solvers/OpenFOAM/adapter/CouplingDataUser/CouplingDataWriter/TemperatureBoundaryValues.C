@@ -1,12 +1,12 @@
 #include "TemperatureBoundaryValues.h"
 
-ofcoupler::TemperatureBoundaryValues::TemperatureBoundaryValues(volScalarField & T) :
+adapter::TemperatureBoundaryValues::TemperatureBoundaryValues(volScalarField & T) :
     _T(T)
 {
 
 }
 
-void ofcoupler::TemperatureBoundaryValues::write(double * dataBuffer)
+void adapter::TemperatureBoundaryValues::write(double * dataBuffer)
 {
     int bufferIndex = 0;
     for(int k = 0; k < _patchIDs.size(); k++) {

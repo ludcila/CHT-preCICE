@@ -1,6 +1,6 @@
 #include "BuoyantBoussinesqPimpleHeatFluxBoundaryCondition.h"
 
-ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp) :
+adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp) :
     _T(T),
     _turbulence(turbulence),
     _alphat(alphat),
@@ -11,7 +11,7 @@ ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::BuoyantBoussinesqPi
 
 }
 
-void ofcoupler::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::read(double * dataBuffer)
+void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::read(double * dataBuffer)
 {
 
     int bufferIndex = 0;

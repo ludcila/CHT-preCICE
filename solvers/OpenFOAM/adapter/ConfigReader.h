@@ -4,9 +4,9 @@
 #include <string>
 #include <boost/log/trivial.hpp>
 #include "yaml-cpp/yaml.h"
-#include "Coupler.h"
+#include "Adapter.h"
 
-namespace ofcoupler
+namespace adapter
 {
 
 class ConfigReader

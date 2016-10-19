@@ -1,6 +1,6 @@
 #include "ConfigReader.h"
 
-void ofcoupler::ConfigReader::checkFields(std::string filename, YAML::Node & config, std::string participantName)
+void adapter::ConfigReader::checkFields(std::string filename, YAML::Node & config, std::string participantName)
 {
     
     if(!config["precice-config-file"]) {
@@ -37,7 +37,7 @@ void ofcoupler::ConfigReader::checkFields(std::string filename, YAML::Node & con
     }
 }
 
-ofcoupler::ConfigReader::ConfigReader(std::string configFile, std::string participantName)
+adapter::ConfigReader::ConfigReader(std::string configFile, std::string participantName)
 {
 
     YAML::Node config = YAML::LoadFile(configFile);

@@ -1,14 +1,14 @@
 #include "HeatFluxBoundaryValues.h"
 
 
-ofcoupler::HeatFluxBoundaryValues::HeatFluxBoundaryValues(volScalarField & T, double k) :
+adapter::HeatFluxBoundaryValues::HeatFluxBoundaryValues(volScalarField & T, double k) :
     _T(T),
     _k(k)
 {
 
 }
 
-void ofcoupler::HeatFluxBoundaryValues::write(double * dataBuffer)
+void adapter::HeatFluxBoundaryValues::write(double * dataBuffer)
 {
 
     int bufferIndex = 0;

@@ -4,7 +4,7 @@
 #include <vector>
 #include "fvCFD.H"
 
-namespace ofcoupler
+namespace adapter
 {
 class Checkpoint
 {

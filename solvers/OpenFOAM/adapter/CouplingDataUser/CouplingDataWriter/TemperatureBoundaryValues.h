@@ -5,7 +5,7 @@
 #include "fvCFD.H"
 
 
-namespace ofcoupler
+namespace adapter
 {
 class TemperatureBoundaryValues : public CouplingDataWriter
 {

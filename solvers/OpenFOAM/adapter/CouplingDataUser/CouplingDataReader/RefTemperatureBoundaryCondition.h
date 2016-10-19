@@ -6,7 +6,7 @@
 #include "mixedFvPatchFields.H"
 
 
-namespace ofcoupler
+namespace adapter
 {
 class RefTemperatureBoundaryCondition : public CouplingDataReader
 {

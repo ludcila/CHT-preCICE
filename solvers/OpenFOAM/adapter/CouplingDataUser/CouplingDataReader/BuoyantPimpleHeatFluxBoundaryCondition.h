@@ -7,7 +7,7 @@
 #include "CouplingDataReader.h"
 #include "fixedGradientFvPatchFields.H"
 
-namespace ofcoupler
+namespace adapter
 {
 
 class BuoyantPimpleHeatFluxBoundaryCondition : public CouplingDataReader

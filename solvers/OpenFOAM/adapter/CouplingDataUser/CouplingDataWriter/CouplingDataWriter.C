@@ -1,6 +1,6 @@
 #include "CouplingDataWriter.h"
 
-ofcoupler::CouplingDataWriter::CouplingDataWriter()
+adapter::CouplingDataWriter::CouplingDataWriter()
 {
 
 }

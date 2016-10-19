@@ -5,24 +5,24 @@
 #include <vector>
 #include "fvCFD.H"
 #include "precice/SolverInterface.hpp"
-#include "CoupledSurface.h"
+#include "Interface.h"
 
-namespace ofcoupler {
+namespace adapter {
 
-class Coupler
+class Adapter
 {
 
 protected:
     precice::SolverInterface & _precice;
     std::string _solverName;
-    std::vector<CoupledSurface*> _coupledSurfaces;
+    std::vector<Interface*> _interface;
     fvMesh & _mesh;
 
 
 public:
-    Coupler(precice::SolverInterface & precice, fvMesh & mesh, std::string solverName = "");
+    Adapter(precice::SolverInterface & precice, fvMesh & mesh, std::string solverName = "");
     precice::SolverInterface & precice() { return _precice; }
-    CoupledSurface & addNewCoupledSurface(std::string meshName, std::vector<std::string> patchNames);
+    Interface & addNewInterface(std::string meshName, std::vector<std::string> patchNames);
     void receiveCouplingData();
     void sendCouplingData();
 
