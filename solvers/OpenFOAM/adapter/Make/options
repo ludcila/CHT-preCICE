@@ -13,7 +13,8 @@ EXE_INC = \
 	-I$(LIB_SRC)/TurbulenceModels/incompressible/lnInclude \
 	-I$(PRECICE_ROOT)/src \
 	-I/usr/local/yaml-cpp/include \
-	-I../
+	-I../ \
+	-DBOOST_LOG_DYN_LINK
 
 EXE_LIBS = \
     -lfiniteVolume \
@@ -33,6 +34,8 @@ EXE_LIBS = \
     -lpetsc \
     -lboost_system \
     -lboost_filesystem \
+	-lboost_log \
+	-lpthread \
 	-lpython2.7 \
 	-L/usr/local/yaml-cpp/build \
 	-lyaml-cpp

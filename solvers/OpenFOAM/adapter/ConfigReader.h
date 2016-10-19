@@ -2,6 +2,7 @@
 #define CONFIGREADER_H
 
 #include <string>
+#include <boost/log/trivial.hpp>
 #include "yaml-cpp/yaml.h"
 #include "Coupler.h"
 
