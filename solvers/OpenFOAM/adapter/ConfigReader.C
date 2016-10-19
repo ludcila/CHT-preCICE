@@ -5,20 +5,20 @@ void adapter::ConfigReader::checkFields( std::string filename, YAML::Node & conf
 
 	if( !config["precice-config-file"] )
 	{
-		BOOST_LOG_TRIVIAL( error ) << "precice-config-file not specified in " << filename;
+		BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": precice-config-file not specified";
 		exit( 1 );
 	}
 
 	if( !config["participants"][participantName] )
 	{
-		std::cerr << "ERROR in " << filename << ": participant " << participantName << " not found in the YAML config file\n";
+		BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": participant \"" << participantName << "\" not specified";
 		exit( 1 );
 	}
 	else
 	{
 		if( !config["participants"][participantName]["interfaces"] )
 		{
-			std::cerr << "ERROR in " << filename << ": interfaces not specified for participant\n" << participantName;
+			BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": interfaces not specified for participant \"" << participantName << "\"";
 			exit( 1 );
 		}
 		else
@@ -27,25 +27,25 @@ void adapter::ConfigReader::checkFields( std::string filename, YAML::Node & conf
 			{
 				if( !config["participants"][participantName]["interfaces"][i]["mesh"] )
 				{
-					std::cerr << "ERROR in " << filename << ": mesh not specified\n";
+					BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": mesh not specified\n";
 					exit( 1 );
 				}
 
 				if( !config["participants"][participantName]["interfaces"][i]["patches"] )
 				{
-					std::cerr << "ERROR in " << filename << ": patches not specified\n";
+					BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": patches not specified\n";
 					exit( 1 );
 				}
 
 				if( !config["participants"][participantName]["interfaces"][i]["write-data"] )
 				{
-					std::cerr << "ERROR in " << filename << ": write-data not specified\n";
+					BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": write-data not specified\n";
 					exit( 1 );
 				}
 
 				if( !config["participants"][participantName]["interfaces"][i]["read-data"] )
 				{
-					std::cerr << "ERROR in " << filename << ": read-data not specified\n";
+					BOOST_LOG_TRIVIAL( error ) << "ERROR in " << filename << ": read-data not specified\n";
 					exit( 1 );
 				}
 			}
