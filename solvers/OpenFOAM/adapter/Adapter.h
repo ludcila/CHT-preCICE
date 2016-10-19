@@ -6,7 +6,6 @@
 #include "fvCFD.H"
 #include "precice/SolverInterface.hpp"
 #include "Interface.h"
-#include "Checkpoint.h"
 
 namespace adapter
 {
