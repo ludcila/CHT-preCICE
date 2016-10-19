@@ -1,27 +1,29 @@
 #include "HeatFluxBoundaryValues.h"
 
 
-adapter::HeatFluxBoundaryValues::HeatFluxBoundaryValues(volScalarField & T, double k) :
-    _T(T),
-    _k(k)
+adapter::HeatFluxBoundaryValues::HeatFluxBoundaryValues( volScalarField & T, double k ) :
+	_T( T ),
+	_k( k )
 {
 
 }
 
-void adapter::HeatFluxBoundaryValues::write(double * dataBuffer)
+void adapter::HeatFluxBoundaryValues::write( double * dataBuffer )
 {
 
-    int bufferIndex = 0;
+	int bufferIndex = 0;
 
-    for(int k = 0; k < _patchIDs.size(); k++) {
+	for( uint k = 0 ; k < _patchIDs.size() ; k++ )
+	{
 
-        int patchID = _patchIDs.at(k);
+		int patchID = _patchIDs.at( k );
 
-        scalarField flux = - _k * refCast<fixedValueFvPatchScalarField>(_T.boundaryField()[patchID]).snGrad();
-        forAll(flux, i) {
-            dataBuffer[bufferIndex++] = flux[i];
-        }
+		scalarField flux = -_k* refCast<fixedValueFvPatchScalarField>( _T.boundaryField()[patchID] ).snGrad();
+		forAll( flux, i )
+		{
+			dataBuffer[bufferIndex++] = flux[i];
+		}
 
-    }
-
+	}
 }
+

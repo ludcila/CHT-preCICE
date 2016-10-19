@@ -14,15 +14,20 @@ namespace adapter
 class BuoyantPimpleSinkTemperatureBoundaryValues : public CouplingDataWriter
 {
 protected:
-    volScalarField & _T;
-    rhoThermo & _thermo;
-    autoPtr<compressible::turbulenceModel> & _turbulence;
-public:
-    BuoyantPimpleSinkTemperatureBoundaryValues(volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence);
 
-    // CouplingDataWriter interface
+	volScalarField & _T;
+	rhoThermo & _thermo;
+	autoPtr<compressible::turbulenceModel> & _turbulence;
+
 public:
-    void write(double * dataBuffer);
+
+	BuoyantPimpleSinkTemperatureBoundaryValues( volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence );
+
+	// CouplingDataWriter interface
+
+public:
+
+	void write( double * dataBuffer );
 };
 
 }

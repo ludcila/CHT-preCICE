@@ -11,14 +11,20 @@ namespace adapter
 class RefTemperatureBoundaryValues : public CouplingDataWriter
 {
 protected:
-    volScalarField & _T;
+
+	volScalarField & _T;
+
 public:
-    RefTemperatureBoundaryValues(volScalarField & T);
-    
-    // CouplingDataWriter interface
+
+	RefTemperatureBoundaryValues( volScalarField & T );
+
+	// CouplingDataWriter interface
+
 public:
-    void write(double *dataBuffer);
+
+	void write( double * dataBuffer );
 };
+
 }
 
 #endif // REFTEMPERATUREBOUNDARYVALUES_H

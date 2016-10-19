@@ -23,9 +23,9 @@ protected:
     bool _enabled;
 public:
     Checkpoint(Foam::Time & runTime, bool checkpointingEnabled);
-    void addVolScalarField(volScalarField & field);
-    void addVolVectorField(volVectorField & field);
-    void addSurfaceScalarField(surfaceScalarField & field);
+    void addField(volScalarField & field);
+    void addField(volVectorField & field);
+    void addField(surfaceScalarField & field);
     void write();
     void read();
 };
