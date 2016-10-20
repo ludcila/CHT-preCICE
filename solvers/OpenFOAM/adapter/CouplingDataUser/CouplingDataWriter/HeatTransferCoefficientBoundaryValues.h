@@ -1,5 +1,5 @@
-#ifndef KDELTABOUNDARYVALUES_H
-#define KDELTABOUNDARYVALUES_H
+#ifndef HEATTRANSFERCOEFFICIENTBOUNDARYVALUES_H
+#define HEATTRANSFERCOEFFICIENTBOUNDARYVALUES_H
 
 #include "fvCFD.H"
 #include "CouplingDataWriter.h"
@@ -9,7 +9,7 @@ namespace adapter
 {
 
 template<typename autoPtrTurb>
-class KDeltaBoundaryValues : public CouplingDataWriter
+class HeatTransferCoefficientBoundaryValues : public CouplingDataWriter
 {
 protected:
 
@@ -17,7 +17,7 @@ protected:
 
 public:
 
-	KDeltaBoundaryValues( autoPtrTurb & turbulence ) :
+	HeatTransferCoefficientBoundaryValues( autoPtrTurb & turbulence ) :
 		_turbulence( turbulence )
 	{
 	}
@@ -63,4 +63,4 @@ public:
 
 
 
-#endif // KDELTABOUNDARYVALUES_H
+#endif // HEATTRANSFERCOEFFICIENTBOUNDARYVALUES_H

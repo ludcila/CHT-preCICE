@@ -1,5 +1,5 @@
-#ifndef REFTEMPERATUREBOUNDARYCONDITION_H
-#define REFTEMPERATUREBOUNDARYCONDITION_H
+#ifndef SINKTEMPERATUREBOUNDARYCONDITION_H
+#define SINKTEMPERATUREBOUNDARYCONDITION_H
 
 #include "fvCFD.H"
 #include "CouplingDataReader.h"
@@ -8,12 +8,12 @@
 
 namespace adapter
 {
-class RefTemperatureBoundaryCondition : public CouplingDataReader
+class SinkTemperatureBoundaryCondition : public CouplingDataReader
 {
 protected:
     volScalarField & _T;
 public:
-    RefTemperatureBoundaryCondition(volScalarField & T);
+    SinkTemperatureBoundaryCondition(volScalarField & T);
     
     // CouplingDataReader interface
 public:
@@ -21,4 +21,4 @@ public:
 };
 }
 
-#endif // REFTEMPERATUREBOUNDARYCONDITION_H
+#endif // SINKTEMPERATUREBOUNDARYCONDITION_H
