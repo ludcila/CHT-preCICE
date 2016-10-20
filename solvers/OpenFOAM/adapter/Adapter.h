@@ -1,5 +1,5 @@
-#ifndef COUPLER_H
-#define COUPLER_H
+#ifndef ADAPTER_H
+#define ADAPTER_H
 
 #include <mpi.h>
 #include <string>
@@ -70,4 +70,4 @@ public:
 
 }
 
-#endif // COUPLER_H
+#endif // ADAPTER_H
