@@ -45,6 +45,9 @@ Description
 
 int main(int argc, char *argv[])
 {
+    argList::addOption("precice-participant", "string", "name of preCICE participant");
+    argList::addOption("precice-config", "string", "name of preCICE config file");
+    
     #include "setRootCase.H"
 
     #include "createTime.H"
@@ -55,59 +58,67 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
-    int mpiUsed, rank = 0, size = 1;
-    MPI_Initialized(&mpiUsed);
-    if(mpiUsed) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-    }
     
-    std::string participantName = runTime.caseName().components().first();
-    adapter::ConfigReader config("config.yml", participantName);
-    precice::SolverInterface precice(participantName, rank, size);
-    precice.configure(config.preciceConfigFilename());
-    adapter::Adapter adapter(precice, mesh, runTime, "laplacianFoam");
+    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
+    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
+    
+    adapter::ConfigReader config(preciceConfig, participantName);
+   
+    bool subcyclingEnabled = true;
+    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "laplacianFoam", subcyclingEnabled);
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
         adapter::Interface & coupledSurface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        for(int j = 0; j < config.interfaces().at(i).data.size(); j++) {
-            std::string dataName = config.interfaces().at(i).data.at(j).name;
-            std::string dataDirection = config.interfaces().at(i).data.at(j).direction;
-            if(dataName.compare("Temperature") == 0 && dataDirection.compare("out") == 0) {
+        
+        
+        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).writeData.at(j);
+            std::cout << dataName << std::endl;
+            if(dataName.compare("Temperature") == 0) {
                 adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.compare("Temperature") == 0 && dataDirection.compare("in") == 0) {
-                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
-                coupledSurface.addCouplingDataReader(dataName, br);
-            }
-            if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("in") == 0) {
-                adapter::HeatFluxBoundaryCondition * br = new adapter::HeatFluxBoundaryCondition(T, k.value());
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.compare("Heat-Flux") == 0 && dataDirection.compare("out") == 0) {
+            } else if(dataName.compare("Heat-Flux") == 0) {
                 adapter::HeatFluxBoundaryValues * bw = new adapter::HeatFluxBoundaryValues(T, k.value());
                 coupledSurface.addCouplingDataWriter(dataName, bw);
+            } else {
+                std::cout << "Error: " << dataName << " does not exist." << std::endl;
+                return 1;
             }
         }
+        
+        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
+            std::string dataName = config.interfaces().at(i).readData.at(j);
+            std::cout << dataName << std::endl;
+            if(dataName.compare("Temperature") == 0) {
+                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else if(dataName.compare("Heat-Flux") == 0) {
+                adapter::HeatFluxBoundaryCondition * br = new adapter::HeatFluxBoundaryCondition(T, k.value());
+                coupledSurface.addCouplingDataReader(dataName, br);
+            } else {
+                std::cout << "Error: " << dataName << " does not exist." << std::endl;
+                return 1;
+            }
+        }
+        
     }
     
-    double precice_dt = precice.initialize();
-    precice.initializeData();
-	
-	const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-	const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
-	
-    simple.loop();
+    adapter.addCheckpointField(T);
+    adapter.initialize();
 
     Info<< "\nCalculating temperature distribution\n" << endl;
 	    
-    while(precice.isCouplingOngoing()) {
+    while(adapter.isCouplingOngoing()) {
+        
+        adapter.adjustSolverTimeStep();
 
-        /* =========================== preCICE read data =========================== */
-
-        if(precice.isActionRequired(cowic)){
-            precice.fulfilledAction(cowic);
+        if(adapter.isWriteCheckpointRequired()){
+            adapter.writeCheckpoint();
+            adapter.fulfilledWriteCheckpoint();
         }
+        
+        simple.loop();
 
         adapter.receiveCouplingData();
 
@@ -124,23 +135,23 @@ int main(int argc, char *argv[])
         /* =========================== preCICE write data =========================== */
 
         adapter.sendCouplingData();
+        adapter.advance();
 
-        precice_dt = precice.advance(precice_dt);
-
-        if(precice.isActionRequired(coric)){
-
-            precice.fulfilledAction(coric);
-
+        if(adapter.isReadCheckpointRequired()){
+            
+            adapter.readCheckpoint();
+            adapter.fulfilledReadCheckpoint();
+            
         } else {
+            
+            Info << "Time: " << runTime.value() << endl;
+            Info << "Requires write: " << runTime.outputTime() << endl;
 
             #include "write.H"
 
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
                 << "  ClockTime = " << runTime.elapsedClockTime() << " s"
                 << nl << endl;
-
-            // Advance in time
-            simple.loop();
 
         }
     }
