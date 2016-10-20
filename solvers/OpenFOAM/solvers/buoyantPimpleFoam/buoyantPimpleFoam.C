@@ -33,7 +33,6 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
-#include <mpi.h>
 #include "fvCFD.H"
 #include "rhoThermo.H"
 #include "turbulentFluidThermoModel.H"
@@ -41,12 +40,10 @@ Description
 #include "fvIOoptionList.H"
 #include "pimpleControl.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
-#include "precice/SolverInterface.hpp"
 #include <sstream>
 #include <vector>
 #include <algorithm>
 #include "yaml-cpp/yaml.h"
-#include "adapter/Checkpoint.h"
 #include "adapter/ConfigReader.h"
 #include "adapter/Adapter.h"
 #include "adapter/Interface.h"
@@ -115,20 +112,11 @@ int main(int argc, char *argv[])
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
     adapter::ConfigReader config(preciceConfig, participantName);
     
-    int mpiUsed, rank = 0, size = 1;
-    MPI_Initialized(&mpiUsed);
-    if(mpiUsed) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-    }
-
-    precice::SolverInterface precice(participantName, rank, size);
-    precice.configure(config.preciceConfigFilename());
-    adapter::Adapter coupler(precice, mesh, "buoyantPimpleFoam");
+    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
-        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & coupledSurface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
@@ -175,67 +163,49 @@ int main(int argc, char *argv[])
     }
 
     // Chekpointing
-    adapter::Checkpoint chkpt(runTime, checkpointingEnabled);
-    chkpt.addVolVectorField(U);
-    chkpt.addVolScalarField(p);
-    chkpt.addVolScalarField(p_rgh);
-    chkpt.addVolScalarField(rho);
-    chkpt.addVolScalarField(thermo.T());
-    chkpt.addVolScalarField(thermo.he());
+    
+    adapter.setCheckpointingEnabled(checkpointingEnabled);
+    adapter.addCheckpointField(U);
+    adapter.addCheckpointField(p);
+    adapter.addCheckpointField(p_rgh);
+    adapter.addCheckpointField(rho);
+    adapter.addCheckpointField(thermo.T());
+    adapter.addCheckpointField(thermo.he());
     //chkpt.addVolScalarField(thermo.hc()());
-    chkpt.addVolScalarField(thermo.p());
-    chkpt.addVolScalarField(K);
-    chkpt.addVolScalarField(dpdt);
+    adapter.addCheckpointField(thermo.p());
+    adapter.addCheckpointField(K);
+    adapter.addCheckpointField(dpdt);
     if(turbulenceUsed) {
-        chkpt.addVolScalarField(turbulence->k()());
-        chkpt.addVolScalarField(turbulence->epsilon()());
-        chkpt.addVolScalarField(turbulence->nut()());
-        chkpt.addVolScalarField(turbulence->alphat()());
+        adapter.addCheckpointField(turbulence->k()());
+        adapter.addCheckpointField(turbulence->epsilon()());
+        adapter.addCheckpointField(turbulence->nut()());
+        adapter.addCheckpointField(turbulence->alphat()());
         // chkpt.addVolScalarField(turbulence->mut()());
     }
-    chkpt.addSurfaceScalarField(phi);
+    adapter.addCheckpointField(phi);
 
-    /* =========================== preCICE initialize =========================== */
-
-    const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-    const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
-
-    double preciceDt = precice.initialize();
-    if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
-        coupler.sendCouplingData();
-        precice.fulfilledAction(precice::constants::actionWriteInitialData());
-    }
-    precice.initializeData();
-    coupler.receiveCouplingData();
-    
-    dimensionedScalar solverDt("solverDt", dimensionSet(0,0,1,0,0,0,0), scalar(preciceDt));
-    
+    adapter.initialize();
+       
     Info<< "\nStarting time loop\n" << endl;
 
-    while (precice.isCouplingOngoing())
+    while (adapter.isCouplingOngoing())
     {
 
         #include "createTimeControls.H"
         #include "compressibleCourantNo.H"
         #include "setDeltaT.H"
-
-        // Set the solver timestep
-        solverDt.value() = std::min(preciceDt, runTime.deltaT().value());
-        runTime.setDeltaT(solverDt);
+        
+        adapter.adjustTimeStep();
 
         // Write checkpoint
-        if(precice.isActionRequired(cowic)){
-
-            std::cout << "<<<<<< Write checkpoint required" << std::endl;
-            chkpt.write();
-            precice.fulfilledAction(cowic);
+        if(adapter.isWriteCheckpointRequired()){
+            adapter.writeCheckpoint();
+            adapter.fulfilledWriteCheckpoint();
         }
 
         runTime++;
 
-        std::cout << "Receive" << std::endl;
-        coupler.receiveCouplingData();
-        std::cout << "Finish receive" << std::endl;
+        adapter.receiveCouplingData();
 
         /* Start of original solver code */
 
@@ -265,24 +235,17 @@ int main(int argc, char *argv[])
 
         /* End of original solver code */
         
-        std::cout << "Send" << std::endl;
-        coupler.sendCouplingData();
-        std::cout << "Finish send" << std::endl;
+        adapter.sendCouplingData();
         
-        std::cout << "Advance" << std::endl;
-        preciceDt = precice.advance(solverDt.value());
-        std::cout << "Finish advance" << std::endl;
+        adapter.advance();
 
-        if(precice.isActionRequired(coric)) {
-
-            std::cout << ">>>>>> Read checkpoint required" << std::endl;
+        if(adapter.isReadCheckpointRequired()) {  
             
-            chkpt.read();
-            if(turbulenceUsed && checkpointingEnabled) {
+            adapter.readCheckpoint();
+            if(turbulenceUsed && adapter.isCheckpointingEnabled()) {
                 turbulence->alphat()().correctBoundaryConditions();
             }
-
-            precice.fulfilledAction(coric);
+            adapter.fulfilledReadCheckpoint();
 
         } else {
 
@@ -294,10 +257,8 @@ int main(int argc, char *argv[])
 
         }
 
-        if(precice.isTimestepComplete()) {
-            std::cout << "Coupling timestep completed!!!==================================================================================" << std::endl;
-        }
-
+        adapter.checkCouplingTimeStepComplete();
+        
     }
 
     Info<< "End\n" << endl;

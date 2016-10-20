@@ -30,7 +30,6 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
-#include <mpi.h>
 #include "fvCFD.H"
 #include "rhoThermo.H"
 #include "turbulentFluidThermoModel.H"
@@ -38,7 +37,6 @@ Description
 #include "simpleControl.H"
 #include "fvIOoptionList.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
-#include "precice/SolverInterface.hpp"
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -76,28 +74,17 @@ int main(int argc, char *argv[])
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
     std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
     adapter::ConfigReader config(preciceConfig, participantName);
-    
-    int mpiUsed, rank = 0, size = 1;
-    MPI_Initialized(&mpiUsed);
-    if(mpiUsed) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-    }
 
-    precice::SolverInterface precice(participantName, rank, size);
-    precice.configure(config.preciceConfigFilename());
-    precice.configure(config.preciceConfigFilename());
-    adapter::Adapter coupler(precice, mesh, "buoyantSimpleFoam");
-
+    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantSimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {        
-        adapter::Interface & coupledSurface = coupler.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+        adapter::Interface & interface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                coupledSurface.addCouplingDataWriter(dataName, new adapter::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
+                interface.addCouplingDataWriter(dataName, new adapter::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
-                coupledSurface.addCouplingDataWriter(dataName, new adapter::RefTemperatureBoundaryValues(thermo.T()));
+                interface.addCouplingDataWriter(dataName, new adapter::RefTemperatureBoundaryValues(thermo.T()));
             } else {
                 std::cout << "Error: " << dataName << " is not valid" << std::endl;
                 return 1;
@@ -106,9 +93,9 @@ int main(int argc, char *argv[])
         for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
             std::string dataName = config.interfaces().at(i).readData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                coupledSurface.addCouplingDataReader(dataName, new adapter::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
+                interface.addCouplingDataReader(dataName, new adapter::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
-                coupledSurface.addCouplingDataReader(dataName, new adapter::RefTemperatureBoundaryCondition(thermo.T()));
+                interface.addCouplingDataReader(dataName, new adapter::RefTemperatureBoundaryCondition(thermo.T()));
             } else {
                 std::cout << "Error: " << dataName << " is not valid" << std::endl;
                 return 1;
@@ -116,28 +103,16 @@ int main(int argc, char *argv[])
             
         }  
     }
-    
-    const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-    const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
 
-    double preciceDt = precice.initialize();
-    if(precice.isActionRequired(precice::constants::actionWriteInitialData())) {
-        coupler.sendCouplingData();
-        precice.fulfilledAction(precice::constants::actionWriteInitialData());
-    }
-    precice.initializeData();
-    coupler.receiveCouplingData();
+    adapter.initialize();
+    adapter.receiveCouplingData();
 
     Info<< "\nStarting time loop\n" << endl;
 
-    while (simple.loop())
+    while (simple.loop() && adapter.isCouplingOngoing())
     {
         
-        if(precice.isActionRequired(cowic)) {
-            precice.fulfilledAction(cowic);
-        }
-
-        coupler.receiveCouplingData();
+        adapter.receiveCouplingData();
 
         // Pressure-velocity SIMPLE corrector
         {
@@ -148,24 +123,14 @@ int main(int argc, char *argv[])
 
         turbulence->correct();
 
-        coupler.sendCouplingData();
+        adapter.sendCouplingData();
+        adapter.advance();
         
-        std::cout << "Before advance" << std::endl;
-        preciceDt = precice.advance(runTime.deltaT().value());
-        std::cout << "After advance" << std::endl;
+        runTime.write(); 
         
-        runTime.write(); // write anyway!
-        
-        if(precice.isActionRequired(coric)) {
-            
-            precice.fulfilledAction(coric);
-            
-        } else {
-
-            Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-                << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-                << nl << endl;
-        }
+        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+            << nl << endl;
 
     }
 
