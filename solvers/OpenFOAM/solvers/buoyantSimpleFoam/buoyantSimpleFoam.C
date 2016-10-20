@@ -44,10 +44,10 @@ Description
 #include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/HeatTransferCoefficientBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/HeatTransferCoefficientBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
             std::string dataName = config.interfaces().at(i).writeData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                interface.addCouplingDataWriter(dataName, new adapter::KDeltaBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
+                interface.addCouplingDataWriter(dataName, new adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
                 interface.addCouplingDataWriter(dataName, new adapter::RefTemperatureBoundaryValues(thermo.T()));
             } else {
@@ -93,9 +93,9 @@ int main(int argc, char *argv[])
         for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
             std::string dataName = config.interfaces().at(i).readData.at(j);
             if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                interface.addCouplingDataReader(dataName, new adapter::KDeltaBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
+                interface.addCouplingDataReader(dataName, new adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
             } else if(dataName.find("Sink-Temperature") == 0) {
-                interface.addCouplingDataReader(dataName, new adapter::RefTemperatureBoundaryCondition(thermo.T()));
+                interface.addCouplingDataReader(dataName, new adapter::SinkTemperatureBoundaryCondition(thermo.T()));
             } else {
                 std::cout << "Error: " << dataName << " is not valid" << std::endl;
                 return 1;
