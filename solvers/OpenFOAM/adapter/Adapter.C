@@ -45,7 +45,8 @@ int adapter::Adapter::_getMPISize()
 adapter::Adapter::Adapter( std::string participantName,  std::string preciceConfigFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName ) :
 	_mesh( mesh ),
 	_runTime( runTime ),
-	_solverName( solverName )
+	_solverName( solverName ),
+	_solverTimeStep( -1 )
 {
 	_precice = new precice::SolverInterface( participantName, _getMPIRank(), _getMPISize() );
 	_precice->configure( preciceConfigFilename );
@@ -90,9 +91,9 @@ void adapter::Adapter::sendCouplingData()
 
 void adapter::Adapter::advance()
 {
-	if( _solverTimeStep == 0 )
+	if( _solverTimeStep == -1 )
 	{
-
+		_preciceTimeStep = _precice->advance( _preciceTimeStep );
 	}
 	else
 	{
