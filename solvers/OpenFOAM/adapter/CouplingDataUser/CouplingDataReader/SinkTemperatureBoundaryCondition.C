@@ -1,12 +1,12 @@
-#include "RefTemperatureBoundaryCondition.h"
+#include "SinkTemperatureBoundaryCondition.h"
 
-adapter::RefTemperatureBoundaryCondition::RefTemperatureBoundaryCondition(volScalarField &T) :
+adapter::SinkTemperatureBoundaryCondition::SinkTemperatureBoundaryCondition(volScalarField &T) :
     _T(T)
 {
     
 }
 
-void adapter::RefTemperatureBoundaryCondition::read(double * dataBuffer)
+void adapter::SinkTemperatureBoundaryCondition::read(double * dataBuffer)
 {
     
     int bufferIndex = 0;

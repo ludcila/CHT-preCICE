@@ -1,4 +1,4 @@
-#include "RefTemperatureBoundaryValues.h"
+#include "SinkTemperatureBoundaryValues.h"
 
 
 adapter::RefTemperatureBoundaryValues::RefTemperatureBoundaryValues( volScalarField & T ) :
