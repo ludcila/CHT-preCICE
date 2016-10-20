@@ -42,12 +42,19 @@ int adapter::Adapter::_getMPISize()
 	return size;
 }
 
-adapter::Adapter::Adapter( std::string participantName,  std::string preciceConfigFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName ) :
+adapter::Adapter::Adapter( std::string participantName,  std::string preciceConfigFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName, bool subcyclingEnabled ) :
 	_mesh( mesh ),
 	_runTime( runTime ),
 	_solverName( solverName ),
-	_solverTimeStep( -1 )
+	_solverTimeStep( -1 ),
+	_subcyclingEnabled( subcyclingEnabled )
 {
+
+	boost::log::core::get()->set_filter
+	(
+	        boost::log::trivial::severity >= boost::log::trivial::info
+	);
+
 	_precice = new precice::SolverInterface( participantName, _getMPIRank(), _getMPISize() );
 	_precice->configure( preciceConfigFilename );
 }
@@ -102,16 +109,38 @@ void adapter::Adapter::advance()
 	}
 }
 
-void adapter::Adapter::adjustTimeStep( bool forcePreciceTimeStep )
+void adapter::Adapter::adjustSolverTimeStep()
 {
-	if( forcePreciceTimeStep )
+
+	// Time step size specified in the controlDict file or automatically computed by setting adjustTimeStep to true
+	double solverDeterminedTimeStep = _runTime.deltaT().value();
+
+	if( solverDeterminedTimeStep < _preciceTimeStep )
 	{
+		if( !_subcyclingEnabled )
+		{
+			BOOST_LOG_TRIVIAL( warning ) << "Subcycling is not allowed for this solver.  "
+			                             << "Solver time step cannot be smaller than the coupling time step.  "
+			                             << "Forcing solver to use the coupling time step.";
+			_solverTimeStep = _preciceTimeStep;
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL( info ) << "Solver time step is smaller than coupling time step: subcycling used.";
+			_solverTimeStep = solverDeterminedTimeStep;
+		}
+	}
+	else if ( solverDeterminedTimeStep > _preciceTimeStep )
+	{
+		BOOST_LOG_TRIVIAL( info ) << "Solver time step cannot be larger than the coupling time step.  "
+		                          << "Adjusting from " << solverDeterminedTimeStep << " to " << _preciceTimeStep;
 		_solverTimeStep = _preciceTimeStep;
 	}
 	else
 	{
-		_solverTimeStep = std::min( _preciceTimeStep, _runTime.deltaT().value() );
+		_solverTimeStep = _preciceTimeStep;
 	}
+
 	_runTime.setDeltaT( _solverTimeStep );
 }
 
