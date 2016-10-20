@@ -1,5 +1,5 @@
-#ifndef KDELTABOUNDARYCONDITION_H
-#define KDELTABOUNDARYCONDITION_H
+#ifndef HEATTRANSFERCOEFFICIENTBOUNDARYCONDITION_H
+#define HEATTRANSFERCOEFFICIENTBOUNDARYCONDITION_H
 
 #include "fvCFD.H"
 #include "CouplingDataReader.h"
@@ -10,7 +10,7 @@
 namespace adapter
 {
 template<typename autoPtrTurb>
-class KDeltaBoundaryCondition : public CouplingDataReader
+class HeatTransferCoefficientBoundaryCondition : public CouplingDataReader
 {
 protected:
 
@@ -19,7 +19,7 @@ protected:
 
 public:
 
-	KDeltaBoundaryCondition( volScalarField & T, autoPtrTurb & _turbulence ) :
+	HeatTransferCoefficientBoundaryCondition( volScalarField & T, autoPtrTurb & _turbulence ) :
 		_T( T ),
 		_turbulence( _turbulence )
 	{
@@ -58,4 +58,4 @@ public:
 
 } // end namespace
 
-#endif // KDELTABOUNDARYCONDITION_H
+#endif // HEATTRANSFERCOEFFICIENTBOUNDARYCONDITION_H
