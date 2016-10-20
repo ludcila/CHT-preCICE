@@ -144,9 +144,6 @@ int main(int argc, char *argv[])
             
         } else {
             
-            Info << "Time: " << runTime.value() << endl;
-            Info << "Requires write: " << runTime.outputTime() << endl;
-
             #include "write.H"
 
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
