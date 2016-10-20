@@ -51,12 +51,11 @@ Description
 #include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleSinkTemperatureBoundaryValues.h"
 
-#include "adapter/CouplingDataUser/CouplingDataReader/RefTemperatureBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/RefTemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/KDeltaBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/KDeltaBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.h"
+#include "adapter/CouplingDataUser/CouplingDataReader/HeatTransferCoefficientBoundaryCondition.h"
+#include "adapter/CouplingDataUser/CouplingDataWriter/HeatTransferCoefficientBoundaryValues.h"
 
 
 
@@ -128,7 +127,7 @@ int main(int argc, char *argv[])
                 adapter::BuoyantPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                adapter::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new adapter::KDeltaBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
+                adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
                 coupledSurface.addCouplingDataWriter(dataName, bw);
             } else if(dataName.find("Sink-Temperature") == 0) {
                 adapter::RefTemperatureBoundaryValues * bw = new adapter::RefTemperatureBoundaryValues(thermo.T());
@@ -149,10 +148,10 @@ int main(int argc, char *argv[])
                 adapter::BuoyantPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                adapter::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new adapter::KDeltaBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
+                adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else if(dataName.find("Sink-Temperature") == 0) {
-                adapter::RefTemperatureBoundaryCondition * br = new adapter::RefTemperatureBoundaryCondition(thermo.T());
+                adapter::SinkTemperatureBoundaryCondition * br = new adapter::SinkTemperatureBoundaryCondition(thermo.T());
                 coupledSurface.addCouplingDataReader(dataName, br);
             } else {
                 std::cout << "Error: " << dataName << " does not exist." << std::endl;

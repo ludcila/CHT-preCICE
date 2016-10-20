@@ -92,16 +92,7 @@ int main(int argc, char *argv[])
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
     adapter::ConfigReader config(preciceConfig, participantName);
 
-    int mpiUsed, rank = 0, size = 1;
-    MPI_Initialized(&mpiUsed);
-    if(mpiUsed) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-    }
-
-    precice::SolverInterface precice(participantName, rank, size);
-    precice.configure(config.preciceConfigFilename());
-    adapter::Adapter adapter(precice, mesh, runTime, "buoyantBoussinesqPimpleFoam");
+    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantBoussinesqPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         
@@ -140,17 +131,11 @@ int main(int argc, char *argv[])
     }
 
 
-    double precice_dt = precice.initialize();
-    precice.initializeData();
-
-    const std::string& coric = precice::constants::actionReadIterationCheckpoint();
-    const std::string& cowic = precice::constants::actionWriteIterationCheckpoint();
+    adapter.initialize();
 
     Info<< "\nStarting time loop\n" << endl;
 
-    runTime++;
-
-    while(precice.isCouplingOngoing())
+    while(adapter.isCouplingOngoing())
     {
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
@@ -158,13 +143,15 @@ int main(int argc, char *argv[])
         #include "createTimeControls.H"
         #include "CourantNo.H"
         #include "setDeltaT.H"
+        
+        adapter.adjustTimeStep();
 
-
-        /* =========================== preCICE read data =========================== */
-
-        if(precice.isActionRequired(cowic)){
-            precice.fulfilledAction(cowic);
+        if(adapter.isWriteCheckpointRequired()){
+            adapter.writeCheckpoint();
+            adapter.fulfilledWriteCheckpoint();
         }
+        
+        runTime++;
 
         adapter.receiveCouplingData();
 
@@ -187,16 +174,12 @@ int main(int argc, char *argv[])
             }
         }
 
-
-        /* =========================== preCICE write data =========================== */
-
-
         adapter.sendCouplingData();
+        adapter.advance();
 
-        precice_dt = precice.advance(precice_dt);
-
-        if(precice.isActionRequired(coric)){
-            precice.fulfilledAction(coric);
+        if(adapter.isReadCheckpointRequired()){
+            adapter.readCheckpoint();
+            adapter.fulfilledReadCheckpoint();
         } else {
 
             runTime.write();
@@ -204,8 +187,6 @@ int main(int argc, char *argv[])
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
                 << "  ClockTime = " << runTime.elapsedClockTime() << " s"
                 << nl << endl;
-
-            runTime++;
         }
 
     }
