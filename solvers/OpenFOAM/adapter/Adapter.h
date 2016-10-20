@@ -4,6 +4,8 @@
 #include <mpi.h>
 #include <string>
 #include <vector>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
 #include "fvCFD.H"
 #include "precice/SolverInterface.hpp"
 #include "Interface.h"
@@ -24,6 +26,8 @@ protected:
 	double _solverTimeStep;
 
 	bool _checkpointingIsEnabled = true;
+	bool _subcyclingEnabled = false;
+
 	scalar _couplingIterationTimeValue;
 	label _couplingIterationTimeIndex;
 	std::vector<volScalarField*> _volScalarFields;
@@ -35,13 +39,20 @@ protected:
 	void _storeCheckpointTime();
 	void _reloadCheckpointTime();
 
+
 	bool _isMPIUsed();
 	int _getMPIRank();
 	int _getMPISize();
 
 public:
 
-	Adapter( std::string participantName, std::string preciceConfigFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName );
+	Adapter(
+	        std::string participantName,
+	        std::string preciceConfigFilename,
+	        fvMesh & mesh, Foam::Time & runTime,
+	        std::string solverName,
+	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!
+	        );
 
 	Interface & addNewInterface( std::string meshName, std::vector<std::string> patchNames );
 
@@ -49,7 +60,7 @@ public:
 	void receiveCouplingData();
 	void sendCouplingData();
 	void advance();
-	void adjustTimeStep( bool forcePreciceTimeStep = false );
+	void adjustSolverTimeStep();
 	bool isCouplingOngoing();
 	void checkCouplingTimeStepComplete();
 

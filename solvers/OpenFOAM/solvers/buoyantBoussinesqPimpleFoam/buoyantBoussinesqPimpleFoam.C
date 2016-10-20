@@ -130,7 +130,6 @@ int main(int argc, char *argv[])
         
     }
 
-
     adapter.initialize();
 
     Info<< "\nStarting time loop\n" << endl;
@@ -144,7 +143,7 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "setDeltaT.H"
         
-        adapter.adjustTimeStep();
+        adapter.adjustSolverTimeStep();
 
         if(adapter.isWriteCheckpointRequired()){
             adapter.writeCheckpoint();
@@ -181,7 +180,7 @@ int main(int argc, char *argv[])
             adapter.readCheckpoint();
             adapter.fulfilledReadCheckpoint();
         } else {
-
+            
             runTime.write();
 
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

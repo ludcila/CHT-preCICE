@@ -111,7 +111,8 @@ int main(int argc, char *argv[])
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
     adapter::ConfigReader config(preciceConfig, participantName);
     
-    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantPimpleFoam");
+    bool subcyclingEnabled = true;
+    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantPimpleFoam", subcyclingEnabled);
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
@@ -194,7 +195,7 @@ int main(int argc, char *argv[])
         #include "compressibleCourantNo.H"
         #include "setDeltaT.H"
         
-        adapter.adjustTimeStep();
+        adapter.adjustSolverTimeStep();
 
         // Write checkpoint
         if(adapter.isWriteCheckpointRequired()){
