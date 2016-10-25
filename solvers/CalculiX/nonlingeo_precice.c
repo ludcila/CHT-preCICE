@@ -233,7 +233,9 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 		.mt = mt,
 		.nk = *nk,
 		.theta = &theta,
-		.dtheta = &dtheta
+		.dtheta = &dtheta,
+        .tper = tper,
+        .nmethod = nmethod
 	};
 
 	int numPreciceInterfaces;
@@ -1130,16 +1132,8 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	
 	while(precicec_isCouplingOngoing()) { //	while((1. - theta > 1.e-6) || (negpres == 1)) {
 		
-		PreciceInterface_AdjustSolverTimestep(precice_dt, *tper, &dtheta, &solver_dt);
-		if(*nmethod == 1) {
-			theta = 0;
-			*tper = 1;
-			solver_dt = 1;
-			dtheta = 1;
-			precice_dt = 1;
-//			printf("heyyy");
-		}
-		
+		PreciceInterface_AdjustSolverTimestep(ccxData, precice_dt, &solver_dt);
+
 		if(precicec_isReadDataAvailable()) {
 			for(i = 0; i < numPreciceInterfaces; i++) {
 				if(preciceInterfaces[i]->readData == TEMPERATURE) {

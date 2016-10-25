@@ -31,6 +31,8 @@ typedef struct CalculiXData {
 	double mt;
 	double * theta;
 	double * dtheta;
+    double * tper;
+    ITG * nmethod;
 	double * coupling_init_v;
 	double coupling_init_theta;
 	double coupling_init_dtheta;
@@ -141,7 +143,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, s
  * @param dtheta: CalculiX variable for the step size, normalized with respect to the total time tper
  * @param solver_dt: Actual step size (dtheta * tper), used by preCICE
  */
-void PreciceInterface_AdjustSolverTimestep( double precice_dt, double tper, double * dtheta, double * solver_dt );
+void PreciceInterface_AdjustSolverTimestep( struct CalculiXData ccx, double precice_dt, double * solver_dt );
 
 /**
  * @brief PreciceInterface_WriteIterationCheckpoint

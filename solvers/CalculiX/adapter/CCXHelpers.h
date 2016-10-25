@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "../CalculiX.h"
 
 char * toNodeSetName(char * name);
@@ -18,5 +19,6 @@ void getTetraFaceNodes(ITG * elements, ITG * faces, ITG * nodes, ITG numElements
 void getXloadIndices(char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numElements, ITG nload, ITG * nelemload, char * sideload, ITG * xloadIndices);
 void setXload(double * xload, int * xloadIndices, double * values, int numValues, int indexOffset);
 void setNodeTemperatures(double * temperatures, ITG numNodes, int * xbounIndices, double * xboun);
+bool isSteadyStateSimulation( ITG * nmethod );
 
 #endif // CCXHELPERS_H
