@@ -215,8 +215,8 @@ void PreciceInterface_AdjustSolverTimestep( CalculiXData ccx, double precice_dt,
 {
 	if( isSteadyStateSimulation( ccx.nmethod ) )
 	{
-        printf("Adjusting time step for steady-state step\n");
-        
+		printf( "Adjusting time step for steady-state step\n" );
+
 		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
 		*ccx.theta = 0;
 		*ccx.tper = 1;
@@ -227,7 +227,7 @@ void PreciceInterface_AdjustSolverTimestep( CalculiXData ccx, double precice_dt,
 	}
 	else
 	{
-        printf("Adjusting time step for transient step\n");
+		printf( "Adjusting time step for transient step\n" );
 		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", precice_dt / *ccx.tper, *ccx.dtheta, fmin( precice_dt, *ccx.dtheta * *ccx.tper ) );
 
 		// Compute the normalized time step used by CalculiX
@@ -241,5 +241,106 @@ void PreciceInterface_AdjustSolverTimestep( CalculiXData ccx, double precice_dt,
 void PreciceInterface_DeallocateAll()
 {
 	// Deallocate the data structures of each interface
+}
+
+void PreciceInterface_ReadCouplingData( CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces )
+{
+	int i;
+
+	if( precicec_isReadDataAvailable() )
+	{
+		for( i = 0 ; i < numInterfaces ; i++ )
+		{
+			switch( preciceInterfaces[i]->readData )
+			{
+			case TEMPERATURE:
+				// Read and set temperature BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
+				setNodeTemperatures( preciceInterfaces[i]->nodeData, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->xbounIndices, ccx.xboun );
+				break;
+			case HEAT_FLUX:
+				// Read and set heat flux BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, DFLUX );
+				break;
+			case KDELTA_TEMPERATURE:
+				// Read and set sink temperature in convective film BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, FILM_T );
+				// Read and set heat transfer coefficient in convective film BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, FILM_H );
+				break;
+			}
+		}
+	}
+}
+
+void PreciceInterface_WriteCouplingData( CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces )
+{
+
+	int i;
+    int iset;
+
+	if( precicec_isWriteDataRequired( *ccx.solver_dt ) || precicec_isActionRequired("write-initial-data"))
+	{
+		for( i = 0 ; i < numInterfaces ; i++ )
+		{
+			switch( preciceInterfaces[i]->writeData )
+			{
+			case TEMPERATURE:
+				getNodeTemperatures( preciceInterfaces[i]->nodeIDs, preciceInterfaces[i]->numNodes, ccx.vold, ccx.mt, preciceInterfaces[i]->nodeData );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
+				break;
+			case HEAT_FLUX:
+				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				FORTRAN( getflux, ( ccx.co,
+				                    ccx.ntmat_,
+				                    ccx.vold,
+				                    ccx.cocon,
+				                    ccx.ncocon,
+				                    &iset,
+				                    ccx.istartset,
+				                    ccx.iendset,
+				                    ccx.ipkon,
+				                    *ccx.lakon,
+				                    ccx.kon,
+				                    ccx.ialset,
+				                    ccx.ielmat,
+				                    ccx.mi,
+				                    preciceInterfaces[i]->faceCenterData
+				                    )
+				         );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				break;
+			case KDELTA_TEMPERATURE:
+				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				double * myKDelta = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
+				double * T = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
+				FORTRAN( getkdeltatemp, ( ccx.co,
+				                          ccx.ntmat_,
+				                          ccx.vold,
+				                          ccx.cocon,
+				                          ccx.ncocon,
+				                          &iset,
+				                          ccx.istartset,
+				                          ccx.iendset,
+				                          ccx.ipkon,
+				                          *ccx.lakon,
+				                          ccx.kon,
+				                          ccx.ialset,
+				                          ccx.ielmat,
+				                          ccx.mi,
+				                          myKDelta,
+				                          T
+				                          )
+				         );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, myKDelta );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, T );
+				break;
+
+			}
+		}
+	}
 }
 
