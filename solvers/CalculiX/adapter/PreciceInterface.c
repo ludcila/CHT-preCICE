@@ -211,11 +211,31 @@ void PreciceInterface_ReadIterationCheckpoint( CalculiXData * ccx, double * v )
 
 }
 
-void PreciceInterface_AdjustSolverTimestep( double precice_dt, double tper, double * dtheta, double * solver_dt )
+void PreciceInterface_AdjustSolverTimestep( CalculiXData ccx, double precice_dt, double * solver_dt )
 {
-	printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", precice_dt / tper, *dtheta, fmin( precice_dt, *dtheta * tper ) );
-	*dtheta = fmin( precice_dt / tper, *dtheta );
-	*solver_dt = *dtheta * tper;
+	if( isSteadyStateSimulation( ccx.nmethod ) )
+	{
+        printf("Adjusting time step for steady-state step\n");
+        
+		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
+		*ccx.theta = 0;
+		*ccx.tper = 1;
+		*ccx.dtheta = 1;
+
+		// Do not subcycle! Set the solver time step to be the same as the coupling time step
+		*solver_dt = precice_dt;
+	}
+	else
+	{
+        printf("Adjusting time step for transient step\n");
+		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", precice_dt / *ccx.tper, *ccx.dtheta, fmin( precice_dt, *ccx.dtheta * *ccx.tper ) );
+
+		// Compute the normalized time step used by CalculiX
+		*ccx.dtheta = fmin( precice_dt / *ccx.tper, *ccx.dtheta );
+
+		// Compute the non-normalized time step used by preCICE
+		*solver_dt = ( *ccx.dtheta ) * ( *ccx.tper );
+	}
 }
 
 void PreciceInterface_DeallocateAll()
