@@ -230,20 +230,35 @@ void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * 
 	// See documentation ccx_2.10.pdf for the definition of ikboun and ilboun
 }
 
-void setXload( double * xload, int * xloadIndices, double * values, int numValues, int indexOffset )
+void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar )
 {
-
-	// xload has two "columns", the dflux must be set in the first column
-
 	ITG i;
-
-	printf( "Flux:\n" );
+	int indexOffset = getXloadIndexOffset( xloadVar );
 
 	for( i = 0 ; i < numValues ; i++ )
 	{
 		double temp = xload[xloadIndices[i] + indexOffset];
 		xload[xloadIndices[i] + indexOffset] = values[i];
-//		printf("(%d) xload[%d] = %f (%f)\n", i, xloadIndices[i] + indexOffset, values[i], temp);
+	}
+}
+
+int getXloadIndexOffset( enum xloadVariable xloadVar )
+{
+	/*
+	 * xload is the CalculiX array where the DFLUX and FILM boundary conditions are stored
+	 * the array has two components:
+	 * - the first component corresponds to the flux value and the heat transfer coefficient
+	 * - the second component corresponds to the sink temperature
+	 * */
+	int indexOffset;
+	switch( xloadVar )
+	{
+	case DFLUX:
+		return 0;
+	case FILM_H:
+		return 0;
+	case FILM_T:
+		return 1;
 	}
 }
 
@@ -260,7 +275,7 @@ void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndice
 
 bool isSteadyStateSimulation( ITG * nmethod )
 {
-    return *nmethod == 1;
+	return *nmethod == 1;
 }
 
 void getFaceFluxes()
