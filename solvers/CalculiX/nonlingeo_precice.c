@@ -289,9 +289,6 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 			} else if(preciceInterfaces[i]->readData == HEAT_FLUX) {
 				precicec_readBlockScalarData(preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
 				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 0);
-			} else if(preciceInterfaces[i]->readData == SINK_TEMPERATURE) {
-				precicec_readBlockScalarData(preciceInterfaces[i]->sinkTemperatureDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
-				setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
 			} else if(preciceInterfaces[i]->readData == KDELTA_TEMPERATURE) {
 				// Get sink temperature and set in xload
 				precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
@@ -1142,22 +1139,13 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 				} else if(preciceInterfaces[i]->readData == HEAT_FLUX) {
 					precicec_readBlockScalarData(preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
 					setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 0);
-				} else if(preciceInterfaces[i]->readData == SINK_TEMPERATURE) {
-					precicec_readBlockScalarData(preciceInterfaces[i]->sinkTemperatureDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
-					setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
 				} else if(preciceInterfaces[i]->readData == KDELTA_TEMPERATURE) {
 					// Get sink temperature and set in xload
 					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
 					setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 1);
-					double * buffer = malloc(preciceInterfaces[i]->numElements * sizeof(double));
 					// Get nbrKDelta, compute heat transfer coefficient h and set in xload
-					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, buffer);
-					setXload(xload, preciceInterfaces[i]->xloadIndices, buffer, preciceInterfaces[i]->numElements, 0);
-//					printf("From interface %d\n", i);
-//					for(j = 0; j < preciceInterfaces[i]->numElements; j++) {
-//						printf("%d) T=%f, h=%f\n", j, preciceInterfaces[i]->faceCenterData[j], buffer[j]);
-//					}
-					free(buffer);
+					precicec_readBlockScalarData(preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData);
+					setXload(xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, 0);
 				} 
 			}
 		}
