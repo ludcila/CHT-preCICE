@@ -5,7 +5,7 @@
 #include "CCXHelpers.h"
 #include "Helpers.h"
 
-enum CouplingDataType {TEMPERATURE, HEAT_FLUX, SINK_TEMPERATURE, KDELTA_TEMPERATURE};
+enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
 
 /*
  * CalculiXData: Structure with all the CalculiX variables 
