@@ -193,28 +193,6 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	tmax = &timepar[3];
 	tincf = &timepar[4];
 
-	/*
-	 *
-	 * preCICE initialization
-	 * - define two meshes: nodes and face centers
-	 * - initialize preCICE
-	 * - initialize data if necessary
-	 *
-	 * */
-
-	/* Set up the face centers mesh
-	int interfaceSetID = getSetID("SINTERFACET", set, *nset);
-	int numInterfaceElements = getNumSetElements(interfaceSetID, istartset, iendset);
-	int interfaceElementIDs[numInterfaceElements];
-	int interfaceFaceIDs[numInterfaceElements];
-	getSurfaceElementsAndFaces(interfaceSetID, ialset, istartset, iendset, interfaceElementIDs, interfaceFaceIDs);
-	double interfaceFaceCenters[numInterfaceElements * 3]; // hard code num dimensions
-	getTetraFaceCenters(interfaceElementIDs, interfaceFaceIDs, numInterfaceElements, kon, ipkon, co, interfaceFaceCenters);
-	int faceCentersMeshID = precicec_getMeshID("CCX-Face-Centers");
-	int preciceFaceCenterIDs[numInterfaceElements];
-	precicec_setMeshVertices(faceCentersMeshID, numInterfaceElements, interfaceFaceCenters, preciceFaceCenterIDs);
- */
-
 	struct CalculiXData ccxData = {
 		.ialset = ialset,
 		.istartset = istartset,
@@ -244,17 +222,12 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	printf("Setting up preCICE participant %s, using config file: %s\n", preciceParticipantName, preciceConfigFilename);
 	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, ccxData, &preciceInterfaces, &numPreciceInterfaces);
 
-	/* Data variables */
-
-	/* Additional variables for solver coupling */
+	/* Additional variables for the coupling */
 	double precice_dt, solver_dt;
 	double coupling_init_theta, coupling_init_dtheta;
 	NNEW(ccxData.coupling_init_v, double, mt ** nk);	
 	
-	printf("Before init\n");
-
 	precice_dt = precicec_initialize();
-	printf("After init\n");
 
 	// Initialize data
 	if(precicec_isActionRequired("write-initial-data")) {
@@ -2684,7 +2657,6 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 				}
 			}
 			
-			printf("Solver dt = %f\n", solver_dt);
 			precice_dt = precicec_advance(solver_dt);
 			
 			if(precicec_isActionRequired("read-iteration-checkpoint")) {
