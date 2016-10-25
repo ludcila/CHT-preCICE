@@ -1,6 +1,7 @@
 #ifndef PRECICEINTERFACE_H
 #define PRECICEINTERFACE_H
 
+#include <string.h>
 #include "ConfigReader.h"
 #include "CCXHelpers.h"
 #include "Helpers.h"
@@ -13,6 +14,7 @@ enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
  */
 typedef struct CalculiXData {
 	ITG * ialset;
+    ITG * ielmat;
 	ITG * istartset;
 	ITG * iendset;
 	char ** lakon;
@@ -28,14 +30,22 @@ typedef struct CalculiXData {
 	int nload;
 	char * sideload;
 	double nk;
-	double mt;
+	ITG mt;
 	double * theta;
 	double * dtheta;
     double * tper;
     ITG * nmethod;
+    double * xload;
+    double * xboun;
+    ITG * ntmat_;
+    double * vold;
+    double * cocon;
+    ITG * ncocon;
+    ITG * mi;
 	double * coupling_init_v;
 	double coupling_init_theta;
 	double coupling_init_dtheta;
+    double * solver_dt;
 } CalculiXData;
 
 /*
@@ -158,6 +168,23 @@ void PreciceInterface_WriteIterationCheckpoint( struct CalculiXData * ccx, doubl
  * @param v: CalculiX array with the temperature values
  */
 void PreciceInterface_ReadIterationCheckpoint( CalculiXData * ccx, double * v );
+
+/**
+ * @brief PreciceInterface_ReadCouplingData
+ * @param ccx
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void PreciceInterface_ReadCouplingData( struct CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces );
+
+/**
+ * @brief PreciceInterface_WriteCouplingData
+ * @param ccx
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void PreciceInterface_WriteCouplingData( struct CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces );
+
 
 
 #endif // PRECICEINTERFACE_H
