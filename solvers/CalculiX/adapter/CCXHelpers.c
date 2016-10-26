@@ -230,18 +230,6 @@ void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * 
 	// See documentation ccx_2.10.pdf for the definition of ikboun and ilboun
 }
 
-void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar )
-{
-	ITG i;
-	int indexOffset = getXloadIndexOffset( xloadVar );
-
-	for( i = 0 ; i < numValues ; i++ )
-	{
-		double temp = xload[xloadIndices[i] + indexOffset];
-		xload[xloadIndices[i] + indexOffset] = values[i];
-	}
-}
-
 int getXloadIndexOffset( enum xloadVariable xloadVar )
 {
 	/*
@@ -262,6 +250,33 @@ int getXloadIndexOffset( enum xloadVariable xloadVar )
 	}
 }
 
+void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar )
+{
+	ITG i;
+	int indexOffset = getXloadIndexOffset( xloadVar );
+
+	for( i = 0 ; i < numValues ; i++ )
+	{
+		double temp = xload[xloadIndices[i] + indexOffset];
+		xload[xloadIndices[i] + indexOffset] = values[i];
+	}
+}
+
+void setFaceFluxes( double * fluxes, int numFaces, int * xloadIndices, double * xload )
+{
+	setXload( xload, xloadIndices, fluxes, numFaces, DFLUX );
+}
+
+void setFaceHeatTransferCoefficients( double * coefficients, int numFaces, int * xloadIndices, double * xload )
+{
+	setXload( xload, xloadIndices, coefficients, numFaces, FILM_H );
+}
+
+void setFaceSinkTemperatures( double * sinkTemperatures, int numFaces, int * xloadIndices, double * xload )
+{
+	setXload( xload, xloadIndices, sinkTemperatures, numFaces, FILM_T );
+}
+
 void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndices, double * xboun )
 {
 	ITG i;
@@ -269,7 +284,6 @@ void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndice
 	for( i = 0 ; i < numNodes ; i++ )
 	{
 		xboun[xbounIndices[i]] = temperatures[i];
-//		printf("T(%d/%d) = %f\n", i+1, numNodes, temperatures[i]);
 	}
 }
 
