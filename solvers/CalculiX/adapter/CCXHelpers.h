@@ -7,20 +7,37 @@
 #include <stdbool.h>
 #include "../CalculiX.h"
 
+/*
+ * These are some helper functions for handling CalculiX data structures.
+ * The original names of the CalculiX variables were kept.
+ * Please refer to the CalculiX documentation ccx_2.10.pdf on page 518
+ * for a "List of variables and their meaning"
+ * */
+
+/**
+ * @brief Possible variables in xload (CalculiX variable for the load)
+ */
 enum xloadVariable { DFLUX, FILM_H, FILM_T };
 
 /**
  * @brief Returns node set name with internal CalculiX format
+ * Prepends and appends an N: If the input name is "interface",
+ * it returns NinterfaceN
  */
 char* toNodeSetName( char * name );
 
 /**
  * @brief Returns face set name with internal CalculiX format
+ * Prepends an S and appends a T: If the input name is "interface",
+ * it returns SinterfaceT
  */
 char* toFaceSetName( char * name );
 
 /**
  * @brief Returns id of a set given its name
+ * @param setName: set name as returned by toNodeSetName or toFaceSetName
+ * @param set: CalculiX array for all the set names
+ * @param nset: CalculiX variable for the number of sets
  */
 ITG getSetID( char * setName, char * set, ITG nset );
 
@@ -79,7 +96,7 @@ void getTetraFaceCenters( ITG * elements, ITG * faces, ITG numElements, ITG * ko
  * @param numElements: number of input elements
  * @param numNodes: number of input nodes
  * @param kon: CalculiX array with the connectivity information
- * @param ipkon: CalculiX array
+ * @param ipkon: CalculiX array (see description in ccx_2.10.pdf)
  * @param tetraFaceNodes: output list of node IDs that belong to the input element faces
  */
 void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, int * tetraFaceNodes );
@@ -99,24 +116,51 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
 
 /**
  * @brief Gets the indices of the xboun array where the boundary conditions must be applied
- * @param nodes
- * @param numNodes
- * @param nboun
- * @param ikboun
+ * @param nodes: list of node IDs
+ * @param numNodes: number of nodes
+ * @param nboun: CalculiX variable for the number of SPCs (single point constraints)
+ * @param ikboun: CalculiX ordered array of the DOFs corresponding to the SPCs
  * @param ilboun
- * @param xbounIndices
+ * @param xbounIndices: output list of indices of the xboun array
  */
 void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * ilboun, int * xbounIndices );
 
 /**
  * @brief Modifies the values of a DFLUX or FILM boundary condition
- * @param xload: CalculiX array with the values for the boundary conditions
+ * @param xload: CalculiX array for the loads
  * @param xloadIndices: list of indices where the values must be set in the xload array
  * @param values: boundary values to apply
  * @param numValues: number of boundary values provided
  * @param xloadVar: variable that is actually modified: DFLUX for heat flux, FILM_H for heat transfer coeff, FILM_T for sink temperature
  */
 void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar );
+
+/**
+ * @brief Calls setXload to update the flux values at the specified indices
+ * @param fluxes: flux values
+ * @param numFaces: number of faces
+ * @param xloadIndices: indices of the xload array where the values must be updated
+ * @param xload: CalculiX array for the loads
+ */
+void setFaceFluxes( double * fluxes, ITG numFaces, int * xloadIndices, double * xload );
+
+/**
+ * @brief Calls setXload to update the heat transfer coefficients at the specified indices
+ * @param coefficients: values for the heat transfer coefficient
+ * @param numFaces: number of faces
+ * @param xloadIndices: indices of the xload array where the values must be updated
+ * @param xload: CalculiX array for the loads
+ */
+void setFaceHeatTransferCoefficients( double * coefficients, ITG numFaces, int * xloadIndices, double * xload );
+
+/**
+ * @brief Calls setXload to update the sink temperature at the specified indices
+ * @param sinkTemperatures: values for the sink temperature
+ * @param numFaces: number of faces
+ * @param xloadIndices: indices of the xload array where the values must be updated
+ * @param xload: CalculiX array for the loads
+ */
+void setFaceSinkTemperatures( double * sinkTemperatures, ITG numFaces, int * xloadIndices, double * xload );
 
 /**
  * @brief Modifies the values of temperature boundary condition
@@ -129,7 +173,7 @@ void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndice
 
 /**
  * @brief Returns whether it is a steady-state simulation based on the value of nmethod
- * @param nmethod: CalculiX variable with information regarding the type of simulation performed
+ * @param nmethod: CalculiX variable with information regarding the type of analysis
  */
 bool isSteadyStateSimulation( ITG * nmethod );
 

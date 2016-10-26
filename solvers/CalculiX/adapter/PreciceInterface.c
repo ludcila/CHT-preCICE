@@ -261,15 +261,15 @@ void PreciceInterface_ReadCouplingData( CalculiXData ccx, PreciceInterface ** pr
 			case HEAT_FLUX:
 				// Read and set heat flux BC
 				precicec_readBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, DFLUX );
+				setFaceFluxes( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, ccx.xload );
 				break;
 			case KDELTA_TEMPERATURE:
 				// Read and set sink temperature in convective film BC
 				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, FILM_T );
+				setFaceSinkTemperatures( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, ccx.xload );
 				// Read and set heat transfer coefficient in convective film BC
 				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setXload( ccx.xload, preciceInterfaces[i]->xloadIndices, preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, FILM_H );
+				setFaceHeatTransferCoefficients( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, ccx.xload );
 				break;
 			}
 		}
@@ -280,9 +280,9 @@ void PreciceInterface_WriteCouplingData( CalculiXData ccx, PreciceInterface ** p
 {
 
 	int i;
-    int iset;
+	int iset;
 
-	if( precicec_isWriteDataRequired( *ccx.solver_dt ) || precicec_isActionRequired("write-initial-data"))
+	if( precicec_isWriteDataRequired( *ccx.solver_dt ) || precicec_isActionRequired( "write-initial-data" ) )
 	{
 		for( i = 0 ; i < numInterfaces ; i++ )
 		{
