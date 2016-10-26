@@ -9,12 +9,13 @@
 enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
 
 /*
- * CalculiXData: Structure with all the CalculiX variables 
+ * CalculiXData: Structure with all the CalculiX variables
  * that need to be accessed by the adapter in order to do the coupling
  */
-typedef struct CalculiXData {
+typedef struct SimulationData {
+	// CalculiX data
 	ITG * ialset;
-    ITG * ielmat;
+	ITG * ielmat;
 	ITG * istartset;
 	ITG * iendset;
 	char ** lakon;
@@ -33,20 +34,22 @@ typedef struct CalculiXData {
 	ITG mt;
 	double * theta;
 	double * dtheta;
-    double * tper;
-    ITG * nmethod;
-    double * xload;
-    double * xboun;
-    ITG * ntmat_;
-    double * vold;
-    double * cocon;
-    ITG * ncocon;
-    ITG * mi;
+	double * tper;
+	ITG * nmethod;
+	double * xload;
+	double * xboun;
+	ITG * ntmat_;
+	double * vold;
+	double * cocon;
+	ITG * ncocon;
+	ITG * mi;
+	// Coupling data
 	double * coupling_init_v;
 	double coupling_init_theta;
 	double coupling_init_dtheta;
-    double * solver_dt;
-} CalculiXData;
+	double * precice_dt;
+	double * solver_dt;
+} SimulationData;
 
 /*
  * PreciceInterface: Structure with all the information of a coupled surface
@@ -55,8 +58,8 @@ typedef struct CalculiXData {
 typedef struct PreciceInterface {
 
 	char * name;
-    
-    // Interface nodes
+
+	// Interface nodes
 	int numNodes;
 	int * nodeIDs;
 	double * nodeCoordinates;
@@ -65,7 +68,7 @@ typedef struct PreciceInterface {
 	int nodesMeshID;
 	char * nodesMeshName;
 
-    // Interface face elements
+	// Interface face elements
 	int numElements;
 	int * elementIDs;
 	int * faceIDs;
@@ -75,8 +78,8 @@ typedef struct PreciceInterface {
 	char * faceCentersMeshName;
 	int * preciceFaceCenterIDs;
 	int * triangles;
-    
-    // Arrays to store the coupling data
+
+	// Arrays to store the coupling data
 	double * nodeData;
 	double * faceCenterData;
 
@@ -88,8 +91,8 @@ typedef struct PreciceInterface {
 	int kDeltaTemperatureWriteDataID;
 	int kDeltaReadDataID;
 	int kDeltaTemperatureReadDataID;
-    
-    // Indices that indicate where to apply the boundary conditions
+
+	// Indices that indicate where to apply the boundary conditions
 	int * xloadIndices;
 	int * xbounIndices;
 
@@ -103,87 +106,84 @@ typedef struct PreciceInterface {
  * @brief PreciceInterface_Setup
  * @param configFilename
  * @param participantName
- * @param ccx
+ * @param sim
  * @param preciceInterfaces
  * @param numPreciceInterfaces
  */
-void PreciceInterface_Setup( char * configFilename, char * participantName, struct CalculiXData ccx, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
+void PreciceInterface_Setup( char * configFilename, char * participantName, struct SimulationData sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
 
 /**
  * @brief PreciceInterface_CreateInterface
  * @param interface
- * @param ccx
+ * @param sim
  * @param config
  */
-void PreciceInterface_CreateInterface( PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config );
+void PreciceInterface_CreateInterface( PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config );
 
 /**
  * @brief Configures the face centers mesh and calls setMeshVertices on preCICE
  * @param interface
- * @param ccx
+ * @param sim
  */
-void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, struct CalculiXData ccx );
+void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, struct SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureNodesMesh
  * @param interface
- * @param ccx: Structure with CalculiX data
+ * @param sim: Structure with CalculiX data
  */
-void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, struct CalculiXData ccx );
+void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, struct SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureTetraFaces
  * @param interface
- * @param ccx
+ * @param sim
  */
-void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, struct CalculiXData ccx );
+void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, struct SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureHeatTransferData
  * @param interface
- * @param ccx
+ * @param sim
  * @param config
  */
-void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, struct CalculiXData ccx, InterfaceConfig * config );
+void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config );
 
 /**
  * @brief PreciceInterface_AdjustSolverTimestep
- * @param precice_dt: Maximum time step size that can be used for the coupling
- * @param tper: CalculiX variable for the total simulation time
- * @param dtheta: CalculiX variable for the step size, normalized with respect to the total time tper
- * @param solver_dt: Actual step size (dtheta * tper), used by preCICE
+ * @param sim
  */
-void PreciceInterface_AdjustSolverTimestep( struct CalculiXData ccx, double precice_dt, double * solver_dt );
+void PreciceInterface_AdjustSolverTimestep( struct SimulationData sim );
 
 /**
  * @brief PreciceInterface_WriteIterationCheckpoint
- * @param ccx: Structure with CalculiX data
- * @param v: CalculiX array with the temperature values 
+ * @param sim: Structure with CalculiX data
+ * @param v: CalculiX array with the temperature values
  */
-void PreciceInterface_WriteIterationCheckpoint( struct CalculiXData * ccx, double * v );
+void PreciceInterface_WriteIterationCheckpoint( struct SimulationData * sim, double * v );
 
 /**
  * @brief PreciceInterface_ReadIterationCheckpoint
- * @param ccx: Structure with CalculiX data
+ * @param sim: Structure with CalculiX data
  * @param v: CalculiX array with the temperature values
  */
-void PreciceInterface_ReadIterationCheckpoint( CalculiXData * ccx, double * v );
+void PreciceInterface_ReadIterationCheckpoint( SimulationData * sim, double * v );
 
 /**
  * @brief PreciceInterface_ReadCouplingData
- * @param ccx
+ * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void PreciceInterface_ReadCouplingData( struct CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void PreciceInterface_ReadCouplingData( struct SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 /**
  * @brief PreciceInterface_WriteCouplingData
- * @param ccx
+ * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void PreciceInterface_WriteCouplingData( struct CalculiXData ccx, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void PreciceInterface_WriteCouplingData( struct SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 
 

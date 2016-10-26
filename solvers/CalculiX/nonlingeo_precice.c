@@ -197,7 +197,7 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	double precice_dt, solver_dt;
 	double coupling_init_theta, coupling_init_dtheta;
 
-	struct CalculiXData ccxData = {
+	struct SimulationData simulationData = {
 		.ialset = ialset,
         .ielmat = ielmat,
 		.istartset = istartset,
@@ -234,17 +234,15 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	PreciceInterface ** preciceInterfaces;
 	
 	printf("Setting up preCICE participant %s, using config file: %s\n", preciceParticipantName, preciceConfigFilename);
-	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, ccxData, &preciceInterfaces, &numPreciceInterfaces);
-
-	NNEW(ccxData.coupling_init_v, double, mt ** nk);	
+	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, simulationData, &preciceInterfaces, &numPreciceInterfaces);
 	
-	precice_dt = precicec_initialize();
+	PreciceInterface_Initialize(&simulationData);
 
 	// Initialize data
-    PreciceInterface_WriteCouplingData(ccxData, preciceInterfaces, numPreciceInterfaces);
+    PreciceInterface_WriteCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
     precicec_fulfilledAction("write-initial-data");
 	precicec_initialize_data();
-	PreciceInterface_ReadCouplingData(ccxData, preciceInterfaces, numPreciceInterfaces);
+	PreciceInterface_ReadCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
 
 	if(*ithermal == 4) {
 		uncoupled = 1;
@@ -1075,8 +1073,8 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	
 	while(precicec_isCouplingOngoing()) { //	while((1. - theta > 1.e-6) || (negpres == 1)) {
 		
-		PreciceInterface_AdjustSolverTimestep(ccxData, precice_dt, &solver_dt);
-        PreciceInterface_ReadCouplingData(ccxData, preciceInterfaces, numPreciceInterfaces);
+		PreciceInterface_AdjustSolverTimestep(simulationData);
+        PreciceInterface_ReadCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
 		
 		if(icutb == 0) {
 			/* previous increment converged: update the initial values */
@@ -1090,7 +1088,7 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 
 			
 			if(precicec_isActionRequired("write-iteration-checkpoint")) {
-				PreciceInterface_WriteIterationCheckpoint(&ccxData, vini);
+				PreciceInterface_WriteIterationCheckpoint(&simulationData, vini);
 				precicec_fulfilledAction("write-iteration-checkpoint");
 			}
 
@@ -2590,13 +2588,13 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 		/* Perform coupling related actions, only if solver iterations converged (icutb == 0) */
 		if(icutb == 0) {
 
-			PreciceInterface_WriteCouplingData(ccxData, preciceInterfaces, numPreciceInterfaces);
+			PreciceInterface_WriteCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
 			
-			precice_dt = precicec_advance(solver_dt);
+			PreciceInterface_Advance(simulationData);
 			
 			if(precicec_isActionRequired("read-iteration-checkpoint")) {
 				if(*nmethod == 4) {
-					PreciceInterface_ReadIterationCheckpoint(&ccxData, vold);
+					PreciceInterface_ReadIterationCheckpoint(&simulationData, vold);
 					icutb++;
 				}
 				precicec_fulfilledAction("read-iteration-checkpoint");
@@ -3313,5 +3311,8 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 
 	// MPADD end
 	(*ttime) += (*tper);
+    
+    PreciceInterface_FreeAll(simulationData, preciceInterfaces, numPreciceInterfaces);
+    
 	return;
 }
