@@ -149,12 +149,13 @@ bool adapter::Adapter::isCouplingOngoing()
 	return _precice->isCouplingOngoing();
 }
 
-void adapter::Adapter::checkCouplingTimeStepComplete()
+bool adapter::Adapter::checkCouplingTimeStepComplete()
 {
 	if( _precice->isTimestepComplete() )
 	{
 		// do something
 	}
+	return _precice->isTimestepComplete();
 }
 
 bool adapter::Adapter::isReadCheckpointRequired()
