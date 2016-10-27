@@ -232,15 +232,9 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 
 	int numPreciceInterfaces;
 	PreciceInterface ** preciceInterfaces;
-	
 	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, simulationData, &preciceInterfaces, &numPreciceInterfaces);
-	
 	PreciceInterface_Initialize(&simulationData);
-
-	// Exchange initial data
-    PreciceInterface_WriteCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
-    PreciceInterface_DoInitialExchange();
-	PreciceInterface_ReadCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
+    PreciceInterface_InitializeData(simulationData, preciceInterfaces, numPreciceInterfaces);
 
 	if(*ithermal == 4) {
 		uncoupled = 1;
@@ -1084,7 +1078,6 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 			/* vold is copied into vini */
 			memcpy(&vini[0], &vold[0], sizeof(double)*mt ** nk);
 
-			
 			if(PreciceInterface_IsWriteCheckpointRequired()) {
 				PreciceInterface_WriteIterationCheckpoint(&simulationData, vini);
 				PreciceInterface_FulfilledWriteCheckpoint();

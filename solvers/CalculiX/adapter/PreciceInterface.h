@@ -108,10 +108,12 @@ typedef struct PreciceInterface {
 void PreciceInterface_Initialize( SimulationData * sim );
 
 /**
- * @brief PreciceInterface_DoInitialExchange
+ * @brief PreciceInterface_InitializeData
  * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
  */
-void PreciceInterface_DoInitialExchange();
+void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces );
 
 /**
  * @brief PreciceInterface_Advance
