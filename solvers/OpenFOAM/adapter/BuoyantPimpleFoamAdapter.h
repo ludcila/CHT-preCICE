@@ -4,6 +4,7 @@
 #include "fvCFD.H"
 #include "rhoThermo.H"
 #include "turbulentFluidThermoModel.H"
+#include "Adapter.h"
 #include "ConfigReader.h"
 
 namespace adapter
@@ -12,8 +13,10 @@ namespace adapter
 class BuoyantPimpleFoamAdapter : public Adapter
 {
 protected:
-    rhoThermo & _thermo;
-    autoPtr<compressible::turbulenceModel> & _turbulence;
+
+	rhoThermo & _thermo;
+	autoPtr<compressible::turbulenceModel> & _turbulence;
+
 public:
 
 	BuoyantPimpleFoamAdapter(
@@ -21,8 +24,8 @@ public:
 	        std::string preciceConfigFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
 	        std::string solverName,
-            rhoThermo & thermo,
-            autoPtr<compressible::turbulenceModel> & turbulence,
+	        rhoThermo & thermo,
+	        autoPtr<compressible::turbulenceModel> & turbulence,
 	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!
 	        );
 	void createInterfacesFromConfigFile( std::string configFile, std::string participantName );
