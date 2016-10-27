@@ -1,4 +1,5 @@
 #include "Adapter.h"
+#include "ConfigReader.h"
 
 void adapter::Adapter::_storeCheckpointTime()
 {
@@ -42,21 +43,21 @@ int adapter::Adapter::_getMPISize()
 	return size;
 }
 
-adapter::Adapter::Adapter( std::string participantName,  std::string preciceConfigFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName, bool subcyclingEnabled ) :
+adapter::Adapter::Adapter( std::string participantName,  std::string configFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName, bool subcyclingEnabled ) :
 	_mesh( mesh ),
 	_runTime( runTime ),
 	_solverName( solverName ),
 	_solverTimeStep( -1 ),
 	_subcyclingEnabled( subcyclingEnabled )
 {
+	adapter::ConfigReader config( configFilename, participantName );
 
 	boost::log::core::get()->set_filter
 	(
 	        boost::log::trivial::severity >= boost::log::trivial::info
 	);
-
 	_precice = new precice::SolverInterface( participantName, _getMPIRank(), _getMPISize() );
-	_precice->configure( preciceConfigFilename );
+	_precice->configure( config.preciceConfigFilename() );
 }
 
 adapter::Interface & adapter::Adapter::addNewInterface( std::string meshName, std::vector<std::string> patchNames )
@@ -260,6 +261,9 @@ void adapter::Adapter::writeCheckpoint()
 
 adapter::Adapter::~Adapter()
 {
+
+	BOOST_LOG_TRIVIAL( info ) << "Destroying adapter...";
+
 	for ( uint i = 0 ; i < _volScalarFieldCopies.size() ; i++ )
 	{
 		delete _volScalarFieldCopies.at( i );

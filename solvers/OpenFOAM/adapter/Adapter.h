@@ -67,7 +67,7 @@ public:
     /**
      * @brief Adapter
      * @param participantName: Name of the current participant
-     * @param preciceConfigFilename: name of the .xml file
+     * @param configFilename: name of the .yml file
      * @param mesh: OpenFOAM mesh object
      * @param runTime
      * @param solverName
@@ -75,7 +75,7 @@ public:
      */
 	Adapter(
 	        std::string participantName,
-	        std::string preciceConfigFilename,
+	        std::string configFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
 	        std::string solverName,
 	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!
