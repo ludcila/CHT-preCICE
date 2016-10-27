@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/log/trivial.hpp>
 #include "fvCFD.H"
 #include "CouplingDataUser/CouplingDataReader/CouplingDataReader.h"
 #include "CouplingDataUser/CouplingDataWriter/CouplingDataWriter.h"
@@ -37,6 +38,7 @@ public:
 	void sendData();
 	void addCouplingDataWriter( std::string dataName, CouplingDataWriter * couplingDataWriter );
 	void addCouplingDataReader( std::string dataName, CouplingDataReader * couplingDataReader );
+	~Interface();
 };
 
 }
