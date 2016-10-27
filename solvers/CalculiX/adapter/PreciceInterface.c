@@ -10,10 +10,12 @@ void PreciceInterface_Initialize( SimulationData * sim )
 	NNEW( sim->coupling_init_v, double, sim->mt * sim->nk );
 }
 
-void PreciceInterface_DoInitialExchange()
+void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces )
 {
 	printf( "Initializing coupling data\n" );
+	PreciceInterface_WriteCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
 	precicec_initialize_data();
+	PreciceInterface_ReadCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
 }
 
 void PreciceInterface_Advance( SimulationData sim )
