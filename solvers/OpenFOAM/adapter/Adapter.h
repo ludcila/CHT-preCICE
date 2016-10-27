@@ -36,16 +36,43 @@ protected:
 	std::vector<volVectorField*> _volVectorFieldCopies;
 	std::vector<surfaceScalarField*> _surfaceScalarFields;
 	std::vector<surfaceScalarField*> _surfaceScalarFieldCopies;
+    
+    /**
+     * @brief Makes a copy of the Foam::Time object
+     */
 	void _storeCheckpointTime();
+    
+    /**
+     * @brief Restores the copy of the Foam::Time object
+     */
 	void _reloadCheckpointTime();
 
-
+    /**
+     * @brief Returns true if MPI is used
+     */
 	bool _isMPIUsed();
+    
+    /**
+     * @brief Returns the MPI rank 
+     */
 	int _getMPIRank();
+    
+    /**
+     * @brief Returns the MPI size
+     */
 	int _getMPISize();
 
 public:
 
+    /**
+     * @brief Adapter
+     * @param participantName: Name of the current participant
+     * @param preciceConfigFilename: name of the .xml file
+     * @param mesh: OpenFOAM mesh object
+     * @param runTime
+     * @param solverName
+     * @param subcyclingEnabled: Whether subcycling is implemented for this solver
+     */
 	Adapter(
 	        std::string participantName,
 	        std::string preciceConfigFilename,
@@ -54,26 +81,102 @@ public:
 	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!
 	        );
 
+    /**
+     * @brief Creates a new interface to be handled by preCICE
+     * @param meshName: Name of the surface mesh as specified in precice-config.xml
+     * @param patchNames: Names of the patches that are part of this interface, as specified in the OpenFOAM case
+     * @return Reference to the created interface
+     */
 	Interface & addNewInterface( std::string meshName, std::vector<std::string> patchNames );
 
+	/**
+	 * @brief initialize
+	 */
 	void initialize();
-	void receiveCouplingData();
-	void sendCouplingData();
-	void advance();
-	void adjustSolverTimeStep();
-	bool isCouplingOngoing();
-	void checkCouplingTimeStepComplete();
 
+	/**
+	 * @brief Receives the coupling data by calling precice::readBlockScalarData for each interface
+	 */
+	void receiveCouplingData();
+
+	/**
+	 * @brief Sends the coupling data by calling precice::writeBlockScalarData for each interface
+	 */
+	void sendCouplingData();
+
+	/**
+	 * @brief Advances the coupling
+	 */
+	void advance();
+
+	/**
+	 * @brief Adjusts the solver time step based on the coupling time step determined by preCICE
+	 */
+	void adjustSolverTimeStep();
+
+	/**
+	 * @brief Returns true if the coupling is still ongoing
+	 */
+	bool isCouplingOngoing();
+
+	/**
+	 * @brief Determines whether the coupling iteration is complete
+	 */
+	bool checkCouplingTimeStepComplete();
+
+	/**
+	 * @brief Returns true if checkpoint must be written
+	 */
 	bool isReadCheckpointRequired();
+
+	/**
+	 * @brief Returns true if checkpoint must be read
+	 */
 	bool isWriteCheckpointRequired();
+
+	/**
+	 * @brief Tells preCICE that the checkpoint has been read
+	 */
 	void fulfilledReadCheckpoint();
+
+	/**
+	 * @brief Tells preCICE that the checkpoint has been written
+	 */
 	void fulfilledWriteCheckpoint();
+
+	/**
+	 * @brief Set whether checkpointing is enabled
+	 */
 	void setCheckpointingEnabled( bool value );
+
+	/**
+	 * @brief Returns true if checkpointing is enabled
+	 */
 	bool isCheckpointingEnabled();
+
+	/**
+	 * @brief Adds a volScalarField for checkpointing
+	 */
 	void addCheckpointField( volScalarField & field );
+
+	/**
+	 * @brief Adds a volVectorField for checkpointing
+	 */
 	void addCheckpointField( volVectorField & field );
+
+	/**
+	 * @brief Adds a surfaceScalarField for checkpointing
+	 */
 	void addCheckpointField( surfaceScalarField & field );
+
+	/**
+	 * @brief Restores checkpointed fields and time
+	 */
 	void readCheckpoint();
+
+	/**
+	 * @brief Stores fields and time
+	 */
 	void writeCheckpoint();
 
 	~Adapter();
