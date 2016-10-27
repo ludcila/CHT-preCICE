@@ -101,6 +101,51 @@ typedef struct PreciceInterface {
 
 } PreciceInterface;
 
+/**
+ * @brief PreciceInterface_Initialize
+ * @param sim
+ */
+void PreciceInterface_Initialize( SimulationData * sim );
+
+/**
+ * @brief PreciceInterface_DoInitialExchange
+ * @param sim
+ */
+void PreciceInterface_DoInitialExchange();
+
+/**
+ * @brief PreciceInterface_Advance
+ * @param sim
+ */
+void PreciceInterface_Advance( SimulationData sim );
+
+/**
+ * @brief Returns true if coupling is still ongoing
+ * @return
+ */
+bool PreciceInterface_IsCouplingOngoing();
+
+/**
+ * @brief Returns true if checkpoint must be read
+ * @return
+ */
+bool PreciceInterface_IsReadCheckpointRequired();
+
+/**
+ * @brief Returns true if checkpoint must be written
+ * @return
+ */
+bool PreciceInterface_IsWriteCheckpointRequired();
+
+/**
+ * @brief PreciceInterface_FulfilledReadCheckpoint
+ */
+void PreciceInterface_FulfilledReadCheckpoint();
+
+/**
+ * @brief PreciceInterface_FulfilledWriteCheckpoint
+ */
+void PreciceInterface_FulfilledWriteCheckpoint();
 
 /**
  * @brief PreciceInterface_Setup
@@ -185,6 +230,19 @@ void PreciceInterface_ReadCouplingData( struct SimulationData sim, PreciceInterf
  */
 void PreciceInterface_WriteCouplingData( struct SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
+/**
+ * @brief PreciceInterface_FreeData
+ * @param preciceInterface
+ */
+void PreciceInterface_FreeData( PreciceInterface * preciceInterface );
+
+/**
+ * @brief PreciceInterface_FreeAll
+ * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void PreciceInterface_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 
 #endif // PRECICEINTERFACE_H

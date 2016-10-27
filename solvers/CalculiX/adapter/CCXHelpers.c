@@ -69,13 +69,10 @@ void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, int mt, double 
 	// CalculiX variable mt = 4 : temperature + 3 displacements (depends on the simulated case)
 	ITG i;
 
-	printf( "Temperature:\n" );
-
 	for( i = 0 ; i < numNodes ; i++ )
 	{
 		int nodeIdx = nodes[i] - 1;
 		temperatures[i] = v[nodeIdx * mt];
-//		printf("%f\n", temperatures[i]);
 	}
 }
 
