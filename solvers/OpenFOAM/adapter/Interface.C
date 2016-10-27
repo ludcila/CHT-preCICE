@@ -96,3 +96,21 @@ void adapter::Interface::sendData()
 	}
 }
 
+adapter::Interface::~Interface()
+{
+
+	BOOST_LOG_TRIVIAL( info ) << "Destroying interface...";
+
+	for ( uint i = 0 ; i < _couplingDataReaders.size() ; i++ )
+	{
+		delete _couplingDataReaders.at( i );
+	}
+	_couplingDataReaders.clear();
+
+	for ( uint i = 0 ; i < _couplingDataWriters.size() ; i++ )
+	{
+		delete _couplingDataWriters.at( i );
+	}
+	_couplingDataWriters.clear();
+}
+
