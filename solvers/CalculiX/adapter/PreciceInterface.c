@@ -10,9 +10,40 @@ void PreciceInterface_Initialize( SimulationData * sim )
 	NNEW( sim->coupling_init_v, double, sim->mt * sim->nk );
 }
 
+void PreciceInterface_DoInitialExchange()
+{
+	printf( "Initializing coupling data\n" );
+	precicec_initialize_data();
+}
+
 void PreciceInterface_Advance( SimulationData sim )
 {
 	*sim.precice_dt = precicec_advance( *sim.solver_dt );
+}
+
+bool PreciceInterface_IsCouplingOngoing()
+{
+	return precicec_isCouplingOngoing();
+}
+
+bool PreciceInterface_IsReadCheckpointRequired()
+{
+	return precicec_isActionRequired( "read-iteration-checkpoint" );
+}
+
+bool PreciceInterface_IsWriteCheckpointRequired()
+{
+	return precicec_isActionRequired( "write-iteration-checkpoint" );
+}
+
+void PreciceInterface_FulfilledReadCheckpoint()
+{
+	precicec_fulfilledAction( "read-iteration-checkpoint" );
+}
+
+void PreciceInterface_FulfilledWriteCheckpoint()
+{
+	precicec_fulfilledAction( "write-iteration-checkpoint" );
 }
 
 void PreciceInterface_Setup( char * configFilename, char * participantName, struct SimulationData sim, struct PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces )
@@ -20,6 +51,8 @@ void PreciceInterface_Setup( char * configFilename, char * participantName, stru
 	char * preciceConfigFilename;
 
 	InterfaceConfig * interfaces;
+
+	printf( "Setting up preCICE participant %s, using config file: %s\n", participantName, configFilename );
 
 	ConfigReader_Read( "config.yml", participantName, &preciceConfigFilename, &interfaces, numPreciceInterfaces );
 	precicec_createSolverInterface( participantName, preciceConfigFilename, 0, 1 );
@@ -348,6 +381,12 @@ void PreciceInterface_WriteCouplingData( SimulationData sim, PreciceInterface **
 				break;
 
 			}
+		}
+
+		if( precicec_isActionRequired( "write-initial-data" ) )
+		{
+			printf( "Initial data written\n" );
+			precicec_fulfilledAction( "write-initial-data" );
 		}
 	}
 }

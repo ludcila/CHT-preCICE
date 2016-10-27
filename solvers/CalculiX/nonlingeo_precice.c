@@ -233,15 +233,13 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 	int numPreciceInterfaces;
 	PreciceInterface ** preciceInterfaces;
 	
-	printf("Setting up preCICE participant %s, using config file: %s\n", preciceParticipantName, preciceConfigFilename);
 	PreciceInterface_Setup(preciceConfigFilename, preciceParticipantName, simulationData, &preciceInterfaces, &numPreciceInterfaces);
 	
 	PreciceInterface_Initialize(&simulationData);
 
-	// Initialize data
+	// Exchange initial data
     PreciceInterface_WriteCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
-    precicec_fulfilledAction("write-initial-data");
-	precicec_initialize_data();
+    PreciceInterface_DoInitialExchange();
 	PreciceInterface_ReadCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
 
 	if(*ithermal == 4) {
@@ -1071,7 +1069,7 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 		memcpy(&sideloadref[0], &sideload[0], sizeof(char) * 20 * *nload);
 	}
 	
-	while(precicec_isCouplingOngoing()) { //	while((1. - theta > 1.e-6) || (negpres == 1)) {
+	while(PreciceInterface_IsCouplingOngoing()) { //	while((1. - theta > 1.e-6) || (negpres == 1)) {
 		
 		PreciceInterface_AdjustSolverTimestep(simulationData);
         PreciceInterface_ReadCouplingData(simulationData, preciceInterfaces, numPreciceInterfaces);
@@ -1087,9 +1085,9 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 			memcpy(&vini[0], &vold[0], sizeof(double)*mt ** nk);
 
 			
-			if(precicec_isActionRequired("write-iteration-checkpoint")) {
+			if(PreciceInterface_IsWriteCheckpointRequired()) {
 				PreciceInterface_WriteIterationCheckpoint(&simulationData, vini);
-				precicec_fulfilledAction("write-iteration-checkpoint");
+				PreciceInterface_FulfilledWriteCheckpoint();
 			}
 
 			for(k = 0; k < *nboun; ++k) {
@@ -2592,12 +2590,12 @@ void nonlingeo_precice(double ** cop, ITG * nk, ITG ** konp, ITG ** ipkonp, char
 			
 			PreciceInterface_Advance(simulationData);
 			
-			if(precicec_isActionRequired("read-iteration-checkpoint")) {
+			if(PreciceInterface_IsReadCheckpointRequired()) {
 				if(*nmethod == 4) {
 					PreciceInterface_ReadIterationCheckpoint(&simulationData, vold);
 					icutb++;
 				}
-				precicec_fulfilledAction("read-iteration-checkpoint");
+				PreciceInterface_FulfilledReadCheckpoint();
 			}
 
 		}
