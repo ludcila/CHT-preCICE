@@ -22,7 +22,7 @@ void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read(double *dataBuffer)
         std::cout << "Flux" << std::endl;
         fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>(_T.boundaryField()[patchID]);
         forAll(gradientPatch, i) {
-            std::cout << "q(" << i << ") = " << dataBuffer[bufferIndex] << "/" << K[i] << " = " << dataBuffer[bufferIndex] / K[i] << std::endl;
+            //std::cout << "q(" << i << ") = " << dataBuffer[bufferIndex] << "/" << K[i] << " = " << dataBuffer[bufferIndex] / K[i] << std::endl;
             gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / K[i];
         }
 
