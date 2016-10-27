@@ -36,43 +36,43 @@ protected:
 	std::vector<volVectorField*> _volVectorFieldCopies;
 	std::vector<surfaceScalarField*> _surfaceScalarFields;
 	std::vector<surfaceScalarField*> _surfaceScalarFieldCopies;
-    
-    /**
-     * @brief Makes a copy of the Foam::Time object
-     */
+
+	/**
+	 * @brief Makes a copy of the Foam::Time object
+	 */
 	void _storeCheckpointTime();
-    
-    /**
-     * @brief Restores the copy of the Foam::Time object
-     */
+
+	/**
+	 * @brief Restores the copy of the Foam::Time object
+	 */
 	void _reloadCheckpointTime();
 
-    /**
-     * @brief Returns true if MPI is used
-     */
+	/**
+	 * @brief Returns true if MPI is used
+	 */
 	bool _isMPIUsed();
-    
-    /**
-     * @brief Returns the MPI rank 
-     */
+
+	/**
+	 * @brief Returns the MPI rank
+	 */
 	int _getMPIRank();
-    
-    /**
-     * @brief Returns the MPI size
-     */
+
+	/**
+	 * @brief Returns the MPI size
+	 */
 	int _getMPISize();
 
 public:
 
-    /**
-     * @brief Adapter
-     * @param participantName: Name of the current participant
-     * @param configFilename: name of the .yml file
-     * @param mesh: OpenFOAM mesh object
-     * @param runTime
-     * @param solverName
-     * @param subcyclingEnabled: Whether subcycling is implemented for this solver
-     */
+	/**
+	 * @brief Adapter
+	 * @param participantName: Name of the current participant
+	 * @param configFilename: name of the .yml file
+	 * @param mesh: OpenFOAM mesh object
+	 * @param runTime
+	 * @param solverName
+	 * @param subcyclingEnabled: Whether subcycling is implemented for this solver
+	 */
 	Adapter(
 	        std::string participantName,
 	        std::string configFilename,
@@ -82,11 +82,18 @@ public:
 	        );
 
     /**
-     * @brief Creates a new interface to be handled by preCICE
-     * @param meshName: Name of the surface mesh as specified in precice-config.xml
-     * @param patchNames: Names of the patches that are part of this interface, as specified in the OpenFOAM case
-     * @return Reference to the created interface
+     * @brief createInterfacesFromConfigFile
+     * @param configFilename
+     * @param participantName
      */
+	virtual void createInterfacesFromConfigFile( std::string configFilename, std::string participantName ) = 0;
+
+	/**
+	 * @brief Creates a new interface to be handled by preCICE
+	 * @param meshName: Name of the surface mesh as specified in precice-config.xml
+	 * @param patchNames: Names of the patches that are part of this interface, as specified in the OpenFOAM case
+	 * @return Reference to the created interface
+	 */
 	Interface & addNewInterface( std::string meshName, std::vector<std::string> patchNames );
 
 	/**
@@ -179,7 +186,7 @@ public:
 	 */
 	void writeCheckpoint();
 
-	~Adapter();
+	virtual ~Adapter();
 };
 
 }

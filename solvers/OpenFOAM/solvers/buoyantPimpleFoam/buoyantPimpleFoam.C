@@ -40,22 +40,27 @@ Description
 #include "fvIOoptionList.H"
 #include "pimpleControl.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
-#include <sstream>
-#include <vector>
-#include <algorithm>
-#include "yaml-cpp/yaml.h"
-#include "adapter/ConfigReader.h"
-#include "adapter/Adapter.h"
-#include "adapter/Interface.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
 
-#include "adapter/CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/HeatTransferCoefficientBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/HeatTransferCoefficientBoundaryValues.h"
+#include "adapter/BuoyantPimpleFoamAdapter.h"
+
+bool isTurbulenceUsed( Foam::fvMesh & mesh, Foam::Time & runTime )
+{
+	const word turbulenceModel
+	(
+	        IOdictionary
+	        (
+	                IOobject
+	                (
+	                        "turbulenceProperties",
+	                        runTime.constant(),
+	                        mesh,
+	                        IOobject::MUST_READ_IF_MODIFIED,
+	                        IOobject::NO_WRITE
+	                )
+	        ).lookup( "simulationType" )
+	);
+	return ( turbulenceModel != "laminar" );
+}
 
 
 
@@ -63,17 +68,15 @@ Description
 
 int main(int argc, char *argv[])
 {
-    
-    argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("precice-config", "string", "name of preCICE config file");
-    argList::addBoolOption("disable-checkpointing", "disable checkpointing");
 
-    #include "addRegionOption.H"
+    /* Adapter: Add command line arguments */    
+    argList::addOption( "precice-participant", "string", "name of preCICE participant" );
+    argList::addOption( "precice-config", "string", "name of preCICE config file" );
+    argList::addBoolOption( "disable-checkpointing", "disable checkpointing" );
 
     #include "setRootCase.H"
     #include "createTime.H"
-//    #include "createMesh.H"
-    #include "createNamedMesh.H"
+    #include "createMesh.H"
 
     pimpleControl pimple(mesh);
 
@@ -86,108 +89,44 @@ int main(int argc, char *argv[])
     #include "compressibleCourantNo.H"
     #include "setInitialDeltaT.H"
     
-    bool turbulenceUsed = false;
-    const word turbulenceModel
-    (
-        IOdictionary
-        (
-            IOobject
-            (
-                "turbulenceProperties",
-                runTime.constant(),
-                mesh,
-                IOobject::MUST_READ_IF_MODIFIED,
-                IOobject::NO_WRITE
-            )
-        ).lookup("simulationType")
-    );
-    if(turbulenceModel != "laminar") turbulenceUsed = true;
-    
-
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
-    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
-    bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
-    adapter::ConfigReader config(preciceConfig, participantName);
-    
+    /* Adapter: Set parameters and create the adapter */
+    bool turbulenceUsed = isTurbulenceUsed( mesh, runTime );
+    std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
+    std::string preciceConfig = args.optionFound( "precice-config" ) ? args.optionRead<string>( "precice-config" ) : "config.yml";
+    bool checkpointingEnabled = !args.optionFound( "disable-checkpointing" );
+
     bool subcyclingEnabled = true;
-    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantPimpleFoam", subcyclingEnabled);
+    adapter::BuoyantPimpleFoamAdapter adapter(participantName, preciceConfig, mesh, runTime, "buoyantPimpleFoam", thermo, turbulence, subcyclingEnabled);
 
-    for(int i = 0; i < config.interfaces().size(); i++) {
+    /* Adapter: Add fields for checkpointing */
+    adapter.setCheckpointingEnabled( checkpointingEnabled );
+    adapter.addCheckpointField( U );
+    adapter.addCheckpointField( p );
+    adapter.addCheckpointField( p_rgh );
+    adapter.addCheckpointField( rho );
+    adapter.addCheckpointField( thermo.T() );
+    adapter.addCheckpointField( thermo.he() );
+    adapter.addCheckpointField( thermo.p() );
+    adapter.addCheckpointField( K );
+    adapter.addCheckpointField( dpdt );
 
-        adapter::Interface & coupledSurface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        
-        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).writeData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(thermo.T());
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::BuoyantPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantPimpleHeatFluxBoundaryValues(thermo.T(), thermo, turbulence);
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::turbulenceModel> > * bw = new adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::turbulenceModel> >(turbulence);
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.find("Sink-Temperature") == 0) {
-                adapter::RefTemperatureBoundaryValues * bw = new adapter::RefTemperatureBoundaryValues(thermo.T());
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
-        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).readData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(thermo.T());
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::BuoyantPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantPimpleHeatFluxBoundaryCondition(thermo.T(), thermo, turbulence);
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::turbulenceModel> > * br = new adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::turbulenceModel> >(thermo.T(), turbulence);
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.find("Sink-Temperature") == 0) {
-                adapter::SinkTemperatureBoundaryCondition * br = new adapter::SinkTemperatureBoundaryCondition(thermo.T());
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
+    if( turbulenceUsed )
+    {
+	    adapter.addCheckpointField( turbulence->k() () );
+	    adapter.addCheckpointField( turbulence->epsilon() () );
+	    adapter.addCheckpointField( turbulence->nut() () );
+	    adapter.addCheckpointField( turbulence->alphat() () );
     }
+    adapter.addCheckpointField( phi );
 
-    // Chekpointing
-    
-    adapter.setCheckpointingEnabled(checkpointingEnabled);
-    adapter.addCheckpointField(U);
-    adapter.addCheckpointField(p);
-    adapter.addCheckpointField(p_rgh);
-    adapter.addCheckpointField(rho);
-    adapter.addCheckpointField(thermo.T());
-    adapter.addCheckpointField(thermo.he());
-    //chkpt.addVolScalarField(thermo.hc()());
-    adapter.addCheckpointField(thermo.p());
-    adapter.addCheckpointField(K);
-    adapter.addCheckpointField(dpdt);
-    if(turbulenceUsed) {
-        adapter.addCheckpointField(turbulence->k()());
-        adapter.addCheckpointField(turbulence->epsilon()());
-        adapter.addCheckpointField(turbulence->nut()());
-        adapter.addCheckpointField(turbulence->alphat()());
-        // chkpt.addVolScalarField(turbulence->mut()());
-    }
-    adapter.addCheckpointField(phi);
-
+    /* Adapter: Initialize coupling */
     adapter.initialize();
        
     Info<< "\nStarting time loop\n" << endl;
 
+    /* Adapter: Give time stepping control to the adapter */
     while (adapter.isCouplingOngoing())
     {
 
@@ -195,16 +134,19 @@ int main(int argc, char *argv[])
         #include "compressibleCourantNo.H"
         #include "setDeltaT.H"
         
+        /* Adapter: Adjust solver time step if necessary */
         adapter.adjustSolverTimeStep();
 
-        // Write checkpoint
-        if(adapter.isWriteCheckpointRequired()){
+        /* Adapter: Write checkpoint if necessary */
+        if( adapter.isWriteCheckpointRequired() )
+        {
             adapter.writeCheckpoint();
             adapter.fulfilledWriteCheckpoint();
         }
 
         runTime++;
-
+        
+        /* Adapter: Receive coupling data */
         adapter.receiveCouplingData();
 
         /* Start of original solver code */
@@ -235,29 +177,33 @@ int main(int argc, char *argv[])
 
         /* End of original solver code */
         
+        /* Adapter: Send coupling data and advance */
         adapter.sendCouplingData();
-        
         adapter.advance();
-
-        if(adapter.isReadCheckpointRequired()) {  
-            
+    
+        /* Adapter: Read checkpoint if necessary (coupling not converged) */
+        if( adapter.isReadCheckpointRequired() )
+        {
+    
             adapter.readCheckpoint();
-            if(turbulenceUsed && adapter.isCheckpointingEnabled()) {
-                turbulence->alphat()().correctBoundaryConditions();
+    
+            if( turbulenceUsed && adapter.isCheckpointingEnabled() )
+            {
+                turbulence->alphat() ().correctBoundaryConditions();
             }
             adapter.fulfilledReadCheckpoint();
-
-        } else {
-
+    
+        }
+        else
+        {
+    
             runTime.write();
-
+    
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
                 << "  ClockTime = " << runTime.elapsedClockTime() << " s"
                 << nl << endl;
-
+    
         }
-
-        adapter.checkCouplingTimeStepComplete();
         
     }
 

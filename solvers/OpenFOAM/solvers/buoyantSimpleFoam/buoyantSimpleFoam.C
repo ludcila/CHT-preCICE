@@ -40,22 +40,15 @@ Description
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include "adapter/ConfigReader.h"
-#include "adapter/Adapter.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/BuoyantPimpleHeatFluxBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/HeatTransferCoefficientBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/HeatTransferCoefficientBoundaryCondition.h"
-#include "adapter/CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.h"
-#include "adapter/CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.h"
+#include "adapter/BuoyantSimpleFoamAdapter.h"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
     
-    argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("precice-config", "string", "name of preCICE config file");
+    argList::addOption( "precice-participant", "string", "name of preCICE participant" );
+    argList::addOption( "yaml-config", "string", "name of preCICE config file" );
 
     #include "setRootCase.H"
     #include "createTime.H"
@@ -71,45 +64,16 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
-    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
-    adapter::ConfigReader config(preciceConfig, participantName);
-
-    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantSimpleFoam");
-
-    for(int i = 0; i < config.interfaces().size(); i++) {        
-        adapter::Interface & interface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).writeData.at(j);
-            if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                interface.addCouplingDataWriter(dataName, new adapter::HeatTransferCoefficientBoundaryValues<autoPtr<compressible::RASModel> >(turbulence));
-            } else if(dataName.find("Sink-Temperature") == 0) {
-                interface.addCouplingDataWriter(dataName, new adapter::RefTemperatureBoundaryValues(thermo.T()));
-            } else {
-                std::cout << "Error: " << dataName << " is not valid" << std::endl;
-                return 1;
-            }
-        }
-        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).readData.at(j);
-            if(dataName.find("Heat-Transfer-Coefficient") == 0) {
-                interface.addCouplingDataReader(dataName, new adapter::HeatTransferCoefficientBoundaryCondition<autoPtr<compressible::RASModel> >(thermo.T(), turbulence));
-            } else if(dataName.find("Sink-Temperature") == 0) {
-                interface.addCouplingDataReader(dataName, new adapter::SinkTemperatureBoundaryCondition(thermo.T()));
-            } else {
-                std::cout << "Error: " << dataName << " is not valid" << std::endl;
-                return 1;
-            }
-            
-        }  
-    }
+    std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
+    std::string yamlConfig = args.optionFound( "yaml-config" ) ? args.optionRead<string>( "precice-config" ) : "config.yml";
+    
+    adapter::BuoyantSimpleFoamAdapter adapter( participantName, yamlConfig, mesh, runTime, "buoyantSimpleFoam", thermo, turbulence );
 
     adapter.initialize();
-    adapter.receiveCouplingData();
 
     Info<< "\nStarting time loop\n" << endl;
 
-    while (simple.loop() && adapter.isCouplingOngoing())
+    while ( simple.loop() && adapter.isCouplingOngoing() )
     {
         
         adapter.receiveCouplingData();

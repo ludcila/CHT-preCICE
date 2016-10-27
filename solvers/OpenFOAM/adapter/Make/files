@@ -2,6 +2,7 @@ Interface.C
 
 Adapter.C
 BuoyantPimpleFoamAdapter.C
+BuoyantSimpleFoamAdapter.C
 ConfigReader.C
 CouplingDataUser/CouplingDataUser.C
 
