@@ -32,9 +32,15 @@
    #include "pardiso.h"
 #endif
 
+/* Adapter: Add headers */
+#include "adapter/CCXHelpers.h"
+#include "adapter/PreciceInterface.h"
+#include "adapter/ConfigReader.h"
+
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
+/* Adapter: Rename the function */
+void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *ne, 
 	     ITG *nodeboun, ITG *ndirboun, double *xboun, ITG *nboun, 
 	     ITG **ipompcp, ITG **nodempcp, double **coefmpcp, char **labmpcp,
@@ -78,7 +84,9 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *nslavs, double *thicke, ITG *ics, 
 	     ITG *nintpoint,ITG *mortar,ITG *ifacecount,char *typeboun,
 	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
-	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext){
+	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext, 
+         /* Adapter: Add variables for the participant name and the config file */
+         char * preciceParticipantName, char * preciceConfigFilename){
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
       *sideface=NULL,*labmpc=NULL,fnffrd[132]="",*lakonf=NULL,
@@ -177,6 +185,46 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   tmin=&timepar[2];
   tmax=&timepar[3];
   tincf=&timepar[4];
+  
+  /* Adapter: Put all the CalculiX data that is needed for the coupling into an array */
+  struct SimulationData simulationData = {
+	  .ialset = ialset,
+	  .ielmat = ielmat,
+	  .istartset = istartset,
+	  .iendset = iendset,
+	  .kon = kon,
+	  .ipkon = ipkon,
+	  .lakon = &lakon,
+	  .co = co,
+	  .set = set,
+	  .nset = *nset,
+	  .ikboun = ikboun,
+	  .ilboun = ilboun,
+	  .nboun = *nboun,
+	  .nelemload = nelemload,
+	  .nload = *nload,
+	  .sideload = sideload,
+	  .mt = mt,
+	  .nk = *nk,
+	  .theta = &theta,
+	  .dtheta = &dtheta,
+	  .tper = tper,
+	  .nmethod = nmethod,
+	  .xload = xload,
+	  .xboun = xboun,
+	  .ntmat_ = ntmat_,
+	  .vold = vold,
+	  .cocon = cocon,
+	  .ncocon = ncocon,
+	  .mi = mi
+  };
+  
+  /* Adapter: Create the interfaces and initialize the coupling */
+  int numPreciceInterfaces;
+  PreciceInterface ** preciceInterfaces;
+  PreciceInterface_Setup( preciceConfigFilename, preciceParticipantName, simulationData, &preciceInterfaces, &numPreciceInterfaces );
+  PreciceInterface_Initialize( &simulationData );
+  PreciceInterface_InitializeData( simulationData, preciceInterfaces, numPreciceInterfaces );
 
   if(*ithermal==4){
       uncoupled=1;
@@ -958,7 +1006,14 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       memcpy(&sideloadref[0],&sideload[0],sizeof(char)*20**nload);
   }
   
-  while((1.-theta>1.e-6)||(negpres==1)){
+  /* Adapter: Give preCICE the control of the time stepping */
+  while( PreciceInterface_IsCouplingOngoing() ) {
+      
+      /* Adapter: Adjust solver time step */
+      PreciceInterface_AdjustSolverTimestep( simulationData );
+
+      /* Adapter read coupling data if available */
+      PreciceInterface_ReadCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
       
       if(icutb==0){
 	  
@@ -975,6 +1030,13 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  /* vold is copied into vini */
 	  
 	  memcpy(&vini[0],&vold[0],sizeof(double)*mt**nk);
+      
+      /* Adapter: Write checkpoint if necessary */
+      if( PreciceInterface_IsWriteCheckpointRequired() )
+      {
+	      PreciceInterface_WriteIterationCheckpoint( &simulationData, vini );
+	      PreciceInterface_FulfilledWriteCheckpoint();
+      }
 	  
 	  for(k=0;k<*nboun;++k){xbounini[k]=xbounact[k];}
 	  if((*ithermal==1)||(*ithermal>=3)){
@@ -2347,6 +2409,26 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     /* icutb=0 means that the iterations in the increment converged,
        icutb!=0 indicates that the increment has to be reiterated with
                 another increment size (dtheta) */
+    
+    /* Adapter: Perform coupling related actions, only if solver iterations converged (icutb == 0) */
+    if( icutb == 0 )
+    {
+	    /* Adapter: Write coupling data */
+	    PreciceInterface_WriteCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
+	    /* Adapter: Advance the coupling */
+	    PreciceInterface_Advance( simulationData );
+
+	    /* Adapter: If the coupling does not converge, read the checkpoint */
+	    if( PreciceInterface_IsReadCheckpointRequired() )
+	    {
+		    if( *nmethod == 4 )
+		    {
+			    PreciceInterface_ReadIterationCheckpoint( &simulationData, vold );
+			    icutb++;
+		    }
+		    PreciceInterface_FulfilledReadCheckpoint();
+	    }
+    }
    
     /* printing the energies (only for dynamic calculations) */
 
@@ -2853,6 +2935,9 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   // MPADD end
   
   (*ttime)+=(*tper);
+  
+  /* Adapter: Free the memory */
+  PreciceInterface_FreeAll( simulationData, preciceInterfaces, numPreciceInterfaces );
   
   return;
 }
