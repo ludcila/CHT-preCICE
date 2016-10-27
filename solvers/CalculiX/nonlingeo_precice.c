@@ -19,7 +19,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include "CalculiX.h"
-#include "precice/adapters/c/SolverInterfaceC.h"
 #ifdef SPOOLES
 #include "spooles.h"
 #endif
