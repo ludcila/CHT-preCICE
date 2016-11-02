@@ -20,7 +20,9 @@
      &  cocon,ncocon,iset,istartset,iendset,ipkon,lakon,kon,
      &  ialset,ielmat,mi,kdelta,reftemp)
 !
-!     calculation and printout of the lift and drag forces
+!     This is a copy of printoutface.f, modified to compute a sink temperature
+!     and a heat transfer coefficient, to be used for Robin-Robin coupling with
+!     preCICE
 !
       implicit none
 !
