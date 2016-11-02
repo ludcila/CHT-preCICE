@@ -1,7 +1,8 @@
 # Specify the locations of: the original CCX source, SPOOLES and ARPACK
-CCX 		= /usr/local/CalculiX/ccx_2.10_org/src
-SPOOLES 	= /usr/local/SPOOLES.2.2
-ARPACK 		= /usr/local/ARPACK
+CCX				= /usr/local/CalculiX/ccx_2.10_org/src
+SPOOLES			= /usr/local/SPOOLES.2.2
+ARPACK			= /usr/local/ARPACK
+PRECICE_C_BUILD	= $(PRECICE_ROOT)/build/release-c/release-nopetsc
 
 # Specify where to store the generated .o files
 OBJDIR 		= bin
@@ -18,7 +19,7 @@ LIBS = \
 		$(SPOOLES)/spooles.a \
 		$(ARPACK)/libarpack_INTEL.a \
        -lpthread -lm -lc \
-       -L$(PRECICE_ROOT)/build/release-c/release-nopetsc \
+       -L$(PRECICE_C_BUILD) \
        -lprecice \
        -lboost_system \
        -lboost_filesystem \
@@ -44,7 +45,7 @@ include $(CCX)/Makefile.inc
 SCCXMAIN = ccx_2.10.c
 
 # Append additional sources
-SCCXC += nonlingeo_precice.c Helpers.c CCXHelpers.c PreciceInterface.c
+SCCXC += nonlingeo_precice.c CCXHelpers.c PreciceInterface.c
 SCCXF += getflux.f getkdeltatemp.f
 
 

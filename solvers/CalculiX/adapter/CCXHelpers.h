@@ -177,4 +177,12 @@ void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndice
  */
 bool isSteadyStateSimulation( ITG * nmethod );
 
+/**
+ * @brief Concatenates prefix + string + suffix
+ * @param prefix
+ * @param string
+ * @param suffix
+ */
+char * concat(char * prefix, char * string, char * suffix);
+
 #endif // CCXHELPERS_H
