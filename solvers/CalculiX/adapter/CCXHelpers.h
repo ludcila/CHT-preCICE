@@ -21,14 +21,14 @@ enum xloadVariable { DFLUX, FILM_H, FILM_T };
 
 /**
  * @brief Returns node set name with internal CalculiX format
- * Prepends and appends an N: If the input name is "interface",
+ * Prepends and appends an N: e.g. If the input name is "interface",
  * it returns NinterfaceN
  */
 char* toNodeSetName( char * name );
 
 /**
  * @brief Returns face set name with internal CalculiX format
- * Prepends an S and appends a T: If the input name is "interface",
+ * Prepends an S and appends a T: e.g. If the input name is "interface",
  * it returns SinterfaceT
  */
 char* toFaceSetName( char * name );
