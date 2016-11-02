@@ -56,6 +56,8 @@ void adapter::ConfigReader::checkFields( std::string filename, YAML::Node & conf
 adapter::ConfigReader::ConfigReader( std::string configFile, std::string participantName )
 {
 
+	BOOST_LOG_TRIVIAL( info ) << "Reading YAML config: " << configFile;
+
 	YAML::Node config = YAML::LoadFile( configFile );
 
 	checkFields( configFile, config, participantName );

@@ -1,30 +1,35 @@
 #include "BuoyantPimpleHeatFluxBoundaryCondition.h"
+#include <boost/log/trivial.hpp>
 
 
-adapter::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCondition(volScalarField &T, rhoThermo &thermo, autoPtr<compressible::turbulenceModel> &turbulence) :
-    _T(T),
-    _thermo(thermo),
-    _turbulence(turbulence)
+adapter::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCondition( volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence ) :
+	_T( T ),
+	_thermo( thermo ),
+	_turbulence( turbulence )
 {
 
 }
 
-void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read(double *dataBuffer)
+void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read( double * dataBuffer )
 {
-    int bufferIndex = 0;
 
-    for(uint k = 0; k < _patchIDs.size(); k++) {
+	BOOST_LOG_TRIVIAL( info ) << "Setting heat flux boundary condition";
 
-        int patchID = _patchIDs.at(k);
+	int bufferIndex = 0;
 
-        scalarField K = _turbulence->alphaEff()().boundaryField()[patchID] * _thermo.Cp()().boundaryField()[patchID];
+	for( uint k = 0 ; k < _patchIDs.size() ; k++ )
+	{
 
-        std::cout << "Flux" << std::endl;
-        fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>(_T.boundaryField()[patchID]);
-        forAll(gradientPatch, i) {
-            //std::cout << "q(" << i << ") = " << dataBuffer[bufferIndex] << "/" << K[i] << " = " << dataBuffer[bufferIndex] / K[i] << std::endl;
-            gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / K[i];
-        }
+		int patchID = _patchIDs.at( k );
 
-    }
+        scalarField kappaEff = _turbulence->kappaEff() ().boundaryField()[patchID];
+
+		fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+		forAll( gradientPatch, i )
+		{
+			gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / kappaEff[i];
+		}
+
+	}
 }
+

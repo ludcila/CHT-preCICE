@@ -18,8 +18,8 @@ void adapter::BuoyantPimpleHeatFluxBoundaryValues::write( double * dataBuffer )
 
 		int patchID = _patchIDs.at( k );
 
-		scalarField flux = -_turbulence->kappaEff() ().boundaryField()[patchID]
-		                   * refCast<fixedValueFvPatchScalarField>( _T.boundaryField()[patchID] ).snGrad();
+		scalarField flux = -_turbulence->alphaEff() ().boundaryField()[patchID]
+						   * _thermo.he().boundaryField()[patchID].snGrad();
 
 		forAll( flux, i )
 		{
