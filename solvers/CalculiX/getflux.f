@@ -20,7 +20,8 @@
      &  cocon,ncocon,iset,istartset,iendset,ipkon,lakon,kon,
      &  ialset,ielmat,mi,flux)
 !
-!     calculation and printout of the lift and drag forces
+!     This is a copy of printoutface.f, modified to extract heat flux values 
+!     at the specifice face set, to be used for coupling with preCICE
 !
       implicit none
 !
