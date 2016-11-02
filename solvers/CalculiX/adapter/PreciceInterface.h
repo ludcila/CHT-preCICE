@@ -4,7 +4,6 @@
 #include <string.h>
 #include "ConfigReader.h"
 #include "CCXHelpers.h"
-#include "Helpers.h"
 
 enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
 
