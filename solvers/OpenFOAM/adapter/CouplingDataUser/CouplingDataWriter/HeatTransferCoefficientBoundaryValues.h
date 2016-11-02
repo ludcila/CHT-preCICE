@@ -45,11 +45,9 @@ public:
 
 			scalarField kDelta = _turbulence->kappaEff() ().boundaryField()[patchID] * kPatch.deltaCoeffs();
 
-			std::cout << "KDelta" << std::endl;
 			forAll( kDelta, i )
 			{
 				dataBuffer[bufferIndex++] = kDelta[i];
-//                std::cout << i << ") " << "write kDelta = " << kDelta[i] << std::endl;
 			}
 
 		}

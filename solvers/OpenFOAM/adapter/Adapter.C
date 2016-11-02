@@ -54,7 +54,7 @@ adapter::Adapter::Adapter( std::string participantName,  std::string configFilen
 
 	boost::log::core::get()->set_filter
 	(
-	        boost::log::trivial::severity >= boost::log::trivial::info
+		boost::log::trivial::severity >= boost::log::trivial::info
 	);
 	_precice = new precice::SolverInterface( participantName, _getMPIRank(), _getMPISize() );
 	_precice->configure( config.preciceConfigFilename() );
@@ -83,6 +83,8 @@ void adapter::Adapter::initialize()
 
 void adapter::Adapter::receiveCouplingData()
 {
+	BOOST_LOG_TRIVIAL( info ) << "Adapter receiving coupling data...";
+
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
 		_interfaces.at( i )->receiveData();
@@ -91,6 +93,8 @@ void adapter::Adapter::receiveCouplingData()
 
 void adapter::Adapter::sendCouplingData()
 {
+	BOOST_LOG_TRIVIAL( info ) << "Adapter sending coupling data...";
+
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
 		_interfaces.at( i )->sendData();
@@ -99,6 +103,8 @@ void adapter::Adapter::sendCouplingData()
 
 void adapter::Adapter::advance()
 {
+	BOOST_LOG_TRIVIAL( info ) << "Adapter calling advance()...";
+
 	if( _solverTimeStep == -1 )
 	{
 		_preciceTimeStep = _precice->advance( _preciceTimeStep );
@@ -121,8 +127,8 @@ void adapter::Adapter::adjustSolverTimeStep()
 		if( !_subcyclingEnabled )
 		{
 			BOOST_LOG_TRIVIAL( warning ) << "Subcycling is not allowed for this solver.  "
-			                             << "Solver time step cannot be smaller than the coupling time step.  "
-			                             << "Forcing solver to use the coupling time step.";
+										 << "Solver time step cannot be smaller than the coupling time step.  "
+										 << "Forcing solver to use the coupling time step.";
 			_solverTimeStep = _preciceTimeStep;
 		}
 		else
@@ -134,7 +140,7 @@ void adapter::Adapter::adjustSolverTimeStep()
 	else if ( solverDeterminedTimeStep > _preciceTimeStep )
 	{
 		BOOST_LOG_TRIVIAL( info ) << "Solver time step cannot be larger than the coupling time step.  "
-		                          << "Adjusting from " << solverDeterminedTimeStep << " to " << _preciceTimeStep;
+								  << "Adjusting from " << solverDeterminedTimeStep << " to " << _preciceTimeStep;
 		_solverTimeStep = _preciceTimeStep;
 	}
 	else
@@ -221,6 +227,8 @@ void adapter::Adapter::addCheckpointField( surfaceScalarField & field )
 
 void adapter::Adapter::readCheckpoint()
 {
+	BOOST_LOG_TRIVIAL( info ) << "Adapter reading checkpoint...";
+
 	_reloadCheckpointTime();
 
 	for ( uint i = 0 ; i < _volScalarFields.size() ; i++ )
@@ -241,6 +249,8 @@ void adapter::Adapter::readCheckpoint()
 
 void adapter::Adapter::writeCheckpoint()
 {
+    BOOST_LOG_TRIVIAL( info ) << "Adapter writing checkpoint...";
+    
 	_storeCheckpointTime();
 
 	for ( uint i = 0 ; i < _volScalarFields.size() ; i++ )

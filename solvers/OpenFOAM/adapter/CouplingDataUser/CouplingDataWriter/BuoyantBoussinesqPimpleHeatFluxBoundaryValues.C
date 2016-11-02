@@ -20,12 +20,12 @@ void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::write( double * dat
 		int patchID = _patchIDs.at( k );
 		scalarField alphaEff = _turbulence->nu() ().boundaryField()[patchID] / _Pr + _alphat.boundaryField()[patchID];
 		scalarField flux = -alphaEff* _rho* _Cp* refCast<fixedValueFvPatchScalarField>( _T.boundaryField()[patchID] ).snGrad();
-		Info << alphaEff *_rho*_Cp << endl;
-		std::cout << "Flux" << std::endl;
+		// Info << alphaEff *_rho*_Cp << endl;
+		// std::cout << "Flux" << std::endl;
 		forAll( flux, i )
 		{
 			dataBuffer[bufferIndex++] = flux[i];
-			std::cout << flux[i] << std::endl;
+			// std::cout << flux[i] << std::endl;
 		}
 	}
 }
