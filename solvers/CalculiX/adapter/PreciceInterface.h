@@ -8,8 +8,10 @@
 enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
 
 /*
- * CalculiXData: Structure with all the CalculiX variables
- * that need to be accessed by the adapter in order to do the coupling
+ * SimulationData: Structure with all the CalculiX variables
+ * that need to be accessed by the adapter in order to do the coupling.
+ * A list of variables and their meaning is available in the documentation
+ * ccx_2.10.pdf (page 518)
  */
 typedef struct SimulationData {
 	// CalculiX data
@@ -100,71 +102,116 @@ typedef struct PreciceInterface {
 
 } PreciceInterface;
 
-/**
- * @brief PreciceInterface_Initialize
- * @param sim
- */
-void PreciceInterface_Initialize( SimulationData * sim );
 
 /**
- * @brief PreciceInterface_InitializeData
- * @param sim
- * @param preciceInterfaces
- * @param numInterfaces
- */
-void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces );
-
-/**
- * @brief PreciceInterface_Advance
- * @param sim
- */
-void PreciceInterface_Advance( SimulationData sim );
-
-/**
- * @brief Returns true if coupling is still ongoing
- * @return
- */
-bool PreciceInterface_IsCouplingOngoing();
-
-/**
- * @brief Returns true if checkpoint must be read
- * @return
- */
-bool PreciceInterface_IsReadCheckpointRequired();
-
-/**
- * @brief Returns true if checkpoint must be written
- * @return
- */
-bool PreciceInterface_IsWriteCheckpointRequired();
-
-/**
- * @brief PreciceInterface_FulfilledReadCheckpoint
- */
-void PreciceInterface_FulfilledReadCheckpoint();
-
-/**
- * @brief PreciceInterface_FulfilledWriteCheckpoint
- */
-void PreciceInterface_FulfilledWriteCheckpoint();
-
-/**
- * @brief PreciceInterface_Setup
+ * @brief Precice_Setup
  * @param configFilename
  * @param participantName
  * @param sim
  * @param preciceInterfaces
  * @param numPreciceInterfaces
  */
-void PreciceInterface_Setup( char * configFilename, char * participantName, SimulationData sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
+void Precice_Setup( char * configFilename, char * participantName, SimulationData * sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
 
 /**
- * @brief PreciceInterface_CreateInterface
+ * @brief Precice_Initialize
+ * @param sim
+ */
+void Precice_Initialize( SimulationData * sim );
+
+/**
+ * @brief Precice_InitializeData
+ * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void Precice_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces );
+
+/**
+ * @brief PreciceInterface_AdjustSolverTimestep
+ * @param sim
+ */
+void Precice_AdjustSolverTimestep( SimulationData sim );
+
+/**
+ * @brief Precice_Advance
+ * @param sim
+ */
+void Precice_Advance( SimulationData sim );
+
+/**
+ * @brief Returns true if coupling is still ongoing
+ * @return
+ */
+bool Precice_IsCouplingOngoing();
+
+/**
+ * @brief Returns true if checkpoint must be read
+ * @return
+ */
+bool Precice_IsReadCheckpointRequired();
+
+/**
+ * @brief Returns true if checkpoint must be written
+ * @return
+ */
+bool Precice_IsWriteCheckpointRequired();
+
+/**
+ * @brief Precice_FulfilledReadCheckpoint
+ */
+void Precice_FulfilledReadCheckpoint();
+
+/**
+ * @brief Precice_FulfilledWriteCheckpoint
+ */
+void Precice_FulfilledWriteCheckpoint();
+
+/**
+ * @brief PreciceInterface_ReadIterationCheckpoint
+ * @param sim: Structure with CalculiX data
+ * @param v: CalculiX array with the temperature values
+ */
+void Precice_ReadIterationCheckpoint( SimulationData * sim, double * v );
+
+/**
+ * @brief PreciceInterface_WriteIterationCheckpoint
+ * @param sim: Structure with CalculiX data
+ * @param v: CalculiX array with the temperature values
+ */
+void Precice_WriteIterationCheckpoint( SimulationData * sim, double * v );
+
+/**
+ * @brief PreciceInterface_ReadCouplingData
+ * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void Precice_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+
+/**
+ * @brief PreciceInterface_WriteCouplingData
+ * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void Precice_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+
+/**
+ * @brief Precice_FreeAll
+ * @param sim
+ * @param preciceInterfaces
+ * @param numInterfaces
+ */
+void Precice_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+
+/**
+ * @brief PreciceInterface_Create
  * @param interface
  * @param sim
  * @param config
  */
-void PreciceInterface_CreateInterface( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
+void PreciceInterface_Create( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
 
 /**
  * @brief Configures the face centers mesh and calls setMeshVertices on preCICE
@@ -196,54 +243,10 @@ void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, Simulat
 void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
 
 /**
- * @brief PreciceInterface_AdjustSolverTimestep
- * @param sim
- */
-void PreciceInterface_AdjustSolverTimestep( SimulationData sim );
-
-/**
- * @brief PreciceInterface_WriteIterationCheckpoint
- * @param sim: Structure with CalculiX data
- * @param v: CalculiX array with the temperature values
- */
-void PreciceInterface_WriteIterationCheckpoint( SimulationData * sim, double * v );
-
-/**
- * @brief PreciceInterface_ReadIterationCheckpoint
- * @param sim: Structure with CalculiX data
- * @param v: CalculiX array with the temperature values
- */
-void PreciceInterface_ReadIterationCheckpoint( SimulationData * sim, double * v );
-
-/**
- * @brief PreciceInterface_ReadCouplingData
- * @param sim
- * @param preciceInterfaces
- * @param numInterfaces
- */
-void PreciceInterface_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
-
-/**
- * @brief PreciceInterface_WriteCouplingData
- * @param sim
- * @param preciceInterfaces
- * @param numInterfaces
- */
-void PreciceInterface_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
-
-/**
  * @brief PreciceInterface_FreeData
  * @param preciceInterface
  */
 void PreciceInterface_FreeData( PreciceInterface * preciceInterface );
-
-/**
- * @brief PreciceInterface_FreeAll
- * @param sim
- * @param preciceInterfaces
- * @param numInterfaces
- */
-void PreciceInterface_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 
 #endif // PRECICEINTERFACE_H
