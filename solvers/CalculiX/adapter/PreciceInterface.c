@@ -57,6 +57,7 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 	if( isSteadyStateSimulation( sim->nmethod ) )
 	{
 		printf( "Adjusting time step for steady-state step\n" );
+        fflush( stdout );
 
 		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
 		*sim->theta = 0;
@@ -64,12 +65,15 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 		*sim->dtheta = 1;
 
 		// Do not subcycle! Set the solver time step to be the same as the coupling time step
-		*sim->solver_dt = *sim->precice_dt;
+		// *sim->solver_dt = *sim->precice_dt;
+        // Temporary fix: force time step to be 1
+        *sim->solver_dt = 1;
 	}
 	else
 	{
 		printf( "Adjusting time step for transient step\n" );
 		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", *sim->precice_dt / *sim->tper, *sim->dtheta, fmin( *sim->precice_dt, *sim->dtheta * *sim->tper ) );
+        fflush( stdout );
 
 		// Compute the normalized time step used by CalculiX
 		*sim->dtheta = fmin( *sim->precice_dt / *sim->tper, *sim->dtheta );
@@ -269,7 +273,7 @@ void Precice_WriteCouplingData( SimulationData * sim )
 void Precice_FreeData( SimulationData * sim )
 {
 	int i;
-
+    
 	free( sim->solver_dt );
 	free( sim->precice_dt );
 	free( sim->coupling_init_v );
