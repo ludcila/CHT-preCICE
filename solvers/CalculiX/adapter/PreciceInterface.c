@@ -28,6 +28,7 @@ void Precice_Setup( char * configFilename, char * participantName, SimulationDat
 		sim->preciceInterfaces[i] = malloc( sizeof( PreciceInterface ) );
 		PreciceInterface_Create( sim->preciceInterfaces[i], sim, &interfaces[i] );
 	}
+    
 	// Initialize variables needed for the coupling
 	sim->solver_dt = malloc( sizeof( int ) );
 	sim->precice_dt = malloc( sizeof( int ) );
@@ -171,7 +172,7 @@ void Precice_ReadCouplingData( SimulationData * sim )
 				precicec_readBlockScalarData( interfaces[i]->fluxDataID, interfaces[i]->numElements, interfaces[i]->preciceFaceCenterIDs, interfaces[i]->faceCenterData );
 				setFaceFluxes( interfaces[i]->faceCenterData, interfaces[i]->numElements, interfaces[i]->xloadIndices, sim->xload );
 				break;
-			case KDELTA_TEMPERATURE:
+			case CONVECTION:
 				// Read and set sink temperature in convective film BC
 				precicec_readBlockScalarData( interfaces[i]->kDeltaTemperatureReadDataID, interfaces[i]->numElements, interfaces[i]->preciceFaceCenterIDs, interfaces[i]->faceCenterData );
 				setFaceSinkTemperatures( interfaces[i]->faceCenterData, interfaces[i]->numElements, interfaces[i]->xloadIndices, sim->xload );
@@ -226,7 +227,7 @@ void Precice_WriteCouplingData( SimulationData * sim )
 						 );
 				precicec_writeBlockScalarData( interfaces[i]->fluxDataID, interfaces[i]->numElements, interfaces[i]->preciceFaceCenterIDs, interfaces[i]->faceCenterData );
 				break;
-			case KDELTA_TEMPERATURE:
+			case CONVECTION:
 				iset = interfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
 				double * myKDelta = malloc( interfaces[i]->numElements * sizeof( double ) );
 				double * T = malloc( interfaces[i]->numElements * sizeof( double ) );
@@ -265,7 +266,7 @@ void Precice_WriteCouplingData( SimulationData * sim )
 	}
 }
 
-void Precice_FreeAll( SimulationData * sim )
+void Precice_FreeData( SimulationData * sim )
 {
 	int i;
 
@@ -399,7 +400,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		}
 		else if ( strcmp1( config->readDataNames[i], "Sink-Temperature-" ) == 0 )
 		{
-			interface->readData = KDELTA_TEMPERATURE;
+			interface->readData = CONVECTION;
 			interface->xloadIndices = malloc( interface->numElements * sizeof( int ) );
 			getXloadIndices( "FILM", interface->elementIDs, interface->faceIDs, interface->numElements, sim->nload, sim->nelemload, sim->sideload, interface->xloadIndices );
 			interface->kDeltaTemperatureReadDataID = precicec_getDataID( config->readDataNames[i], interface->faceCentersMeshID );
@@ -435,7 +436,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		}
 		else if ( strcmp1( config->writeDataNames[i], "Sink-Temperature-" ) == 0 )
 		{
-			interface->writeData = KDELTA_TEMPERATURE;
+			interface->writeData = CONVECTION;
 			interface->kDeltaTemperatureWriteDataID = precicec_getDataID( config->writeDataNames[i], interface->faceCentersMeshID );
 			printf( "Write data '%s' found.\n", config->writeDataNames[i] );
 		}

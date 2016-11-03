@@ -5,8 +5,13 @@
 #include "ConfigReader.h"
 #include "CCXHelpers.h"
 
-enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
-
+/**
+ * @brief Type of coupling data
+ *  Temperature - Dirichlet
+ *  Heat Flux - Neumann
+ *  Convection - Robin
+ */
+enum CouplingDataType {TEMPERATURE, HEAT_FLUX, CONVECTION};
 
 /*
  * PreciceInterface: Structure with all the information of a coupled surface
@@ -111,9 +116,10 @@ typedef struct SimulationData {
 } SimulationData;
 
 
+
 /**
- * @brief Precice_Setup
- * @param configFilename
+ * @brief Configures and initializes preCICE and the interfaces
+ * @param configFilename: YAML config file
  * @param participantName
  * @param sim
  * @param preciceInterfaces
@@ -122,13 +128,7 @@ typedef struct SimulationData {
 void Precice_Setup( char * configFilename, char * participantName, SimulationData * sim );
 
 /**
- * @brief Precice_Initialize
- * @param sim
- */
-void Precice_Initialize( SimulationData * sim );
-
-/**
- * @brief Precice_InitializeData
+ * @brief Initializes the coupling data (does an initial exchange) if necessary
  * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
@@ -136,13 +136,13 @@ void Precice_Initialize( SimulationData * sim );
 void Precice_InitializeData( SimulationData * sim );
 
 /**
- * @brief PreciceInterface_AdjustSolverTimestep
+ * @brief Adjusts the solver time step based on the coupling time step and the solver time step
  * @param sim
  */
 void Precice_AdjustSolverTimestep( SimulationData * sim );
 
 /**
- * @brief Precice_Advance
+ * @brief Advances the coupling
  * @param sim
  */
 void Precice_Advance( SimulationData * sim );
@@ -166,31 +166,31 @@ bool Precice_IsReadCheckpointRequired();
 bool Precice_IsWriteCheckpointRequired();
 
 /**
- * @brief Precice_FulfilledReadCheckpoint
+ * @brief Tells preCICE that the checkpoint has been read
  */
 void Precice_FulfilledReadCheckpoint();
 
 /**
- * @brief Precice_FulfilledWriteCheckpoint
+ * @brief Tells preCICE that the checkpoint has been written
  */
 void Precice_FulfilledWriteCheckpoint();
 
 /**
- * @brief PreciceInterface_ReadIterationCheckpoint
+ * @brief Reads iteration checkpoint
  * @param sim: Structure with CalculiX data
  * @param v: CalculiX array with the temperature values
  */
 void Precice_ReadIterationCheckpoint( SimulationData * sim, double * v );
 
 /**
- * @brief PreciceInterface_WriteIterationCheckpoint
+ * @brief Writes iteration checkpoint
  * @param sim: Structure with CalculiX data
  * @param v: CalculiX array with the temperature values
  */
 void Precice_WriteIterationCheckpoint( SimulationData * sim, double * v );
 
 /**
- * @brief PreciceInterface_ReadCouplingData
+ * @brief Reads the coupling data for all interfaces
  * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
@@ -198,7 +198,7 @@ void Precice_WriteIterationCheckpoint( SimulationData * sim, double * v );
 void Precice_ReadCouplingData( SimulationData * sim );
 
 /**
- * @brief PreciceInterface_WriteCouplingData
+ * @brief Writes the coupling data of all interfaces
  * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
@@ -206,15 +206,17 @@ void Precice_ReadCouplingData( SimulationData * sim );
 void Precice_WriteCouplingData( SimulationData * sim );
 
 /**
- * @brief Precice_FreeAll
+ * @brief Frees the memory
  * @param sim
  * @param preciceInterfaces
  * @param numInterfaces
  */
 void Precice_FreeData( SimulationData * sim );
 
+
+
 /**
- * @brief PreciceInterface_Create
+ * @brief Creates an interface that is coupled with preCICE
  * @param interface
  * @param sim
  * @param config
@@ -229,21 +231,21 @@ void PreciceInterface_Create( PreciceInterface * interface, SimulationData * sim
 void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, SimulationData * sim );
 
 /**
- * @brief PreciceInterface_ConfigureNodesMesh
+ * @brief Configures the nodes mesh
  * @param interface
  * @param sim: Structure with CalculiX data
  */
 void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData * sim );
 
 /**
- * @brief PreciceInterface_ConfigureTetraFaces
+ * @brief Configures the faces mesh (for tetrahedral elements only)
  * @param interface
  * @param sim
  */
 void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData * sim );
 
 /**
- * @brief PreciceInterface_ConfigureHeatTransferData
+ * @brief Configures the coupling data for CHT
  * @param interface
  * @param sim
  * @param config
@@ -251,7 +253,7 @@ void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, Simulat
 void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData * sim, InterfaceConfig * config );
 
 /**
- * @brief PreciceInterface_FreeData
+ * @brief Frees the memory
  * @param preciceInterface
  */
 void PreciceInterface_FreeData( PreciceInterface * preciceInterface );
