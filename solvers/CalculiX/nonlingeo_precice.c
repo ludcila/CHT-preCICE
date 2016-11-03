@@ -1077,8 +1077,6 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
 		  }
 	      }
 	  }	
-      } else {
-      	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       }
       
       /* check for max. # of increments */
