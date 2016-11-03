@@ -7,50 +7,6 @@
 
 enum CouplingDataType {TEMPERATURE, HEAT_FLUX, KDELTA_TEMPERATURE};
 
-/*
- * SimulationData: Structure with all the CalculiX variables
- * that need to be accessed by the adapter in order to do the coupling.
- * A list of variables and their meaning is available in the documentation
- * ccx_2.10.pdf (page 518)
- */
-typedef struct SimulationData {
-	// CalculiX data
-	ITG * ialset;
-	ITG * ielmat;
-	ITG * istartset;
-	ITG * iendset;
-	char ** lakon;
-	ITG * kon;
-	ITG * ipkon;
-	ITG nset;
-	char * set;
-	double * co;
-	ITG nboun;
-	ITG * ikboun;
-	ITG * ilboun;
-	ITG * nelemload;
-	int nload;
-	char * sideload;
-	double nk;
-	ITG mt;
-	double * theta;
-	double * dtheta;
-	double * tper;
-	ITG * nmethod;
-	double * xload;
-	double * xboun;
-	ITG * ntmat_;
-	double * vold;
-	double * cocon;
-	ITG * ncocon;
-	ITG * mi;
-	// Coupling data
-	double * coupling_init_v;
-	double coupling_init_theta;
-	double coupling_init_dtheta;
-	double * precice_dt;
-	double * solver_dt;
-} SimulationData;
 
 /*
  * PreciceInterface: Structure with all the information of a coupled surface
@@ -102,6 +58,58 @@ typedef struct PreciceInterface {
 
 } PreciceInterface;
 
+/*
+ * SimulationData: Structure with all the CalculiX variables
+ * that need to be accessed by the adapter in order to do the coupling.
+ * A list of variables and their meaning is available in the documentation
+ * ccx_2.10.pdf (page 518)
+ */
+typedef struct SimulationData {
+
+	// CalculiX data
+	ITG * ialset;
+	ITG * ielmat;
+	ITG * istartset;
+	ITG * iendset;
+	char ** lakon;
+	ITG * kon;
+	ITG * ipkon;
+	ITG nset;
+	char * set;
+	double * co;
+	ITG nboun;
+	ITG * ikboun;
+	ITG * ilboun;
+	ITG * nelemload;
+	int nload;
+	char * sideload;
+	double nk;
+	ITG mt;
+	double * theta;
+	double * dtheta;
+	double * tper;
+	ITG * nmethod;
+	double * xload;
+	double * xboun;
+	ITG * ntmat_;
+	double * vold;
+	double * cocon;
+	ITG * ncocon;
+	ITG * mi;
+
+	// Interfaces
+	int numPreciceInterfaces;
+	PreciceInterface ** preciceInterfaces;
+
+	// Coupling data
+	double * coupling_init_v;
+	double coupling_init_theta;
+	double coupling_init_dtheta;
+	double * precice_dt;
+	double * solver_dt;
+
+} SimulationData;
+
 
 /**
  * @brief Precice_Setup
@@ -111,7 +119,7 @@ typedef struct PreciceInterface {
  * @param preciceInterfaces
  * @param numPreciceInterfaces
  */
-void Precice_Setup( char * configFilename, char * participantName, SimulationData * sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
+void Precice_Setup( char * configFilename, char * participantName, SimulationData * sim );
 
 /**
  * @brief Precice_Initialize
@@ -125,19 +133,19 @@ void Precice_Initialize( SimulationData * sim );
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void Precice_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces );
+void Precice_InitializeData( SimulationData * sim );
 
 /**
  * @brief PreciceInterface_AdjustSolverTimestep
  * @param sim
  */
-void Precice_AdjustSolverTimestep( SimulationData sim );
+void Precice_AdjustSolverTimestep( SimulationData * sim );
 
 /**
  * @brief Precice_Advance
  * @param sim
  */
-void Precice_Advance( SimulationData sim );
+void Precice_Advance( SimulationData * sim );
 
 /**
  * @brief Returns true if coupling is still ongoing
@@ -187,7 +195,7 @@ void Precice_WriteIterationCheckpoint( SimulationData * sim, double * v );
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void Precice_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void Precice_ReadCouplingData( SimulationData * sim );
 
 /**
  * @brief PreciceInterface_WriteCouplingData
@@ -195,7 +203,7 @@ void Precice_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceIn
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void Precice_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void Precice_WriteCouplingData( SimulationData * sim );
 
 /**
  * @brief Precice_FreeAll
@@ -203,7 +211,7 @@ void Precice_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceI
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void Precice_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void Precice_FreeData( SimulationData * sim );
 
 /**
  * @brief PreciceInterface_Create
@@ -211,28 +219,28 @@ void Precice_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces,
  * @param sim
  * @param config
  */
-void PreciceInterface_Create( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
+void PreciceInterface_Create( PreciceInterface * interface, SimulationData * sim, InterfaceConfig * config );
 
 /**
  * @brief Configures the face centers mesh and calls setMeshVertices on preCICE
  * @param interface
  * @param sim
  */
-void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, SimulationData sim );
+void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, SimulationData * sim );
 
 /**
  * @brief PreciceInterface_ConfigureNodesMesh
  * @param interface
  * @param sim: Structure with CalculiX data
  */
-void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData sim );
+void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData * sim );
 
 /**
  * @brief PreciceInterface_ConfigureTetraFaces
  * @param interface
  * @param sim
  */
-void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData sim );
+void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData * sim );
 
 /**
  * @brief PreciceInterface_ConfigureHeatTransferData
@@ -240,7 +248,7 @@ void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, Simulat
  * @param sim
  * @param config
  */
-void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
+void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData * sim, InterfaceConfig * config );
 
 /**
  * @brief PreciceInterface_FreeData
