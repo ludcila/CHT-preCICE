@@ -73,15 +73,15 @@ void adapter::Adapter::initialize()
 
 	if( _precice->isActionRequired( precice::constants::actionWriteInitialData() ) )
 	{
-		sendCouplingData();
+		writeCouplingData();
 		_precice->fulfilledAction( precice::constants::actionWriteInitialData() );
 	}
 
 	_precice->initializeData();
-	receiveCouplingData();
+	readCouplingData();
 }
 
-void adapter::Adapter::receiveCouplingData()
+void adapter::Adapter::readCouplingData()
 {
 	BOOST_LOG_TRIVIAL( info ) << "Adapter receiving coupling data...";
 
@@ -91,7 +91,7 @@ void adapter::Adapter::receiveCouplingData()
 	}
 }
 
-void adapter::Adapter::sendCouplingData()
+void adapter::Adapter::writeCouplingData()
 {
 	BOOST_LOG_TRIVIAL( info ) << "Adapter sending coupling data...";
 
