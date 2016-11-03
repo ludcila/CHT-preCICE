@@ -222,9 +222,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   /* Adapter: Create the interfaces and initialize the coupling */
   int numPreciceInterfaces;
   PreciceInterface ** preciceInterfaces;
-  PreciceInterface_Setup( preciceConfigFilename, preciceParticipantName, simulationData, &preciceInterfaces, &numPreciceInterfaces );
-  PreciceInterface_Initialize( &simulationData );
-  PreciceInterface_InitializeData( simulationData, preciceInterfaces, numPreciceInterfaces );
+  Precice_Setup( preciceConfigFilename, preciceParticipantName, &simulationData, &preciceInterfaces, &numPreciceInterfaces );
 
   if(*ithermal==4){
       uncoupled=1;
@@ -1007,13 +1005,13 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   }
   
   /* Adapter: Give preCICE the control of the time stepping */
-  while( PreciceInterface_IsCouplingOngoing() ) {
+  while( Precice_IsCouplingOngoing() ) {
       
       /* Adapter: Adjust solver time step */
-      PreciceInterface_AdjustSolverTimestep( simulationData );
+      Precice_AdjustSolverTimestep( simulationData );
 
       /* Adapter read coupling data if available */
-      PreciceInterface_ReadCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
+      Precice_ReadCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
       
       if(icutb==0){
 	  
@@ -1032,10 +1030,10 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
 	  memcpy(&vini[0],&vold[0],sizeof(double)*mt**nk);
       
       /* Adapter: Write checkpoint if necessary */
-      if( PreciceInterface_IsWriteCheckpointRequired() )
+      if( Precice_IsWriteCheckpointRequired() )
       {
-	      PreciceInterface_WriteIterationCheckpoint( &simulationData, vini );
-	      PreciceInterface_FulfilledWriteCheckpoint();
+	      Precice_WriteIterationCheckpoint( &simulationData, vini );
+	      Precice_FulfilledWriteCheckpoint();
       }
 	  
 	  for(k=0;k<*nboun;++k){xbounini[k]=xbounact[k];}
@@ -2414,19 +2412,19 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
     if( icutb == 0 )
     {
 	    /* Adapter: Write coupling data */
-	    PreciceInterface_WriteCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
+	    Precice_WriteCouplingData( simulationData, preciceInterfaces, numPreciceInterfaces );
 	    /* Adapter: Advance the coupling */
-	    PreciceInterface_Advance( simulationData );
+	    Precice_Advance( simulationData );
 
 	    /* Adapter: If the coupling does not converge, read the checkpoint */
-	    if( PreciceInterface_IsReadCheckpointRequired() )
+	    if( Precice_IsReadCheckpointRequired() )
 	    {
 		    if( *nmethod == 4 )
 		    {
-			    PreciceInterface_ReadIterationCheckpoint( &simulationData, vold );
+			    Precice_ReadIterationCheckpoint( &simulationData, vold );
 			    icutb++;
 		    }
-		    PreciceInterface_FulfilledReadCheckpoint();
+		    Precice_FulfilledReadCheckpoint();
 	    }
     }
    
@@ -2937,7 +2935,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   (*ttime)+=(*tper);
   
   /* Adapter: Free the memory */
-  PreciceInterface_FreeAll( simulationData, preciceInterfaces, numPreciceInterfaces );
+  Precice_FreeAll( simulationData, preciceInterfaces, numPreciceInterfaces );
   
   return;
 }

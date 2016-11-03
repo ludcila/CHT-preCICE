@@ -3,25 +3,82 @@
 #include "ConfigReader.h"
 #include "precice/adapters/c/SolverInterfaceC.h"
 
-void PreciceInterface_Initialize( SimulationData * sim )
+
+void Precice_Setup( char * configFilename, char * participantName, SimulationData * sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces )
 {
+
+	printf( "Setting up preCICE participant %s, using config file: %s\n", participantName, configFilename );
+	fflush( stdout );
+
+	int i;
+	char * preciceConfigFilename;
+	InterfaceConfig * interfaces;
+
+	// Read the YAML config file
+	ConfigReader_Read( configFilename, participantName, &preciceConfigFilename, &interfaces, numPreciceInterfaces );
+
+	// Create the solver interface and configure it
+	precicec_createSolverInterface( participantName, preciceConfigFilename, 0, 1 );
+
+	// Create interfaces as specified in the config file
+	*preciceInterfaces = (struct PreciceInterface**) malloc( *numPreciceInterfaces * sizeof( PreciceInterface* ) );
+
+	for( i = 0 ; i < *numPreciceInterfaces ; i++ )
+	{
+		( *preciceInterfaces )[i] = malloc( sizeof( PreciceInterface ) );
+		PreciceInterface_Create( ( *preciceInterfaces )[i], *sim, &interfaces[i] );
+	}
+	// Initialize variables needed for the coupling
 	sim->solver_dt = malloc( sizeof( int ) );
 	sim->precice_dt = malloc( sizeof( int ) );
-	*sim->precice_dt = precicec_initialize();
 	NNEW( sim->coupling_init_v, double, sim->mt * sim->nk );
+
+	// Initialize preCICE
+	*sim->precice_dt = precicec_initialize();
+
+	// Initialize coupling data
+	Precice_InitializeData( *sim, *preciceInterfaces, *numPreciceInterfaces );
+
 }
 
-void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces )
+void Precice_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces )
 {
 	printf( "Initializing coupling data\n" );
 	fflush( stdout );
 
-	PreciceInterface_WriteCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
+	Precice_WriteCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
 	precicec_initialize_data();
-	PreciceInterface_ReadCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
+	Precice_ReadCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
 }
 
-void PreciceInterface_Advance( SimulationData sim )
+void Precice_AdjustSolverTimestep( SimulationData sim )
+{
+	if( isSteadyStateSimulation( sim.nmethod ) )
+	{
+		printf( "Adjusting time step for steady-state step\n" );
+
+		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
+		*sim.theta = 0;
+		*sim.tper = 1;
+		*sim.dtheta = 1;
+
+		// Do not subcycle! Set the solver time step to be the same as the coupling time step
+		*sim.solver_dt = *sim.precice_dt;
+	}
+	else
+	{
+		printf( "Adjusting time step for transient step\n" );
+		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", *sim.precice_dt / *sim.tper, *sim.dtheta, fmin( *sim.precice_dt, *sim.dtheta * *sim.tper ) );
+
+		// Compute the normalized time step used by CalculiX
+		*sim.dtheta = fmin( *sim.precice_dt / *sim.tper, *sim.dtheta );
+
+		// Compute the non-normalized time step used by preCICE
+		*sim.solver_dt = ( *sim.dtheta ) * ( *sim.tper );
+	}
+}
+
+void Precice_Advance( SimulationData sim )
 {
 	printf( "Adapter calling advance()...\n" );
 	fflush( stdout );
@@ -29,57 +86,211 @@ void PreciceInterface_Advance( SimulationData sim )
 	*sim.precice_dt = precicec_advance( *sim.solver_dt );
 }
 
-bool PreciceInterface_IsCouplingOngoing()
+bool Precice_IsCouplingOngoing()
 {
 	return precicec_isCouplingOngoing();
 }
 
-bool PreciceInterface_IsReadCheckpointRequired()
+bool Precice_IsReadCheckpointRequired()
 {
 	return precicec_isActionRequired( "read-iteration-checkpoint" );
 }
 
-bool PreciceInterface_IsWriteCheckpointRequired()
+bool Precice_IsWriteCheckpointRequired()
 {
 	return precicec_isActionRequired( "write-iteration-checkpoint" );
 }
 
-void PreciceInterface_FulfilledReadCheckpoint()
+void Precice_FulfilledReadCheckpoint()
 {
 	precicec_fulfilledAction( "read-iteration-checkpoint" );
 }
 
-void PreciceInterface_FulfilledWriteCheckpoint()
+void Precice_FulfilledWriteCheckpoint()
 {
 	precicec_fulfilledAction( "write-iteration-checkpoint" );
 }
 
-void PreciceInterface_Setup( char * configFilename, char * participantName, SimulationData sim,PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces )
+void Precice_ReadIterationCheckpoint( SimulationData * sim, double * v )
 {
 
-	printf( "Setting up preCICE participant %s, using config file: %s\n", participantName, configFilename );
+	printf( "Adapter reading checkpoint...\n" );
 	fflush( stdout );
 
-	char * preciceConfigFilename;
+	// Reload time
+	*( sim->theta ) = sim->coupling_init_theta;
 
-	InterfaceConfig * interfaces;
+	// Reload step size
+	*( sim->dtheta ) = sim->coupling_init_dtheta;
 
-	ConfigReader_Read( "config.yml", participantName, &preciceConfigFilename, &interfaces, numPreciceInterfaces );
-	precicec_createSolverInterface( participantName, preciceConfigFilename, 0, 1 );
+	// Reload solution vector v
+	memcpy( v, sim->coupling_init_v, sizeof( double ) * sim->mt * sim->nk );
 
-	*preciceInterfaces = (struct PreciceInterface**) malloc( *numPreciceInterfaces * sizeof( PreciceInterface* ) ); // TODO: free memory
+}
+
+void Precice_WriteIterationCheckpoint( SimulationData * sim, double * v )
+{
+
+	printf( "Adapter writing checkpoint...\n" );
+	fflush( stdout );
+
+	// Save time
+	sim->coupling_init_theta = *( sim->theta );
+
+	// Save step size
+	sim->coupling_init_dtheta = *( sim->dtheta );
+
+	// Save solution vector v
+	memcpy( sim->coupling_init_v, v, sizeof( double ) * sim->mt * sim->nk );
+
+}
+
+void Precice_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
+{
+
+	printf( "Adapter reading coupling data...\n" );
+	fflush( stdout );
 
 	int i;
 
-	for( i = 0 ; i < *numPreciceInterfaces ; i++ )
+	if( precicec_isReadDataAvailable() )
 	{
-		( *preciceInterfaces )[i] = malloc( sizeof( PreciceInterface ) );
-		PreciceInterface_CreateInterface( ( *preciceInterfaces )[i], sim, &interfaces[i] );
+		for( i = 0 ; i < numInterfaces ; i++ )
+		{
+			switch( preciceInterfaces[i]->readData )
+			{
+			case TEMPERATURE:
+				// Read and set temperature BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
+				setNodeTemperatures( preciceInterfaces[i]->nodeData, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->xbounIndices, sim.xboun );
+				break;
+			case HEAT_FLUX:
+				// Read and set heat flux BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setFaceFluxes( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
+				break;
+			case KDELTA_TEMPERATURE:
+				// Read and set sink temperature in convective film BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setFaceSinkTemperatures( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
+				// Read and set heat transfer coefficient in convective film BC
+				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				setFaceHeatTransferCoefficients( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
+				break;
+			}
+		}
 	}
 }
 
-void PreciceInterface_CreateInterface( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config )
+void Precice_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
 {
+
+	printf( "Adapter writing coupling data...\n" );
+	fflush( stdout );
+
+	int i;
+	int iset;
+
+	if( precicec_isWriteDataRequired( *sim.solver_dt ) || precicec_isActionRequired( "write-initial-data" ) )
+	{
+		for( i = 0 ; i < numInterfaces ; i++ )
+		{
+			switch( preciceInterfaces[i]->writeData )
+			{
+			case TEMPERATURE:
+				getNodeTemperatures( preciceInterfaces[i]->nodeIDs, preciceInterfaces[i]->numNodes, sim.vold, sim.mt, preciceInterfaces[i]->nodeData );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
+				break;
+			case HEAT_FLUX:
+				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				FORTRAN( getflux, ( sim.co,
+									sim.ntmat_,
+									sim.vold,
+									sim.cocon,
+									sim.ncocon,
+									&iset,
+									sim.istartset,
+									sim.iendset,
+									sim.ipkon,
+									*sim.lakon,
+									sim.kon,
+									sim.ialset,
+									sim.ielmat,
+									sim.mi,
+									preciceInterfaces[i]->faceCenterData
+									)
+						 );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
+				break;
+			case KDELTA_TEMPERATURE:
+				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
+				double * myKDelta = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
+				double * T = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
+				FORTRAN( getkdeltatemp, ( sim.co,
+										  sim.ntmat_,
+										  sim.vold,
+										  sim.cocon,
+										  sim.ncocon,
+										  &iset,
+										  sim.istartset,
+										  sim.iendset,
+										  sim.ipkon,
+										  *sim.lakon,
+										  sim.kon,
+										  sim.ialset,
+										  sim.ielmat,
+										  sim.mi,
+										  myKDelta,
+										  T
+										  )
+						 );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, myKDelta );
+				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, T );
+				free( myKDelta );
+				free( T );
+				break;
+
+			}
+		}
+
+		if( precicec_isActionRequired( "write-initial-data" ) )
+		{
+			printf( "Initial data written\n" );
+			precicec_fulfilledAction( "write-initial-data" );
+		}
+	}
+}
+
+void Precice_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
+{
+	int i;
+
+	free( sim.solver_dt );
+	free( sim.precice_dt );
+	free( sim.coupling_init_v );
+
+	for( i = 0 ; i < numInterfaces ; i++ )
+	{
+		PreciceInterface_FreeData( preciceInterfaces[i] );
+		free( preciceInterfaces[i] );
+	}
+}
+
+void PreciceInterface_Create( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config )
+{
+
+	// Initialize pointers as NULL
+	interface->elementIDs = NULL;
+	interface->faceIDs = NULL;
+	interface->faceCenterCoordinates = NULL;
+	interface->preciceFaceCenterIDs = NULL;
+	interface->nodeCoordinates = NULL;
+	interface->preciceNodeIDs = NULL;
+	interface->triangles = NULL;
+	interface->nodeData = NULL;
+	interface->faceCenterData = NULL;
+	interface->xbounIndices = NULL;
+	interface->xloadIndices = NULL;
 
 	interface->name = config->patchName;
 
@@ -237,183 +448,6 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 	}
 }
 
-void PreciceInterface_WriteIterationCheckpoint( SimulationData * sim, double * v )
-{
-
-	printf( "Adapter writing checkpoint...\n" );
-	fflush( stdout );
-
-	// Save time
-	sim->coupling_init_theta = *( sim->theta );
-
-	// Save step size
-	sim->coupling_init_dtheta = *( sim->dtheta );
-
-	// Save solution vector v
-	memcpy( sim->coupling_init_v, v, sizeof( double ) * sim->mt * sim->nk );
-
-}
-
-void PreciceInterface_ReadIterationCheckpoint( SimulationData * sim, double * v )
-{
-
-	printf( "Adapter reading checkpoint...\n" );
-	fflush( stdout );
-
-	// Reload time
-	*( sim->theta ) = sim->coupling_init_theta;
-
-	// Reload step size
-	*( sim->dtheta ) = sim->coupling_init_dtheta;
-
-	// Reload solution vector v
-	memcpy( v, sim->coupling_init_v, sizeof( double ) * sim->mt * sim->nk );
-
-}
-
-void PreciceInterface_AdjustSolverTimestep( SimulationData sim )
-{
-	if( isSteadyStateSimulation( sim.nmethod ) )
-	{
-		printf( "Adjusting time step for steady-state step\n" );
-
-		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
-		*sim.theta = 0;
-		*sim.tper = 1;
-		*sim.dtheta = 1;
-
-		// Do not subcycle! Set the solver time step to be the same as the coupling time step
-		*sim.solver_dt = *sim.precice_dt;
-	}
-	else
-	{
-		printf( "Adjusting time step for transient step\n" );
-		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", *sim.precice_dt / *sim.tper, *sim.dtheta, fmin( *sim.precice_dt, *sim.dtheta * *sim.tper ) );
-
-		// Compute the normalized time step used by CalculiX
-		*sim.dtheta = fmin( *sim.precice_dt / *sim.tper, *sim.dtheta );
-
-		// Compute the non-normalized time step used by preCICE
-		*sim.solver_dt = ( *sim.dtheta ) * ( *sim.tper );
-	}
-}
-
-void PreciceInterface_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
-{
-
-	printf( "Adapter reading coupling data...\n" );
-	fflush( stdout );
-
-	int i;
-
-	if( precicec_isReadDataAvailable() )
-	{
-		for( i = 0 ; i < numInterfaces ; i++ )
-		{
-			switch( preciceInterfaces[i]->readData )
-			{
-			case TEMPERATURE:
-				// Read and set temperature BC
-				precicec_readBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
-				setNodeTemperatures( preciceInterfaces[i]->nodeData, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->xbounIndices, sim.xboun );
-				break;
-			case HEAT_FLUX:
-				// Read and set heat flux BC
-				precicec_readBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setFaceFluxes( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
-				break;
-			case KDELTA_TEMPERATURE:
-				// Read and set sink temperature in convective film BC
-				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setFaceSinkTemperatures( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
-				// Read and set heat transfer coefficient in convective film BC
-				precicec_readBlockScalarData( preciceInterfaces[i]->kDeltaReadDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				setFaceHeatTransferCoefficients( preciceInterfaces[i]->faceCenterData, preciceInterfaces[i]->numElements, preciceInterfaces[i]->xloadIndices, sim.xload );
-				break;
-			}
-		}
-	}
-}
-
-void PreciceInterface_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
-{
-
-	printf( "Adapter writing coupling data...\n" );
-	fflush( stdout );
-
-	int i;
-	int iset;
-
-	if( precicec_isWriteDataRequired( *sim.solver_dt ) || precicec_isActionRequired( "write-initial-data" ) )
-	{
-		for( i = 0 ; i < numInterfaces ; i++ )
-		{
-			switch( preciceInterfaces[i]->writeData )
-			{
-			case TEMPERATURE:
-				getNodeTemperatures( preciceInterfaces[i]->nodeIDs, preciceInterfaces[i]->numNodes, sim.vold, sim.mt, preciceInterfaces[i]->nodeData );
-				precicec_writeBlockScalarData( preciceInterfaces[i]->temperatureDataID, preciceInterfaces[i]->numNodes, preciceInterfaces[i]->preciceNodeIDs, preciceInterfaces[i]->nodeData );
-				break;
-			case HEAT_FLUX:
-				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
-				FORTRAN( getflux, ( sim.co,
-									sim.ntmat_,
-									sim.vold,
-									sim.cocon,
-									sim.ncocon,
-									&iset,
-									sim.istartset,
-									sim.iendset,
-									sim.ipkon,
-									*sim.lakon,
-									sim.kon,
-									sim.ialset,
-									sim.ielmat,
-									sim.mi,
-									preciceInterfaces[i]->faceCenterData
-									)
-						 );
-				precicec_writeBlockScalarData( preciceInterfaces[i]->fluxDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, preciceInterfaces[i]->faceCenterData );
-				break;
-			case KDELTA_TEMPERATURE:
-				iset = preciceInterfaces[i]->faceSetID + 1; // Adjust index before calling Fortran function
-				double * myKDelta = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
-				double * T = malloc( preciceInterfaces[i]->numElements * sizeof( double ) );
-				FORTRAN( getkdeltatemp, ( sim.co,
-										  sim.ntmat_,
-										  sim.vold,
-										  sim.cocon,
-										  sim.ncocon,
-										  &iset,
-										  sim.istartset,
-										  sim.iendset,
-										  sim.ipkon,
-										  *sim.lakon,
-										  sim.kon,
-										  sim.ialset,
-										  sim.ielmat,
-										  sim.mi,
-										  myKDelta,
-										  T
-										  )
-						 );
-				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, myKDelta );
-				precicec_writeBlockScalarData( preciceInterfaces[i]->kDeltaTemperatureWriteDataID, preciceInterfaces[i]->numElements, preciceInterfaces[i]->preciceFaceCenterIDs, T );
-				free( myKDelta );
-				free( T );
-				break;
-
-			}
-		}
-
-		if( precicec_isActionRequired( "write-initial-data" ) )
-		{
-			printf( "Initial data written\n" );
-			precicec_fulfilledAction( "write-initial-data" );
-		}
-	}
-}
-
 void PreciceInterface_FreeData( PreciceInterface * preciceInterface )
 {
 	free( preciceInterface->elementIDs );
@@ -437,20 +471,5 @@ void PreciceInterface_FreeData( PreciceInterface * preciceInterface )
 	if( preciceInterface->xloadIndices != NULL )
 		free( preciceInterface->xloadIndices );
 
-}
-
-void PreciceInterface_FreeAll( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
-{
-	int i;
-
-	free( sim.solver_dt );
-	free( sim.precice_dt );
-	free( sim.coupling_init_v );
-
-	for( i = 0 ; i < numInterfaces ; i++ )
-	{
-		PreciceInterface_FreeData( preciceInterfaces[i] );
-		free( preciceInterfaces[i] );
-	}
 }
 
