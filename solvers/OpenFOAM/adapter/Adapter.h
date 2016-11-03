@@ -104,12 +104,12 @@ public:
 	/**
 	 * @brief Receives the coupling data by calling precice::readBlockScalarData for each interface
 	 */
-	void receiveCouplingData();
+	void readCouplingData();
 
 	/**
 	 * @brief Sends the coupling data by calling precice::writeBlockScalarData for each interface
 	 */
-	void sendCouplingData();
+	void writeCouplingData();
 
 	/**
 	 * @brief Advances the coupling
