@@ -156,7 +156,7 @@ void PreciceInterface_FulfilledWriteCheckpoint();
  * @param preciceInterfaces
  * @param numPreciceInterfaces
  */
-void PreciceInterface_Setup( char * configFilename, char * participantName, struct SimulationData sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
+void PreciceInterface_Setup( char * configFilename, char * participantName, SimulationData sim, PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces );
 
 /**
  * @brief PreciceInterface_CreateInterface
@@ -164,28 +164,28 @@ void PreciceInterface_Setup( char * configFilename, char * participantName, stru
  * @param sim
  * @param config
  */
-void PreciceInterface_CreateInterface( PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config );
+void PreciceInterface_CreateInterface( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
 
 /**
  * @brief Configures the face centers mesh and calls setMeshVertices on preCICE
  * @param interface
  * @param sim
  */
-void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, struct SimulationData sim );
+void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureNodesMesh
  * @param interface
  * @param sim: Structure with CalculiX data
  */
-void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, struct SimulationData sim );
+void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureTetraFaces
  * @param interface
  * @param sim
  */
-void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, struct SimulationData sim );
+void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData sim );
 
 /**
  * @brief PreciceInterface_ConfigureHeatTransferData
@@ -193,20 +193,20 @@ void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, struct 
  * @param sim
  * @param config
  */
-void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config );
+void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config );
 
 /**
  * @brief PreciceInterface_AdjustSolverTimestep
  * @param sim
  */
-void PreciceInterface_AdjustSolverTimestep( struct SimulationData sim );
+void PreciceInterface_AdjustSolverTimestep( SimulationData sim );
 
 /**
  * @brief PreciceInterface_WriteIterationCheckpoint
  * @param sim: Structure with CalculiX data
  * @param v: CalculiX array with the temperature values
  */
-void PreciceInterface_WriteIterationCheckpoint( struct SimulationData * sim, double * v );
+void PreciceInterface_WriteIterationCheckpoint( SimulationData * sim, double * v );
 
 /**
  * @brief PreciceInterface_ReadIterationCheckpoint
@@ -221,7 +221,7 @@ void PreciceInterface_ReadIterationCheckpoint( SimulationData * sim, double * v 
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void PreciceInterface_ReadCouplingData( struct SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void PreciceInterface_ReadCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 /**
  * @brief PreciceInterface_WriteCouplingData
@@ -229,7 +229,7 @@ void PreciceInterface_ReadCouplingData( struct SimulationData sim, PreciceInterf
  * @param preciceInterfaces
  * @param numInterfaces
  */
-void PreciceInterface_WriteCouplingData( struct SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
+void PreciceInterface_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces );
 
 /**
  * @brief PreciceInterface_FreeData

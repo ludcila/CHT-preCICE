@@ -14,8 +14,8 @@ void PreciceInterface_Initialize( SimulationData * sim )
 void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numPreciceInterfaces )
 {
 	printf( "Initializing coupling data\n" );
-    fflush(stdout);
-    
+	fflush( stdout );
+
 	PreciceInterface_WriteCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
 	precicec_initialize_data();
 	PreciceInterface_ReadCouplingData( sim, preciceInterfaces, numPreciceInterfaces );
@@ -24,8 +24,8 @@ void PreciceInterface_InitializeData( SimulationData sim, PreciceInterface ** pr
 void PreciceInterface_Advance( SimulationData sim )
 {
 	printf( "Adapter calling advance()...\n" );
-    fflush(stdout);
-    
+	fflush( stdout );
+
 	*sim.precice_dt = precicec_advance( *sim.solver_dt );
 }
 
@@ -54,29 +54,31 @@ void PreciceInterface_FulfilledWriteCheckpoint()
 	precicec_fulfilledAction( "write-iteration-checkpoint" );
 }
 
-void PreciceInterface_Setup( char * configFilename, char * participantName, struct SimulationData sim, struct PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces )
+void PreciceInterface_Setup( char * configFilename, char * participantName, SimulationData sim,PreciceInterface *** preciceInterfaces, int * numPreciceInterfaces )
 {
+
+	printf( "Setting up preCICE participant %s, using config file: %s\n", participantName, configFilename );
+	fflush( stdout );
+
 	char * preciceConfigFilename;
 
 	InterfaceConfig * interfaces;
 
-	printf( "Setting up preCICE participant %s, using config file: %s\n", participantName, configFilename );
-
 	ConfigReader_Read( "config.yml", participantName, &preciceConfigFilename, &interfaces, numPreciceInterfaces );
 	precicec_createSolverInterface( participantName, preciceConfigFilename, 0, 1 );
 
-	*preciceInterfaces = (struct PreciceInterface**) malloc( *numPreciceInterfaces * sizeof( struct PreciceInterface* ) ); // TODO: free memory
+	*preciceInterfaces = (struct PreciceInterface**) malloc( *numPreciceInterfaces * sizeof( PreciceInterface* ) ); // TODO: free memory
 
 	int i;
 
 	for( i = 0 ; i < *numPreciceInterfaces ; i++ )
 	{
-		( *preciceInterfaces )[i] = malloc( sizeof( struct PreciceInterface ) );
+		( *preciceInterfaces )[i] = malloc( sizeof( PreciceInterface ) );
 		PreciceInterface_CreateInterface( ( *preciceInterfaces )[i], sim, &interfaces[i] );
 	}
 }
 
-void PreciceInterface_CreateInterface( struct PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config )
+void PreciceInterface_CreateInterface( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config )
 {
 
 	interface->name = config->patchName;
@@ -96,7 +98,7 @@ void PreciceInterface_CreateInterface( struct PreciceInterface * interface, stru
 
 }
 
-void PreciceInterface_ConfigureFaceCentersMesh( struct PreciceInterface * interface, struct SimulationData sim )
+void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, SimulationData sim )
 {
 
 	char * faceSetName = toFaceSetName( interface->name );
@@ -116,7 +118,7 @@ void PreciceInterface_ConfigureFaceCentersMesh( struct PreciceInterface * interf
 
 }
 
-void PreciceInterface_ConfigureNodesMesh( struct PreciceInterface * interface, struct SimulationData sim )
+void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData sim )
 {
 
 	char * nodeSetName = toNodeSetName( interface->name );
@@ -136,7 +138,7 @@ void PreciceInterface_ConfigureNodesMesh( struct PreciceInterface * interface, s
 
 }
 
-void PreciceInterface_ConfigureTetraFaces( struct PreciceInterface * interface, struct SimulationData sim )
+void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData sim )
 {
 	int i;
 
@@ -152,7 +154,7 @@ void PreciceInterface_ConfigureTetraFaces( struct PreciceInterface * interface, 
 	}
 }
 
-void PreciceInterface_ConfigureHeatTransferData( struct PreciceInterface * interface, struct SimulationData sim, InterfaceConfig * config )
+void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, SimulationData sim, InterfaceConfig * config )
 {
 
 	interface->nodeData = malloc( interface->numNodes * sizeof( double ) );
@@ -239,7 +241,7 @@ void PreciceInterface_WriteIterationCheckpoint( SimulationData * sim, double * v
 {
 
 	printf( "Adapter writing checkpoint...\n" );
-    fflush(stdout);
+	fflush( stdout );
 
 	// Save time
 	sim->coupling_init_theta = *( sim->theta );
@@ -256,7 +258,7 @@ void PreciceInterface_ReadIterationCheckpoint( SimulationData * sim, double * v 
 {
 
 	printf( "Adapter reading checkpoint...\n" );
-    fflush(stdout);
+	fflush( stdout );
 
 	// Reload time
 	*( sim->theta ) = sim->coupling_init_theta;
@@ -300,7 +302,7 @@ void PreciceInterface_ReadCouplingData( SimulationData sim, PreciceInterface ** 
 {
 
 	printf( "Adapter reading coupling data...\n" );
-    fflush(stdout);
+	fflush( stdout );
 
 	int i;
 
@@ -335,9 +337,9 @@ void PreciceInterface_ReadCouplingData( SimulationData sim, PreciceInterface ** 
 
 void PreciceInterface_WriteCouplingData( SimulationData sim, PreciceInterface ** preciceInterfaces, int numInterfaces )
 {
-    
-    printf( "Adapter writing coupling data...\n" );
-    fflush(stdout);
+
+	printf( "Adapter writing coupling data...\n" );
+	fflush( stdout );
 
 	int i;
 	int iset;
