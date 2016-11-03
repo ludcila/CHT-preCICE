@@ -29,12 +29,10 @@ void Precice_Setup( char * configFilename, char * participantName, SimulationDat
 		PreciceInterface_Create( sim->preciceInterfaces[i], sim, &interfaces[i] );
 	}
 	// Initialize variables needed for the coupling
-	sim->solver_dt = malloc( sizeof( double ) );
-	sim->precice_dt = malloc( sizeof( double ) );
 	NNEW( sim->coupling_init_v, double, sim->mt * sim->nk );
 
 	// Initialize preCICE
-	*sim->precice_dt = precicec_initialize();
+	sim->precice_dt = precicec_initialize();
 
 	// Initialize coupling data
 	Precice_InitializeData( sim );
@@ -64,19 +62,19 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 		*sim->dtheta = 1;
 
 		// Do not subcycle! Set the solver time step to be the same as the coupling time step
-		*sim->solver_dt = *sim->precice_dt;
+		sim->solver_dt = sim->precice_dt;
 	}
 	else
 	{
 		printf( "Adjusting time step for transient step\n" );
-		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", *sim->precice_dt / *sim->tper, *sim->dtheta, fmin( *sim->precice_dt, *sim->dtheta * *sim->tper ) );
+		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", sim->precice_dt / *sim->tper, *sim->dtheta, fmin( sim->precice_dt, *sim->dtheta * *sim->tper ) );
 		fflush( stdout );
 
 		// Compute the normalized time step used by CalculiX
-		*sim->dtheta = fmin( *sim->precice_dt / *sim->tper, *sim->dtheta );
+		*sim->dtheta = fmin( sim->precice_dt / *sim->tper, *sim->dtheta );
 
 		// Compute the non-normalized time step used by preCICE
-		*sim->solver_dt = ( *sim->dtheta ) * ( *sim->tper );
+		sim->solver_dt = ( *sim->dtheta ) * ( *sim->tper );
 	}
 }
 
@@ -85,7 +83,7 @@ void Precice_Advance( SimulationData * sim )
 	printf( "Adapter calling advance()...\n" );
 	fflush( stdout );
 
-	*sim->precice_dt = precicec_advance( *sim->solver_dt );
+	sim->precice_dt = precicec_advance( sim->solver_dt );
 }
 
 bool Precice_IsCouplingOngoing()
@@ -197,7 +195,7 @@ void Precice_WriteCouplingData( SimulationData * sim )
 	int i;
 	int iset;
 
-	if( precicec_isWriteDataRequired( *sim->solver_dt ) || precicec_isActionRequired( "write-initial-data" ) )
+	if( precicec_isWriteDataRequired( sim->solver_dt ) || precicec_isActionRequired( "write-initial-data" ) )
 	{
 		for( i = 0 ; i < numInterfaces ; i++ )
 		{
@@ -271,8 +269,6 @@ void Precice_FreeData( SimulationData * sim )
 {
 	int i;
 
-	free( sim->solver_dt );
-	free( sim->precice_dt );
 	free( sim->coupling_init_v );
 
 	for( i = 0 ; i < sim->numPreciceInterfaces ; i++ )
