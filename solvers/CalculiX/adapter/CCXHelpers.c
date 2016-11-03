@@ -28,6 +28,7 @@ ITG getSetID( char * setName, char * set, ITG nset )
 			return i;
 		}
 	}
+	printf( "ERROR: Set %s does not exist! Please check that the interface names are correct.\n", setName );
 	exit( EXIT_FAILURE );
 }
 
@@ -66,7 +67,7 @@ void getNodeCoordinates( ITG * nodes, ITG numNodes, double * co, double * coordi
 void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, int mt, double * temperatures )
 {
 
-	// CalculiX variable mt = 4 : temperature + 3 displacements (depends on the simulated case)
+	// CalculiX variable mt = 4 : temperature + 3 displacements (depends on the type of analysis)
 	ITG i;
 
 	for( i = 0 ; i < numNodes ; i++ )
@@ -176,6 +177,8 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
 	int nameLength = 20;
 	char faceLabel[] = { 'x', 'x', '\0' };
 
+    /* Face number is prefixed with 'S' if it is DFLUX boundary condition
+     * and with 'F' if it is a FILM boundary condition */
 	if( strcmp( loadType, "DFLUX" ) == 0 )
 	{
 		faceLabel[0] = (char) 'S';
@@ -289,11 +292,13 @@ bool isSteadyStateSimulation( ITG * nmethod )
 	return *nmethod == 1;
 }
 
-char * concat(char * prefix, char * string, char * suffix) {
-	int nameLength = strlen(string) + strlen(prefix) + strlen(suffix);
-	char * result = malloc(nameLength); // TODO: free memory somewhere?
-	strcpy(result, prefix);
-	strcat(result, string);
-	strcat(result, suffix);
+char* concat( char * prefix, char * string, char * suffix )
+{
+	int nameLength = strlen( string ) + strlen( prefix ) + strlen( suffix );
+	char * result = malloc( nameLength ); // TODO: free memory somewhere?
+	strcpy( result, prefix );
+	strcat( result, string );
+	strcat( result, suffix );
 	return result;
 }
+

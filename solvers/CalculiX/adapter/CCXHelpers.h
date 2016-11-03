@@ -42,16 +42,16 @@ char* toFaceSetName( char * name );
 ITG getSetID( char * setName, char * set, ITG nset );
 
 /**
- * @brief Returns number of elements inside a set
+ * @brief Returns number of elements in a set
  */
 ITG getNumSetElements( ITG setID, ITG * istartset, ITG * iendset );
 
 /**
  * @brief Gets the element and face IDs given a set ID
  * @param setID: input set id
- * @param ialset
- * @param istartset
- * @param iendset
+ * @param ialset: CalculiX variable
+ * @param istartset: CalculiX variable
+ * @param iendset: CalculiX variable
  * @param elements: output element IDs
  * @param faces: output face IDs (local IDs: e.g. 1, 2, 3, 4 for tetrahedral elements)
  */
