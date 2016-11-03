@@ -30,8 +30,8 @@ void Precice_Setup( char * configFilename, char * participantName, SimulationDat
 	}
     
 	// Initialize variables needed for the coupling
-	sim->solver_dt = malloc( sizeof( int ) );
-	sim->precice_dt = malloc( sizeof( int ) );
+	sim->solver_dt = malloc( sizeof( double ) );
+	sim->precice_dt = malloc( sizeof( double ) );
 	NNEW( sim->coupling_init_v, double, sim->mt * sim->nk );
 
 	// Initialize preCICE
