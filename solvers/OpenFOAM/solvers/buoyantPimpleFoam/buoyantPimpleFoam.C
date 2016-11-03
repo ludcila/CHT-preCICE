@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
         runTime++;
         
         /* Adapter: Receive coupling data */
-        adapter.receiveCouplingData();
+        adapter.readCouplingData();
 
         /* Start of original solver code */
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
         /* End of original solver code */
         
         /* Adapter: Send coupling data and advance */
-        adapter.sendCouplingData();
+        adapter.writeCouplingData();
         adapter.advance();
     
         /* Adapter: Read checkpoint if necessary (coupling not converged) */
