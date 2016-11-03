@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
         
         runTime++;
 
-        adapter.receiveCouplingData();
+        adapter.readCouplingData();
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        adapter.sendCouplingData();
+        adapter.writeCouplingData();
         adapter.advance();
 
         if(adapter.isReadCheckpointRequired()){
