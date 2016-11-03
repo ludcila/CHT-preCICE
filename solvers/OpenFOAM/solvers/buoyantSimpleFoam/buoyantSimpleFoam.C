@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     while ( simple.loop() && adapter.isCouplingOngoing() )
     {
         
-        adapter.receiveCouplingData();
+        adapter.readCouplingData();
 
         // Pressure-velocity SIMPLE corrector
         {
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
         turbulence->correct();
 
-        adapter.sendCouplingData();
+        adapter.writeCouplingData();
         adapter.advance();
         
         runTime.write(); 

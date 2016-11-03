@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         
         simple.loop();
 
-        adapter.receiveCouplingData();
+        adapter.readCouplingData();
 
         /* =========================== solve =========================== */
 
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
         /* =========================== preCICE write data =========================== */
 
-        adapter.sendCouplingData();
+        adapter.writeCouplingData();
         adapter.advance();
 
         if(adapter.isReadCheckpointRequired()){
