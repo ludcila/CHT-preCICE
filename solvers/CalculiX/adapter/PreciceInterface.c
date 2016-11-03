@@ -28,7 +28,6 @@ void Precice_Setup( char * configFilename, char * participantName, SimulationDat
 		sim->preciceInterfaces[i] = malloc( sizeof( PreciceInterface ) );
 		PreciceInterface_Create( sim->preciceInterfaces[i], sim, &interfaces[i] );
 	}
-    
 	// Initialize variables needed for the coupling
 	sim->solver_dt = malloc( sizeof( double ) );
 	sim->precice_dt = malloc( sizeof( double ) );
@@ -57,7 +56,7 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 	if( isSteadyStateSimulation( sim->nmethod ) )
 	{
 		printf( "Adjusting time step for steady-state step\n" );
-        fflush( stdout );
+		fflush( stdout );
 
 		// For steady-state simulations, we will always compute the converged steady-state solution in one coupling step
 		*sim->theta = 0;
@@ -65,15 +64,13 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 		*sim->dtheta = 1;
 
 		// Do not subcycle! Set the solver time step to be the same as the coupling time step
-		// *sim->solver_dt = *sim->precice_dt;
-        // Temporary fix: force time step to be 1
-        *sim->solver_dt = 1;
+		*sim->solver_dt = *sim->precice_dt;
 	}
 	else
 	{
 		printf( "Adjusting time step for transient step\n" );
 		printf( "precice_dt dtheta = %f, dtheta = %f, solver_dt = %f\n", *sim->precice_dt / *sim->tper, *sim->dtheta, fmin( *sim->precice_dt, *sim->dtheta * *sim->tper ) );
-        fflush( stdout );
+		fflush( stdout );
 
 		// Compute the normalized time step used by CalculiX
 		*sim->dtheta = fmin( *sim->precice_dt / *sim->tper, *sim->dtheta );
@@ -273,7 +270,7 @@ void Precice_WriteCouplingData( SimulationData * sim )
 void Precice_FreeData( SimulationData * sim )
 {
 	int i;
-    
+
 	free( sim->solver_dt );
 	free( sim->precice_dt );
 	free( sim->coupling_init_v );
