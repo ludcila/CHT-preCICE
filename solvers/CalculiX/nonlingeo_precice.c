@@ -32,10 +32,8 @@
    #include "pardiso.h"
 #endif
 
-/* Adapter: Add headers */
-#include "adapter/CCXHelpers.h"
+/* Adapter: Add header */
 #include "adapter/PreciceInterface.h"
-#include "adapter/ConfigReader.h"
 
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
@@ -86,7 +84,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
 	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
 	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext, 
          /* Adapter: Add variables for the participant name and the config file */
-         char * preciceParticipantName, char * preciceConfigFilename){
+         char * preciceParticipantName, char * configFilename){
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
       *sideface=NULL,*labmpc=NULL,fnffrd[132]="",*lakonf=NULL,
@@ -220,7 +218,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   };
   
   /* Adapter: Create the interfaces and initialize the coupling */
-  Precice_Setup( preciceConfigFilename, preciceParticipantName, &simulationData );
+  Precice_Setup( configFilename, preciceParticipantName, &simulationData );
 
   if(*ithermal==4){
       uncoupled=1;

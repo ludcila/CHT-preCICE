@@ -99,7 +99,7 @@ double fei[3],*xmodal=NULL,timepar[5],
  * Additional variables for the coupling with preCICE 
  * preCICE is used only if a participant name is provided as a command line argument!
 */
-char preciceParticipantName[256] = "", preciceConfigFilename[256] = "config.yml";
+char preciceParticipantName[256] = "", configFilename[256] = "config.yml";
 int preciceUsed = 0;
 
 
@@ -132,7 +132,7 @@ else{
 	  }
 	  // Overwrite YAML config file name
 	  if(strcmp1(argv[i],"-precice-config")==0) {
-		strcpy(preciceConfigFilename,argv[i+1]);
+		strcpy(configFilename,argv[i+1]);
 	  }
   }
 }
@@ -1092,7 +1092,7 @@ while(istat>=0) {
 			   &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke,
 			   ics,&nintpoint,&mortar,
 			   &ifacecount,typeboun,&islavsurf,&pslavsurf,&clearini,&nmat,
-			   xmodal,&iaxial,&inext,preciceParticipantName,preciceConfigFilename);
+			   xmodal,&iaxial,&inext,preciceParticipantName,configFilename);
 	  
 		  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
 			  maxlenmpc=mpcinfo[3];

@@ -2002,7 +2002,7 @@ void nonlingeo_precice(double **co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp
 	     ITG *nintpoint,ITG *mortar,ITG *ifacecount,char *typeboun,
 	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
 	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext,
-		 char *preciceParticipantName,char *preciceConfigFilename
+		 char *preciceParticipantName,char *configFilename
 					   );
 
 void FORTRAN(nonlinmpc,(double *co,double *vold,ITG *ipompc,ITG *nodempc,

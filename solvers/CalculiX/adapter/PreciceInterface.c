@@ -61,7 +61,7 @@ void Precice_AdjustSolverTimestep( SimulationData * sim )
 		*sim->tper = 1;
 		*sim->dtheta = 1;
 
-		// Do not subcycle! Set the solver time step to be the same as the coupling time step
+		// Set the solver time step to be the same as the coupling time step
 		sim->solver_dt = sim->precice_dt;
 	}
 	else
