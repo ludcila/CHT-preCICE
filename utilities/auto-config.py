@@ -170,6 +170,8 @@ for participant in participants:
     if participant.solver_type == "Code_Aster":
         output_comm_file = open(output_comm_file_name, "w")
         output_comm_file.write("settings = \\\n")
+        if "output-frequency" not in config["simulation"]:
+            config["simulation"]["output-frequency"] = 1
         pprint.pprint(config, output_comm_file)
         output_comm_file.close()
         logging.info("Output .comm file:\t" + output_comm_file_name)
