@@ -1,3 +1,10 @@
+/**********************************************************************************************
+ *                                                                                            *
+ *       CalculiX adapter for heat transfer coupling using preCICE                            *
+ *       Developed by Lucía Cheung with the support of SimScale GmbH (www.simscale.com)       *
+ *                                                                                            *
+ *********************************************************************************************/
+
 #ifndef PRECICEINTERFACE_H
 #define PRECICEINTERFACE_H
 
@@ -238,6 +245,12 @@ void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, Si
 void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, SimulationData * sim );
 
 /**
+ * @brief Terminate execution if the nodes mesh ID is not valid
+ * @param interface
+ */
+void PreciceInterface_EnsureValidNodesMeshID( PreciceInterface * interface );
+
+/**
  * @brief Configures the faces mesh (for tetrahedral elements only)
  * @param interface
  * @param sim
@@ -257,6 +270,5 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
  * @param preciceInterface
  */
 void PreciceInterface_FreeData( PreciceInterface * preciceInterface );
-
 
 #endif // PRECICEINTERFACE_H

@@ -1,3 +1,10 @@
+/**********************************************************************************************
+ *                                                                                            *
+ *       CalculiX adapter for heat transfer coupling using preCICE                            *
+ *       Developed by Lucía Cheung with the support of SimScale GmbH (www.simscale.com)       *
+ *                                                                                            *
+ *********************************************************************************************/
+
 #ifndef CCXHELPERS_H
 #define CCXHELPERS_H
 
@@ -184,5 +191,34 @@ bool isSteadyStateSimulation( ITG * nmethod );
  * @param suffix
  */
 char * concat(char * prefix, char * string, char * suffix);
+
+/* Error messages */
+
+/**
+ * @brief Terminate program if a node set is not defined for the interface (e.g. missing interface.nam file)
+ * @param setName
+ */
+void nodeSetNotFoundError( char * setName );
+
+/**
+ * @brief Terminate program if a face set is not defined for the interface (e.g. missing interface.sur file)
+ * @param setName
+ */
+void faceSetNotFoundError( char * setName );
+
+/**
+ * @brief Terminate program if a temperature BC is not defined when using Dirichlet BC for coupling (e.g. missing line under *BOUNDARY)
+ */
+void missingTemperatureBCError();
+
+/**
+ * @brief Terminate program if a DFLUX BC is not defined when using Neumann BC for coupling (e.g. missing interface.dfl file)
+ */
+void missingDfluxBCError();
+
+/**
+ * @brief Terminate program if a FILM BC is not defined when using Robin BC for coupling (e.g. missing interface.flm file)
+ */
+void missingFilmBCError();
 
 #endif // CCXHELPERS_H
