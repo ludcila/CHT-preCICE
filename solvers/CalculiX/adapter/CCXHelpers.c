@@ -1,3 +1,10 @@
+/**********************************************************************************************
+ *                                                                                            *
+ *       CalculiX adapter for heat transfer coupling using preCICE                            *
+ *       Developed by Lucía Cheung with the support of SimScale GmbH (www.simscale.com)       *
+ *                                                                                            *
+ *********************************************************************************************/
+
 #include "CCXHelpers.h"
 #include <stdlib.h>
 
@@ -28,8 +35,16 @@ ITG getSetID( char * setName, char * set, ITG nset )
 			return i;
 		}
 	}
-	printf( "ERROR: Set %s does not exist! Please check that the interface names are correct.\n", setName );
-	exit( EXIT_FAILURE );
+	// Set not found:
+
+	if( setName[0] == (char) 'N' )
+	{
+		nodeSetNotFoundError( setName );
+	}
+	else if ( setName[0] == (char) 'S' )
+	{
+		faceSetNotFoundError( setName );
+	}
 }
 
 ITG getNumSetElements( ITG setID, ITG * istartset, ITG * iendset )
@@ -177,8 +192,8 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
 	int nameLength = 20;
 	char faceLabel[] = { 'x', 'x', '\0' };
 
-    /* Face number is prefixed with 'S' if it is DFLUX boundary condition
-     * and with 'F' if it is a FILM boundary condition */
+	/* Face number is prefixed with 'S' if it is DFLUX boundary condition
+	 * and with 'F' if it is a FILM boundary condition */
 	if( strcmp( loadType, "DFLUX" ) == 0 )
 	{
 		faceLabel[0] = (char) 'S';
@@ -194,21 +209,28 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
 		ITG faceID = faceIDs[k];
 		ITG elementID = elementIDs[k];
 		faceLabel[1] = faceID + '0';
+		int found = 0;
 
 		for( i = 0 ; i < nload ; i++ )
 		{
 			if( elementID == nelemload[i * 2] && strcmp1( &sideload[i * nameLength], faceLabel ) == 0 )
 			{
 				xloadIndices[k] = 2 * i;
+				found = 1;
 				break;
 			}
 		}
 
-		if( i == nload )
+		// xload index not found:
+		if( !found && strcmp( loadType, "DFLUX" ) == 0 )
 		{
-			printf( "%d %s\n", elementID, sideload + ( i * nameLength ) );
-			exit( 1 );
+			missingDfluxBCError();
 		}
+		else if ( !found && strcmp( loadType, "FILM" ) == 0 )
+		{
+			missingFilmBCError();
+		}
+
 
 	}
 }
@@ -228,6 +250,14 @@ void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * 
 		xbounIndices[i] = m;
 	}
 	// See documentation ccx_2.10.pdf for the definition of ikboun and ilboun
+
+	for( i = 0 ; i < numNodes ; i++ )
+	{
+		if( xbounIndices[i] < 0 )
+		{
+            missingTemperatureBCError();
+		}
+	}
 }
 
 int getXloadIndexOffset( enum xloadVariable xloadVar )
@@ -295,10 +325,44 @@ bool isSteadyStateSimulation( ITG * nmethod )
 char* concat( char * prefix, char * string, char * suffix )
 {
 	int nameLength = strlen( string ) + strlen( prefix ) + strlen( suffix ) + 1;
-	char * result = malloc( nameLength ); // TODO: free memory somewhere?
+	char * result = malloc( nameLength );
 	strcpy( result, prefix );
 	strcat( result, string );
 	strcat( result, suffix );
 	return result;
+}
+
+/* Errors messages */
+
+void nodeSetNotFoundError( char * setName )
+{
+	printf( "ERROR: Set %s does not exist! Please check that the interface names are correct and that .nam file is provided.\n", setName );
+	fflush( stdout );
+	exit( EXIT_FAILURE );
+}
+
+void faceSetNotFoundError( char * setName )
+{
+	printf( "ERROR: Set %s does not exist! Please check that the interface names are correct and that .sur file is provided.\n", setName );
+	fflush( stdout );
+	exit( EXIT_FAILURE );
+}
+
+void missingTemperatureBCError()
+{
+	printf( "ERROR: Cannot apply temperature BC to one or more interface nodes.  Please make sure that a temperature boundary condition is set for the interface, when using a Dirichlet coupling BC.\n" );
+	exit( EXIT_FAILURE );
+}
+
+void missingDfluxBCError()
+{
+	printf( "ERROR: Cannot apply DFLUX BC to one or more interface elements.  Please make sure that a .dfl file is provided for the interface, when using a Neumann coupling BC.\n" );
+	exit( EXIT_FAILURE );
+}
+
+void missingFilmBCError()
+{
+	printf( "ERROR: Cannot apply FILM BC to one or more interface elements.  Please make sure that a .flm file is provided for the interface, when using a Robin coupling BC.\n" );
+	exit( EXIT_FAILURE );
 }
 

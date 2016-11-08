@@ -1,3 +1,10 @@
+/**********************************************************************************************
+ *                                                                                            *
+ *       CalculiX adapter for heat transfer coupling using preCICE                            *
+ *       Developed by Lucía Cheung with the support of SimScale GmbH (www.simscale.com)       *
+ *                                                                                            *
+ *********************************************************************************************/
+
 #ifndef CONFIGREADER_H
 #define CONFIGREADER_H
 

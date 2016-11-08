@@ -1,3 +1,10 @@
+/**********************************************************************************************
+ *                                                                                            *
+ *       CalculiX adapter for heat transfer coupling using preCICE                            *
+ *       Developed by Lucía Cheung with the support of SimScale GmbH (www.simscale.com)       *
+ *                                                                                            *
+ *********************************************************************************************/
+
 #include <stdlib.h>
 #include "PreciceInterface.h"
 #include "ConfigReader.h"
@@ -297,10 +304,12 @@ void PreciceInterface_Create( PreciceInterface * interface, SimulationData * sim
 	interface->name = config->patchName;
 
 	// Nodes mesh
+	interface->nodesMeshID = -1;
 	interface->nodesMeshName = config->nodesMeshName;
 	PreciceInterface_ConfigureNodesMesh( interface, sim );
 
 	// Face centers mesh
+	interface->faceCentersMeshID = -1;
 	interface->faceCentersMeshName = config->facesMeshName;
 	PreciceInterface_ConfigureFaceCentersMesh( interface, sim );
 
@@ -351,6 +360,16 @@ void PreciceInterface_ConfigureNodesMesh( PreciceInterface * interface, Simulati
 
 }
 
+void PreciceInterface_EnsureValidNodesMeshID( PreciceInterface * interface )
+{
+	if( interface->nodesMeshID < 0 )
+	{
+		printf( "Nodes mesh not provided in YAML config file\n" );
+		fflush( stdout );
+		exit( EXIT_FAILURE );
+	}
+}
+
 void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, SimulationData * sim )
 {
 	int i;
@@ -379,6 +398,8 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 	{
 		if( strcmp( config->readDataNames[i], "Temperature" ) == 0 )
 		{
+
+			PreciceInterface_EnsureValidNodesMeshID( interface );
 			interface->readData = TEMPERATURE;
 			interface->xbounIndices = malloc( interface->numNodes * sizeof( int ) );
 			interface->temperatureDataID = precicec_getDataID( "Temperature", interface->nodesMeshID );
@@ -411,7 +432,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		else
 		{
 			printf( "ERROR: Read data '%s' does not exist!\n", config->readDataNames[i] );
-			exit( 1 );
+			exit( EXIT_FAILURE );
 		}
 	}
 
@@ -419,6 +440,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 	{
 		if( strcmp( config->writeDataNames[i], "Temperature" ) == 0 )
 		{
+			PreciceInterface_EnsureValidNodesMeshID( interface );
 			interface->writeData = TEMPERATURE;
 			interface->temperatureDataID = precicec_getDataID( "Temperature", interface->nodesMeshID );
 			printf( "Write data '%s' found.\n", config->writeDataNames[i] );
@@ -445,7 +467,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		else
 		{
 			printf( "ERROR: Write data '%s' does not exist!\n", config->writeDataNames[i] );
-			exit( 1 );
+			exit( EXIT_FAILURE );
 		}
 	}
 }
