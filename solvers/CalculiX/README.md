@@ -18,9 +18,9 @@
 
 
 ## Downloading and Installing CalculiX 2.10
-Download CalculiX 2.10 from: http://www.dhondt.de/ccx_2.10.src.tar.bz2
+Download CalculiX 2.10 from http://www.dhondt.de/ccx_2.10.src.tar.bz2.  Follow the instructions in the README.INSTALL file included in the package.
 
-Follow the instructions in the README.INSTALL file included in the package.
+The graphical user interface for version 2.10 can be downloaded from http://dhondt.de/cgx_2.10.all.tar.bz2.  Follow the instructions included in the package.
 
 PDF documentation: http://www.dhondt.de/ccx_2.10.pdf
 
