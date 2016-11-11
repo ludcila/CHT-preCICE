@@ -28,11 +28,26 @@ RUN tar -xvzf boost_1_62_0.tar.gz
 RUN apt-get install -y libboost-all-dev
 RUN cd boost_1_62_0 && ./bootstrap.sh && ./b2 install --prefix=/usr
 
-RUN cd precice && scons petsc=no compiler=mpic++ build=release
+RUN \
+    apt-get install libblas-dev liblapack-dev
+
+RUN \
+    git clone -b maint https://bitbucket.org/petsc/petsc petsc \
+    && cd petsc \
+    && ./configure --with-debugging=0 \
+    && make
+
+ENV PETSC_DIR=/petsc
+ENV PETSC_ARCH=arch-linux2-c-opt
+
+RUN cd precice && scons -j4 petsc=yes compiler=mpic++ build=release
 
 RUN cd precice \
     && sed -i '/env.Replace(CC = env\["compiler"\])/aenv.Append(LIBS = ['\''-lm'\'', '\''-lstdc++'\'', '\''-lmpi_cxx'\''])' SConstruct \
-    && scons petsc=no compiler=mpicc build=release builddir=release-c
+    && scons -j4 petsc=yes compiler=mpicc build=release builddir=build/release-c
+
+RUN cd precice \
+    && scons -j4 petsc=yes compiler=mpicc build=debug builddir=build/debug-c
 
 
 RUN \
@@ -45,16 +60,22 @@ RUN \
     && cmake -G "Unix Makefiles" .. \
     && make
 
-RUN \
-    apt-get install libblas-dev liblapack-dev
-
-RUN \
-    git clone -b maint https://bitbucket.org/petsc/petsc petsc \
-    && cd petsc \
-    && ./configure --with-debugging=0 \
-    && make
-
-RUN \
-    mv precice/release-c precice/build/
-
 ENV PRECICE_ROOT=/precice
+
+
+# Python interface for preCICE: TODO: move to preCICE Dockerfile
+RUN \
+    cd $PRECICE_ROOT \
+    && wget https://github.com/cython/cython/archive/0.23.4.tar.gz \
+    && tar xvzf 0.23.4.tar.gz \
+    && cd cython-0.23.4 \
+    && python setup.py install
+
+RUN \
+    cd $PRECICE_ROOT \
+    &&cd src/precice/adapters/python \
+    && python setup.py build_ext --inplace
+
+RUN \
+    apt-get install -y python-pip \
+    && pip install mpi4py
