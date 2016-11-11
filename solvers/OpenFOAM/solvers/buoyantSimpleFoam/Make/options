@@ -27,6 +27,7 @@ EXE_LIBS = \
 	-L${PRECICE_ROOT}/build/last \
 	-L${PETSC_DIR}/${PETSC_ARCH}/lib \
 	-lprecice \
+	-lpetsc \
 	-lboost_system \
 	-lboost_filesystem \
 	-lpython2.7 \
