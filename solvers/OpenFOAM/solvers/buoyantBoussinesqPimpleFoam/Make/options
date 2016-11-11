@@ -33,3 +33,6 @@ EXE_LIBS = \
 	-L../../adapter \
 	-lOpenFoamAdapter \
 	-lyaml-cpp \
+	-L/usr/lib \
+	-lboost_log \
+	-lpthread
