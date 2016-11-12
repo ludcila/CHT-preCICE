@@ -2,7 +2,7 @@
 CCX				= /usr/local/CalculiX/ccx_2.10_org/src
 SPOOLES			= /usr/local/SPOOLES.2.2
 ARPACK			= /usr/local/ARPACK
-PRECICE_C_BUILD	= $(PRECICE_ROOT)/build/release-c/release-nopetsc
+PRECICE_C_BUILD	= $(PRECICE_ROOT)/build/release-c/release
 
 # Specify where to store the generated .o files
 OBJDIR 		= bin
@@ -21,6 +21,8 @@ LIBS = \
        -lpthread -lm -lc \
        -L$(PRECICE_C_BUILD) \
        -lprecice \
+	   -L$(PETSC_DIR)/$(PETSC_ARCH)/lib \
+	   -lpetsc \
        -lboost_system \
        -lboost_filesystem \
        -lpython2.7 \
