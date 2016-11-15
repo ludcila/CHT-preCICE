@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
     /* Adapter: Add command line arguments */    
     argList::addOption( "precice-participant", "string", "name of preCICE participant" );
-    argList::addOption( "precice-config", "string", "name of preCICE config file" );
+    argList::addOption( "config-file", "string", "name of YAML config file" );
     argList::addBoolOption( "disable-checkpointing", "disable checkpointing" );
 
     #include "setRootCase.H"
@@ -94,11 +94,11 @@ int main(int argc, char *argv[])
     /* Adapter: Set parameters and create the adapter */
     bool turbulenceUsed = isTurbulenceUsed( mesh, runTime );
     std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
-    std::string preciceConfig = args.optionFound( "precice-config" ) ? args.optionRead<string>( "precice-config" ) : "config.yml";
+    std::string configFile = args.optionFound( "config-file" ) ? args.optionRead<string>( "config-file" ) : "config.yml";
     bool checkpointingEnabled = !args.optionFound( "disable-checkpointing" );
 
     bool subcyclingEnabled = true;
-    adapter::BuoyantPimpleFoamAdapter adapter(participantName, preciceConfig, mesh, runTime, "buoyantPimpleFoam", thermo, turbulence, subcyclingEnabled);
+    adapter::BuoyantPimpleFoamAdapter adapter(participantName, configFile, mesh, runTime, "buoyantPimpleFoam", thermo, turbulence, subcyclingEnabled);
 
     /* Adapter: Add fields for checkpointing */
     adapter.setCheckpointingEnabled( checkpointingEnabled );
