@@ -86,7 +86,7 @@ public:
      * @param configFilename
      * @param participantName
      */
-	virtual void createInterfacesFromConfigFile( std::string configFilename, std::string participantName ) = 0;
+    virtual void createInterfacesFromConfigFile( std::string configFilename, std::string participantName ) {};
 
 	/**
 	 * @brief Creates a new interface to be handled by preCICE
