@@ -57,7 +57,7 @@ void adapter::Interface::addCouplingDataReader( std::string dataName, adapter::C
 	_couplingDataReaders.push_back( couplingDataReader );
 }
 
-void adapter::Interface::receiveData()
+void adapter::Interface::readCouplingData()
 {
 	if( _precice.isReadDataAvailable() )
 	{
@@ -78,7 +78,7 @@ void adapter::Interface::receiveData()
 	}
 }
 
-void adapter::Interface::sendData()
+void adapter::Interface::writeCouplingData()
 {
 	for( uint i = 0 ; i < _couplingDataWriters.size() ; i++ )
 	{
