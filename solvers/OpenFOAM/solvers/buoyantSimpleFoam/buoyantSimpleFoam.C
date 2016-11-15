@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 {
     
     argList::addOption( "precice-participant", "string", "name of preCICE participant" );
-    argList::addOption( "yaml-config", "string", "name of preCICE config file" );
+    argList::addOption( "config-file", "string", "name of YAML config file" );
 
     #include "setRootCase.H"
     #include "createTime.H"
@@ -65,9 +65,9 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
     std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
-    std::string yamlConfig = args.optionFound( "yaml-config" ) ? args.optionRead<string>( "precice-config" ) : "config.yml";
+    std::string configFile = args.optionFound( "config-file" ) ? args.optionRead<string>( "config-file" ) : "config.yml";
     
-    adapter::BuoyantSimpleFoamAdapter adapter( participantName, yamlConfig, mesh, runTime, "buoyantSimpleFoam", thermo, turbulence );
+    adapter::BuoyantSimpleFoamAdapter adapter( participantName, configFile, mesh, runTime, "buoyantSimpleFoam", thermo, turbulence );
 
     adapter.initialize();
 

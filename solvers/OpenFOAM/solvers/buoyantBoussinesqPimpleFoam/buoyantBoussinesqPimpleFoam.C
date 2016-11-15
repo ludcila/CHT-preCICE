@@ -68,7 +68,7 @@ Description
 int main(int argc, char *argv[])
 {
     argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("precice-config", "string", "name of preCICE config file");
+    argList::addOption("config-file", "string", "name of YAML config file");
     
     #include "setRootCase.H"
     #include "createTime.H"
@@ -84,15 +84,16 @@ int main(int argc, char *argv[])
     #include "createTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
+    Info << "rhoCpRef" << rhoCpRef << endl;
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
+    std::string configFile = args.optionFound("config-file") ? args.optionRead<string>("config-file") : "config.yml";
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
-    adapter::ConfigReader config(preciceConfig, participantName);
+    adapter::ConfigReader config(configFile, participantName);
 
-    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "buoyantBoussinesqPimpleFoam");
+    adapter::Adapter adapter(participantName, configFile, mesh, runTime, "buoyantBoussinesqPimpleFoam");
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         

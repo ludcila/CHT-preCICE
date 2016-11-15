@@ -46,7 +46,7 @@ Description
 int main(int argc, char *argv[])
 {
     argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("precice-config", "string", "name of preCICE config file");
+    argList::addOption("config-file", "string", "name of preCICE config file");
     
     #include "setRootCase.H"
 
@@ -60,12 +60,12 @@ int main(int argc, char *argv[])
     
     
     std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string preciceConfig = args.optionFound("precice-config") ? args.optionRead<string>("precice-config") : "config.yml";
+    std::string configFile = args.optionFound("config-file") ? args.optionRead<string>("config-file") : "config.yml";
     
-    adapter::ConfigReader config(preciceConfig, participantName);
+    adapter::ConfigReader config(configFile, participantName);
    
     bool subcyclingEnabled = true;
-    adapter::Adapter adapter(participantName, config.preciceConfigFilename(), mesh, runTime, "laplacianFoam", subcyclingEnabled);
+    adapter::Adapter adapter(participantName, configFile, mesh, runTime, "laplacianFoam", subcyclingEnabled);
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 
