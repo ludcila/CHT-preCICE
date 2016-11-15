@@ -34,8 +34,8 @@ protected:
 public:
 
 	Interface( precice::SolverInterface & precice, fvMesh & mesh, std::string meshName, std::vector<std::string> patchNames );
-	void receiveData();
-	void sendData();
+	void readCouplingData();
+	void writeCouplingData();
 	void addCouplingDataWriter( std::string dataName, CouplingDataWriter * couplingDataWriter );
 	void addCouplingDataReader( std::string dataName, CouplingDataReader * couplingDataReader );
 	~Interface();

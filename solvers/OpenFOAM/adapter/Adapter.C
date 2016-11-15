@@ -87,7 +87,7 @@ void adapter::Adapter::readCouplingData()
 
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
-		_interfaces.at( i )->receiveData();
+		_interfaces.at( i )->readCouplingData();
 	}
 }
 
@@ -97,7 +97,7 @@ void adapter::Adapter::writeCouplingData()
 
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
-		_interfaces.at( i )->sendData();
+		_interfaces.at( i )->writeCouplingData();
 	}
 }
 
