@@ -182,29 +182,31 @@ int main(int argc, char *argv[])
         adapter.advance();
     
         /* Adapter: Read checkpoint if necessary (coupling not converged) */
-        if( adapter.isReadCheckpointRequired() )
-        {
-    
-            adapter.readCheckpoint();
-    
-            if( turbulenceUsed && adapter.isCheckpointingEnabled() )
-            {
-                turbulence->alphat() ().correctBoundaryConditions();
-            }
-            adapter.fulfilledReadCheckpoint();
-    
-        }
-        else
-        {
-    
-            runTime.write();
-    
+		if( adapter.isReadCheckpointRequired() )
+		{
+
+			adapter.readCheckpoint();
+
+			if( turbulenceUsed && adapter.isCheckpointingEnabled() )
+			{
+				turbulence->alphat() ().correctBoundaryConditions();
+			}
+			adapter.fulfilledReadCheckpoint();
+
+		}
+		else
+		{
+            
             Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
                 << "  ClockTime = " << runTime.elapsedClockTime() << " s"
                 << nl << endl;
-    
-        }
+		}
         
+		if( adapter.checkCouplingTimeStepComplete() )
+		{
+			runTime.write();
+		}
+
     }
 
     Info<< "End\n" << endl;
