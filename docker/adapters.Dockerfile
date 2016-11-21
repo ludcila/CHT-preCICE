@@ -1,6 +1,24 @@
 FROM solvers
 MAINTAINER Lucía Cheung <lcheung@simscale.com>
 
+# Auto config
+
+USER \
+    root
+
+RUN \
+    apt-get update \
+    && apt-get install -y python-yaml \
+    && apt-get install -y python-lxml \
+    && pip install networkx==1.11 --allow-unverified networkx
+
+USER \
+    precice
+
+COPY \
+    /utilities/ /home/precice/CHT-preCICE/utilities/
+
+
 # Adapters
 # ------------------------------------------------------------------------------
 
@@ -11,10 +29,13 @@ RUN \
 	useradd -m -s /bin/bash precice
 
 RUN \
-    mkdir -p /home/precice/CHT-preCICE/solvers
+    mkdir -p /home/precice/CHT-preCICE/solvers/OpenFOAM  \
+    && mkdir -p /home/precice/CHT-preCICE/solvers/CalculiX \
+    && mkdir -p /home/precice/CHT-preCICE/solvers/Code_Aster \
+    && chown -R precice:precice /home/precice/CHT-preCICE
 
 COPY \
-    /solvers/ /home/precice/CHT-preCICE/solvers/
+    /solvers/Code_Aster /home/precice/CHT-preCICE/solvers/Code_Aster
 
 RUN \
     chown -R precice:precice /home/precice/CHT-preCICE
@@ -27,6 +48,18 @@ ENV PETSC_DIR=/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
 
 # OpenFOAM
+
+COPY \
+    /solvers/OpenFOAM /home/precice/CHT-preCICE/solvers/OpenFOAM
+
+USER \
+    root
+
+RUN \
+    chown -R precice:precice /home/precice
+
+USER \
+    precice
 
 RUN \
     export PRECICE_ROOT=/precice \
@@ -52,6 +85,9 @@ RUN \
 
 # CalculiX
 
+COPY \
+    /solvers/CalculiX /home/precice/CHT-preCICE/solvers/CalculiX
+
 USER \
     root
 
@@ -64,6 +100,12 @@ RUN \
 RUN \
     sed -i 's/extern "C" {//g' /precice/src/precice/adapters/c/SolverInterfaceC.h \
     && tac /precice/src/precice/adapters/c/SolverInterfaceC.h | sed '0,/}/{s/}//}' | tac > /precice/src/precice/adapters/c/SolverInterfaceC.h
+
+USER \
+    root
+
+RUN \
+    chown -R precice:precice /home/precice
 
 USER \
     precice
@@ -89,8 +131,8 @@ RUN \
     echo 'source /opt/openfoam30/etc/bashrc' >> ~/.bashrc \
     echo 'source $ASTER_ROOT/12.6/share/aster/profile.sh' >> ~/.bashrc \
     && echo 'source $ASTER_ROOT/etc/codeaster/profile.sh' >> ~/.bashrc  \
-    && echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PRECICE_ROOT/build/last' >> ~/.bashrc \
-    && echo 'export PATH=$PATH:~/CHT-preCICE/solvers/CalculiX/bin' >> ~/.bashrc
+    && echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PRECICE_ROOT/build/last:$PETSC_DIR/$PETSC_ARCH/lib' >> ~/.bashrc \
+    && echo 'export PATH=$PATH:~/CHT-preCICE/solvers/CalculiX/bin:~/CHT-preCICE/utilities' >> ~/.bashrc
 
 ENV ASTER_ADAPTER_ROOT=/home/precice/CHT-preCICE/solvers/Code_Aster
 
@@ -99,19 +141,11 @@ USER \
 ENV ASTER_ADAPTER_ROOT=/home/precice/CHT-preCICE/solvers/Code_Aster
 
 
-# Auto config
 
-USER \
-    root
+USER root
 
 RUN \
-    apt-get update \
-    && apt-get install -y python-yaml \
-    && apt-get install -y python-lxml \
-    && pip install networkx==1.11 --allow-unverified networkx
+    apt-get install -y gdb
 
-USER \
-    precice
-
-COPY \
-    /utilities/ /home/precice/CHT-preCICE/utilities/
+USER precice
+WORKDIR /home/precice
