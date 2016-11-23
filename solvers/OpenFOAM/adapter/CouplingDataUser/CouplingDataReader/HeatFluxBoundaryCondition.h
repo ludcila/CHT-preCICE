@@ -7,18 +7,22 @@
 
 namespace adapter
 {
+
 class HeatFluxBoundaryCondition : public CouplingDataReader
 {
-protected:
-    volScalarField & _T;
-    double _k;
-public:
-    HeatFluxBoundaryCondition(volScalarField & T, double k);
 
-    // CouplingDataReader interface
+protected:
+
+	volScalarField & _T;
+	double _k;
+
 public:
-    void read(double * dataBuffer);
+
+	HeatFluxBoundaryCondition( volScalarField & T, double k );
+	void read( double * dataBuffer );
+
 };
+
 }
 
 #endif // HEATFLUXBOUNDARYCONDITION_H

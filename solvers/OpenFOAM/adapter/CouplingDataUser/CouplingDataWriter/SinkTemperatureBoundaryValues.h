@@ -8,8 +8,10 @@
 
 namespace adapter
 {
+
 class RefTemperatureBoundaryValues : public CouplingDataWriter
 {
+    
 protected:
 
 	volScalarField & _T;
@@ -17,12 +19,8 @@ protected:
 public:
 
 	RefTemperatureBoundaryValues( volScalarField & T );
-
-	// CouplingDataWriter interface
-
-public:
-
 	void write( double * dataBuffer );
+    
 };
 
 }

@@ -22,12 +22,14 @@ void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read( double * dataBuffer 
 
 		int patchID = _patchIDs.at( k );
 
-        scalarField kappaEff = _turbulence->kappaEff() ().boundaryField()[patchID];
+		scalarField kappaEff = _turbulence->kappaEff() ().boundaryField()[patchID];
 
 		fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+		scalarField & gradient = gradientPatch.gradient();
+
 		forAll( gradientPatch, i )
 		{
-			gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / kappaEff[i];
+			gradient[i] = dataBuffer[bufferIndex++] / kappaEff[i];
 		}
 
 	}

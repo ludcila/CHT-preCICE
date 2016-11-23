@@ -9,14 +9,16 @@ namespace adapter
 
 class TemperatureBoundaryCondition : public CouplingDataReader
 {
+    
 protected:
-    volScalarField & _T;
-public:
-    TemperatureBoundaryCondition(volScalarField & T);
 
-    // CouplingDataReader interface
+	volScalarField & _T;
+
 public:
-    void read(double * dataBuffer);
+
+	TemperatureBoundaryCondition( volScalarField & T );
+	void read( double * dataBuffer );
+    
 };
 
 }

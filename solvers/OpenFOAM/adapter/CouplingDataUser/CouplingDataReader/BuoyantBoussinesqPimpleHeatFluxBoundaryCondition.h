@@ -8,21 +8,24 @@
 
 namespace adapter
 {
+
 class BuoyantBoussinesqPimpleHeatFluxBoundaryCondition : public CouplingDataReader
 {
+
 protected:
-    volScalarField & _T;
-    volScalarField & _alphat;
-    double _Pr;
-    double _rho;
-    double _Cp;
-    autoPtr<incompressible::RASModel> & _turbulence;
+
+	volScalarField & _T;
+	volScalarField & _alphat;
+	double _Pr;
+	double _rho;
+	double _Cp;
+	autoPtr<incompressible::RASModel> & _turbulence;
+
 public:
-    BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp);
-    
-    // CouplingDataReader interface
-public:
-    void read(double * dataBuffer);
+
+	BuoyantBoussinesqPimpleHeatFluxBoundaryCondition( volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp );
+	void read( double * dataBuffer );
+
 };
 
 }

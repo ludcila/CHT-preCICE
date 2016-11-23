@@ -9,6 +9,7 @@ namespace adapter
 
 class HeatFluxBoundaryValues : public CouplingDataWriter
 {
+    
 protected:
 
 	volScalarField & _T;
@@ -17,12 +18,8 @@ protected:
 public:
 
 	HeatFluxBoundaryValues( volScalarField & T, double k );
-
-	// CouplingDataWriter interface
-
-public:
-
 	void write( double * dataBuffer );
+    
 };
 
 }
