@@ -8,8 +8,10 @@
 
 namespace adapter
 {
+
 class BuoyantBoussinesqPimpleHeatFluxBoundaryValues : public CouplingDataWriter
 {
+
 protected:
 
 	volScalarField & _T;
@@ -22,13 +24,8 @@ protected:
 public:
 
 	BuoyantBoussinesqPimpleHeatFluxBoundaryValues( volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp );
-
-
-	// CouplingDataWriter interface
-
-public:
-
 	void write( double * dataBuffer );
+
 };
 
 }

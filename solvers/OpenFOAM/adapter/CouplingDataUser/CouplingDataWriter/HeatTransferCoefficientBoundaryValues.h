@@ -11,6 +11,7 @@ namespace adapter
 template<typename autoPtrTurb>
 class HeatTransferCoefficientBoundaryValues : public CouplingDataWriter
 {
+    
 protected:
 
 	autoPtrTurb & _turbulence;
@@ -21,8 +22,6 @@ public:
 		_turbulence( turbulence )
 	{
 	}
-
-	// CouplingDataWriter interface
 
 public:
 
@@ -38,11 +37,6 @@ public:
 
 			const fvPatch & kPatch = refCast<const fvPatch>( _turbulence->kappaEff() ().mesh().boundary()[patchID] );
 
-			/*
-			   Info << "kappa" << _turbulence->kappaEff()() << endl;
-			   Info << "alpha" << _turbulence->alphaEff()() << endl;
-			 */
-
 			scalarField kDelta = _turbulence->kappaEff() ().boundaryField()[patchID] * kPatch.deltaCoeffs();
 
 			forAll( kDelta, i )
@@ -53,9 +47,9 @@ public:
 		}
 	}
 
-}; // end class
+};
 
-} // end namespace adapter
+}
 
 
 

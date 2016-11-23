@@ -16,7 +16,6 @@ void adapter::TemperatureBoundaryValues::write( double * dataBuffer )
 		forAll( _T.boundaryField()[patchID], i )
 		{
 			dataBuffer[bufferIndex++] = _T.boundaryField()[patchID][i];
-//            std::cout << dataBuffer[bufferIndex] << std::endl;
 		}
 	}
 }

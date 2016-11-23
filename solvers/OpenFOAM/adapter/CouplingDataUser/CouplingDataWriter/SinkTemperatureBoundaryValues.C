@@ -21,7 +21,6 @@ void adapter::RefTemperatureBoundaryValues::write( double * dataBuffer )
 		forAll( TPatch, i )
 		{
 			dataBuffer[bufferIndex++] = scf[i];
-//            std::cout << "write refValue(" << i << ") = " << TPatch.patchInternalField()()[i] << std::endl;
 		}
 
 	}

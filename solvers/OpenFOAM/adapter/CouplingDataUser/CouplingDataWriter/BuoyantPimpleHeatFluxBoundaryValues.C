@@ -11,6 +11,7 @@ adapter::BuoyantPimpleHeatFluxBoundaryValues::BuoyantPimpleHeatFluxBoundaryValue
 
 void adapter::BuoyantPimpleHeatFluxBoundaryValues::write( double * dataBuffer )
 {
+    
 	int bufferIndex = 0;
 
 	for( uint k = 0 ; k < _patchIDs.size() ; k++ )
@@ -18,8 +19,8 @@ void adapter::BuoyantPimpleHeatFluxBoundaryValues::write( double * dataBuffer )
 
 		int patchID = _patchIDs.at( k );
 
-		scalarField flux = -_turbulence->alphaEff() ().boundaryField()[patchID]
-						   * _thermo.he().boundaryField()[patchID].snGrad();
+		scalarField flux = -_turbulence->kappaEff() ().boundaryField()[patchID]
+						   * _thermo.T().boundaryField()[patchID].snGrad();
 
 		forAll( flux, i )
 		{

@@ -3,11 +3,12 @@
 
 #include "../CouplingDataUser.h"
 
-
 namespace adapter
 {
+
 class CouplingDataWriter : public CouplingDataUser
 {
+    
 protected:
 
 	std::string _direction = "out";

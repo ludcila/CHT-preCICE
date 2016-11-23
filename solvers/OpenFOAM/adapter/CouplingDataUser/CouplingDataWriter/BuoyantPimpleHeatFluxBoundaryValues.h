@@ -21,11 +21,6 @@ protected:
 public:
 
 	BuoyantPimpleHeatFluxBoundaryValues( volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence );
-
-	// CouplingDataWriter interface
-
-public:
-
 	void write( double * dataBuffer );
 
 };

@@ -9,9 +9,11 @@
 
 namespace adapter
 {
+
 template<typename autoPtrTurb>
 class HeatTransferCoefficientBoundaryCondition : public CouplingDataReader
 {
+
 protected:
 
 	volScalarField & _T;
@@ -25,8 +27,6 @@ public:
 	{
 
 	}
-
-	// CouplingDataReader interface
 
 public:
 
@@ -48,14 +48,13 @@ public:
 			{
 				double nbrKDelta = dataBuffer[bufferIndex++];
 				TPatch.valueFraction()[i] = nbrKDelta / ( myKDelta[i] + nbrKDelta );
-//                std::cout << "read valueFraction(" << i << ") = " << TPatch.valueFraction()[i] << std::endl;
 			}
 
 		}
 	}
 
-}; // end class
+};
 
-} // end namespace
+}
 
 #endif // HEATTRANSFERCOEFFICIENTBOUNDARYCONDITION_H

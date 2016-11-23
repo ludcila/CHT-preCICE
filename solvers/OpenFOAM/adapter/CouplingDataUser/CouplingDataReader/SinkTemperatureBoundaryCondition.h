@@ -8,17 +8,20 @@
 
 namespace adapter
 {
+
 class SinkTemperatureBoundaryCondition : public CouplingDataReader
 {
-protected:
-    volScalarField & _T;
-public:
-    SinkTemperatureBoundaryCondition(volScalarField & T);
     
-    // CouplingDataReader interface
+protected:
+
+	volScalarField & _T;
+
 public:
-    void read(double *dataBuffer);
+
+	SinkTemperatureBoundaryCondition( volScalarField & T );
+	void read( double * dataBuffer );
 };
+
 }
 
 #endif // SINKTEMPERATUREBOUNDARYCONDITION_H
