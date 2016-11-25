@@ -92,34 +92,46 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
     /* Adapter: Set parameters and create the adapter */
-    bool turbulenceUsed = isTurbulenceUsed( mesh, runTime );
-    std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
-    std::string configFile = args.optionFound( "config-file" ) ? args.optionRead<string>( "config-file" ) : "config.yml";
-    bool checkpointingEnabled = !args.optionFound( "disable-checkpointing" );
+	bool turbulenceUsed = isTurbulenceUsed( mesh, runTime );
 
-    bool subcyclingEnabled = true;
-    adapter::BuoyantPimpleFoamAdapter adapter(participantName, configFile, mesh, runTime, "buoyantPimpleFoam", thermo, turbulence, subcyclingEnabled);
+	std::string participantName = args.optionFound( "precice-participant" ) ?
+								  args.optionRead<string>( "precice-participant" ) : "Fluid";
+
+	std::string configFile = args.optionFound( "config-file" ) ?
+							 args.optionRead<string>( "config-file" ) : "config.yml";
+
+	bool checkpointingEnabled = !args.optionFound( "disable-checkpointing" );
+
+	bool subcyclingEnabled = true;
+	adapter::BuoyantPimpleFoamAdapter adapter( participantName,
+											   configFile,
+											   mesh,
+											   runTime,
+											   "buoyantPimpleFoam",
+											   thermo,
+											   turbulence,
+											   subcyclingEnabled );
 
     /* Adapter: Add fields for checkpointing */
-    adapter.setCheckpointingEnabled( checkpointingEnabled );
-    adapter.addCheckpointField( U );
-    adapter.addCheckpointField( p );
-    adapter.addCheckpointField( p_rgh );
-    adapter.addCheckpointField( rho );
-    adapter.addCheckpointField( thermo.T() );
-    adapter.addCheckpointField( thermo.he() );
-    adapter.addCheckpointField( thermo.p() );
-    adapter.addCheckpointField( K );
-    adapter.addCheckpointField( dpdt );
+	adapter.setCheckpointingEnabled( checkpointingEnabled );
+	adapter.addCheckpointField( U );
+	adapter.addCheckpointField( p );
+	adapter.addCheckpointField( p_rgh );
+	adapter.addCheckpointField( rho );
+	adapter.addCheckpointField( thermo.T() );
+	adapter.addCheckpointField( thermo.he() );
+	adapter.addCheckpointField( thermo.p() );
+	adapter.addCheckpointField( K );
+	adapter.addCheckpointField( dpdt );
+	adapter.addCheckpointField( phi );
 
-    if( turbulenceUsed )
-    {
-	    adapter.addCheckpointField( turbulence->k() () );
-	    adapter.addCheckpointField( turbulence->epsilon() () );
-	    adapter.addCheckpointField( turbulence->nut() () );
-	    adapter.addCheckpointField( turbulence->alphat() () );
-    }
-    adapter.addCheckpointField( phi );
+	if( turbulenceUsed )
+	{
+		adapter.addCheckpointField( turbulence->k() () );
+		adapter.addCheckpointField( turbulence->epsilon() () );
+		adapter.addCheckpointField( turbulence->nut() () );
+		adapter.addCheckpointField( turbulence->alphat() () );
+	}
 
     /* Adapter: Initialize coupling */
     adapter.initialize();
@@ -202,7 +214,7 @@ int main(int argc, char *argv[])
                 << nl << endl;
 		}
         
-		if( adapter.checkCouplingTimeStepComplete() )
+		if( adapter.isCouplingTimeStepComplete() )
 		{
 			runTime.write();
 		}

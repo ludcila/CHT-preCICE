@@ -129,7 +129,7 @@ public:
 	/**
 	 * @brief Determines whether the coupling iteration is complete
 	 */
-	bool checkCouplingTimeStepComplete();
+	bool isCouplingTimeStepComplete();
 
 	/**
 	 * @brief Returns true if checkpoint must be written

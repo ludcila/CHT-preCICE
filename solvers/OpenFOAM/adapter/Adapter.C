@@ -156,7 +156,7 @@ bool adapter::Adapter::isCouplingOngoing()
 	return _precice->isCouplingOngoing();
 }
 
-bool adapter::Adapter::checkCouplingTimeStepComplete()
+bool adapter::Adapter::isCouplingTimeStepComplete()
 {
 	if( _precice->isTimestepComplete() )
 	{
