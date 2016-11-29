@@ -145,7 +145,7 @@ ENV ASTER_ADAPTER_ROOT=/home/precice/CHT-preCICE/solvers/Code_Aster
 USER root
 
 RUN \
-    apt-get install -y gdb
+    apt-get update && apt-get install -y gdb
 
 USER precice
 WORKDIR /home/precice
