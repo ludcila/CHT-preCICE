@@ -233,39 +233,39 @@ void adapter::Adapter::readCheckpoint()
 
 	for ( uint i = 0 ; i < _volScalarFields.size() ; i++ )
 	{
-		*( _volScalarFields.at( i ) ) = *( _volScalarFieldCopies.at( i ) );
+		*( _volScalarFields.at( i ) ) == *( _volScalarFieldCopies.at( i ) );
 	}
 
 	for ( uint i = 0 ; i < _volVectorFields.size() ; i++ )
 	{
-		*( _volVectorFields.at( i ) ) = *( _volVectorFieldCopies.at( i ) );
+		*( _volVectorFields.at( i ) ) == *( _volVectorFieldCopies.at( i ) );
 	}
 
 	for ( uint i = 0 ; i < _surfaceScalarFields.size() ; i++ )
 	{
-		*( _surfaceScalarFields.at( i ) ) = *( _surfaceScalarFieldCopies.at( i ) );
+		*( _surfaceScalarFields.at( i ) ) == *( _surfaceScalarFieldCopies.at( i ) );
 	}
 }
 
 void adapter::Adapter::writeCheckpoint()
 {
-    BOOST_LOG_TRIVIAL( info ) << "Adapter writing checkpoint...";
-    
+	BOOST_LOG_TRIVIAL( info ) << "Adapter writing checkpoint...";
+
 	_storeCheckpointTime();
 
 	for ( uint i = 0 ; i < _volScalarFields.size() ; i++ )
 	{
-		*( _volScalarFieldCopies.at( i ) ) = *( _volScalarFields.at( i ) );
+		*( _volScalarFieldCopies.at( i ) ) == *( _volScalarFields.at( i ) );
 	}
 
 	for ( uint i = 0 ; i < _volVectorFields.size() ; i++ )
 	{
-		*( _volVectorFieldCopies.at( i ) ) = *( _volVectorFields.at( i ) );
+		*( _volVectorFieldCopies.at( i ) ) == *( _volVectorFields.at( i ) );
 	}
 
 	for ( uint i = 0 ; i < _surfaceScalarFields.size() ; i++ )
 	{
-		*( _surfaceScalarFieldCopies.at( i ) ) = *( _surfaceScalarFields.at( i ) );
+		*( _surfaceScalarFieldCopies.at( i ) ) == *( _surfaceScalarFields.at( i ) );
 	}
 }
 
