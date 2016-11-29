@@ -286,6 +286,11 @@ void Precice_FreeData( SimulationData * sim )
 	}
 }
 
+void Precice_Finalize()
+{
+    precicec_finalize();
+}
+
 void PreciceInterface_Create( PreciceInterface * interface, SimulationData * sim, InterfaceConfig * config )
 {
 
@@ -497,4 +502,3 @@ void PreciceInterface_FreeData( PreciceInterface * preciceInterface )
 		free( preciceInterface->xloadIndices );
 
 }
-

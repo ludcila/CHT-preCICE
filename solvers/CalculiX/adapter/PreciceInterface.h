@@ -220,6 +220,11 @@ void Precice_WriteCouplingData( SimulationData * sim );
  */
 void Precice_FreeData( SimulationData * sim );
 
+/**
+ * @brief Calls finalize on preCICE
+ */
+void Precice_Finalize();
+
 
 
 /**
