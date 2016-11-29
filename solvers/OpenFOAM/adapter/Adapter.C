@@ -297,5 +297,8 @@ adapter::Adapter::~Adapter()
 		delete _interfaces.at( i );
 	}
 	_interfaces.clear();
+
+	_precice->finalize();
+
 }
 
