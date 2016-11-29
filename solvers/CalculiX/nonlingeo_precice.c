@@ -184,7 +184,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   tmax=&timepar[3];
   tincf=&timepar[4];
   
-  /* Adapter: Put all the CalculiX data that is needed for the coupling into an array */
+  /* Adapter: Put all the CalculiX data that is needed for the coupling into a structure */
   struct SimulationData simulationData = {
 	  .ialset = ialset,
 	  .ielmat = ielmat,
@@ -2930,6 +2930,7 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
   
   /* Adapter: Free the memory */
   Precice_FreeData( &simulationData );
+  Precice_Finalize();
   
   return;
 }
