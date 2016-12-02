@@ -15,14 +15,14 @@
 using namespace adapter;
 
 BuoyantPimpleFoamAdapter::BuoyantPimpleFoamAdapter(
-        std::string participantName,
-        std::string configFile,
-        fvMesh & mesh,
-        Time & runTime,
-        std::string solverName,
-        rhoThermo & thermo,
-        autoPtr<compressible::turbulenceModel> & turbulence,
-        bool subcyclingEnabled ) :
+	std::string participantName,
+	std::string configFile,
+	fvMesh & mesh,
+	Time & runTime,
+	std::string solverName,
+	rhoThermo & thermo,
+	autoPtr<compressible::turbulenceModel> & turbulence,
+	bool subcyclingEnabled ) :
 	_thermo( thermo ),
 	_turbulence( turbulence ),
 	Adapter( participantName, configFile, mesh, runTime, solverName, subcyclingEnabled )
@@ -61,7 +61,7 @@ void BuoyantPimpleFoamAdapter::createInterfacesFromConfigFile( std::string confi
 			}
 			else if( dataName.find( "Sink-Temperature" ) == 0 )
 			{
-				RefTemperatureBoundaryValues * bw = new RefTemperatureBoundaryValues( _thermo.T() );
+				SinkTemperatureBoundaryValues * bw = new SinkTemperatureBoundaryValues( _thermo.T() );
 				interface->addCouplingDataWriter( dataName, bw );
 			}
 			else

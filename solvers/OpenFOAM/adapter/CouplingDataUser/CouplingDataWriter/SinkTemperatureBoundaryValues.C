@@ -1,13 +1,13 @@
 #include "SinkTemperatureBoundaryValues.h"
 
 
-adapter::RefTemperatureBoundaryValues::RefTemperatureBoundaryValues( volScalarField & T ) :
+adapter::SinkTemperatureBoundaryValues::SinkTemperatureBoundaryValues( volScalarField & T ) :
 	_T( T )
 {
 
 }
 
-void adapter::RefTemperatureBoundaryValues::write( double * dataBuffer )
+void adapter::SinkTemperatureBoundaryValues::write( double * dataBuffer )
 {
 	int bufferIndex = 0;
 
@@ -17,12 +17,16 @@ void adapter::RefTemperatureBoundaryValues::write( double * dataBuffer )
 		int patchID = _patchIDs.at( k );
 
 		fvPatchScalarField & TPatch = refCast<fvPatchScalarField>( _T.boundaryField()[patchID] );
-		scalarField scf = TPatch.patchInternalField() ();
+		tmp<scalarField> patchInternalFieldTmp = TPatch.patchInternalField();
+        scalarField & patchInternalField = patchInternalFieldTmp();
+
 		forAll( TPatch, i )
 		{
-			dataBuffer[bufferIndex++] = scf[i];
+			dataBuffer[bufferIndex++] = patchInternalField[i];
 		}
 
+        patchInternalFieldTmp.clear();
+        
 	}
 }
 
