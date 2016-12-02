@@ -9,7 +9,7 @@
 namespace adapter
 {
 
-class RefTemperatureBoundaryValues : public CouplingDataWriter
+class SinkTemperatureBoundaryValues : public CouplingDataWriter
 {
     
 protected:
@@ -18,7 +18,7 @@ protected:
 
 public:
 
-	RefTemperatureBoundaryValues( volScalarField & T );
+	SinkTemperatureBoundaryValues( volScalarField & T );
 	void write( double * dataBuffer );
     
 };
