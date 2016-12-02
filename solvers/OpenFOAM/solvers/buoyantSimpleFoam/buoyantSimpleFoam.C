@@ -64,10 +64,19 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
-    std::string participantName = args.optionFound( "precice-participant" ) ? args.optionRead<string>( "precice-participant" ) : "Fluid";
-    std::string configFile = args.optionFound( "config-file" ) ? args.optionRead<string>( "config-file" ) : "config.yml";
+	std::string participantName = args.optionFound( "precice-participant" ) ?
+								  args.optionRead<string>( "precice-participant" ) : "Fluid";
+
+	std::string configFile = args.optionFound( "config-file" ) ?
+							 args.optionRead<string>( "config-file" ) : "config.yml";
     
-    adapter::BuoyantSimpleFoamAdapter adapter( participantName, configFile, mesh, runTime, "buoyantSimpleFoam", thermo, turbulence );
+	adapter::BuoyantSimpleFoamAdapter adapter( participantName,
+											   configFile,
+											   mesh,
+											   runTime,
+											   "buoyantSimpleFoam",
+											   thermo,
+											   turbulence );
 
     adapter.initialize();
 

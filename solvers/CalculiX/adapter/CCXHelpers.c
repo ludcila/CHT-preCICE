@@ -72,14 +72,14 @@ void getNodeCoordinates( ITG * nodes, ITG numNodes, double * co, double * coordi
 
 	for( i = 0 ; i < numNodes ; i++ )
 	{
-		int nodeIdx = nodes[i] - 1;
+		ITG nodeIdx = nodes[i] - 1;
 		coordinates[i * 3 + 0] = co[nodeIdx * 3 + 0];
 		coordinates[i * 3 + 1] = co[nodeIdx * 3 + 1];
 		coordinates[i * 3 + 2] = co[nodeIdx * 3 + 2];
 	}
 }
 
-void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, int mt, double * temperatures )
+void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, ITG mt, double * temperatures )
 {
 
 	// CalculiX variable mt = 4 : temperature + 3 displacements (depends on the type of analysis)
@@ -87,7 +87,7 @@ void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, int mt, double 
 
 	for( i = 0 ; i < numNodes ; i++ )
 	{
-		int nodeIdx = nodes[i] - 1;
+		ITG nodeIdx = nodes[i] - 1;
 		temperatures[i] = v[nodeIdx * mt];
 	}
 }
@@ -152,7 +152,7 @@ void getTetraFaceCenters( ITG * elements, ITG * faces, ITG numElements, ITG * ko
  */
 
 
-void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, int * tetraFaceNodes )
+void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, ITG * tetraFaceNodes )
 {
 
 	// Assume all tetra elements -- maybe implement checking later...
@@ -236,7 +236,7 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
 }
 
 // Get the indices for the xboun array, corresponding to the temperature DOF of the nodes passed to the function
-void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * ilboun, int * xbounIndices )
+void getXbounIndices( ITG * nodes, ITG numNodes, ITG nboun, ITG * ikboun, ITG * ilboun, ITG * xbounIndices )
 {
 	ITG i;
 
@@ -280,7 +280,7 @@ int getXloadIndexOffset( enum xloadVariable xloadVar )
 	}
 }
 
-void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar )
+void setXload( double * xload, ITG * xloadIndices, double * values, ITG numValues, enum xloadVariable xloadVar )
 {
 	ITG i;
 	int indexOffset = getXloadIndexOffset( xloadVar );
@@ -292,22 +292,22 @@ void setXload( double * xload, int * xloadIndices, double * values, int numValue
 	}
 }
 
-void setFaceFluxes( double * fluxes, int numFaces, int * xloadIndices, double * xload )
+void setFaceFluxes( double * fluxes, ITG numFaces, ITG * xloadIndices, double * xload )
 {
 	setXload( xload, xloadIndices, fluxes, numFaces, DFLUX );
 }
 
-void setFaceHeatTransferCoefficients( double * coefficients, int numFaces, int * xloadIndices, double * xload )
+void setFaceHeatTransferCoefficients( double * coefficients, ITG numFaces, ITG * xloadIndices, double * xload )
 {
 	setXload( xload, xloadIndices, coefficients, numFaces, FILM_H );
 }
 
-void setFaceSinkTemperatures( double * sinkTemperatures, int numFaces, int * xloadIndices, double * xload )
+void setFaceSinkTemperatures( double * sinkTemperatures, ITG numFaces, ITG * xloadIndices, double * xload )
 {
 	setXload( xload, xloadIndices, sinkTemperatures, numFaces, FILM_T );
 }
 
-void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndices, double * xboun )
+void setNodeTemperatures( double * temperatures, ITG numNodes, ITG * xbounIndices, double * xboun )
 {
 	ITG i;
 
