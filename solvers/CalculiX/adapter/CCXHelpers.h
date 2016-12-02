@@ -81,7 +81,7 @@ void getNodeCoordinates( ITG * nodes, ITG numNodes, double * co, double * coordi
  * @param mt: CalculiX variable
  * @param temperatures: output array with the temperatures of the input nodes
  */
-void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, int mt, double * temperatures );
+void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, ITG mt, double * temperatures );
 
 /**
  * @brief Computes the center of one of the faces of a tetrahedral element
@@ -106,7 +106,7 @@ void getTetraFaceCenters( ITG * elements, ITG * faces, ITG numElements, ITG * ko
  * @param ipkon: CalculiX array (see description in ccx_2.10.pdf)
  * @param tetraFaceNodes: output list of node IDs that belong to the input element faces
  */
-void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, int * tetraFaceNodes );
+void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, ITG * tetraFaceNodes );
 
 /**
  * @brief Gets the indices of the xload where the DFLUX and FILM boundary conditions must be applied
@@ -130,7 +130,7 @@ void getXloadIndices( char * loadType, ITG * elementIDs, ITG * faceIDs, ITG numE
  * @param ilboun
  * @param xbounIndices: output list of indices of the xboun array
  */
-void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * ilboun, int * xbounIndices );
+void getXbounIndices( ITG * nodes, ITG numNodes, ITG nboun, ITG * ikboun, ITG * ilboun, ITG * xbounIndices );
 
 /**
  * @brief Modifies the values of a DFLUX or FILM boundary condition
@@ -140,7 +140,7 @@ void getXbounIndices( ITG * nodes, ITG numNodes, int nboun, int * ikboun, int * 
  * @param numValues: number of boundary values provided
  * @param xloadVar: variable that is actually modified: DFLUX for heat flux, FILM_H for heat transfer coeff, FILM_T for sink temperature
  */
-void setXload( double * xload, int * xloadIndices, double * values, int numValues, enum xloadVariable xloadVar );
+void setXload( double * xload, ITG * xloadIndices, double * values, ITG numValues, enum xloadVariable xloadVar );
 
 /**
  * @brief Calls setXload to update the flux values at the specified indices
@@ -149,7 +149,7 @@ void setXload( double * xload, int * xloadIndices, double * values, int numValue
  * @param xloadIndices: indices of the xload array where the values must be updated
  * @param xload: CalculiX array for the loads
  */
-void setFaceFluxes( double * fluxes, ITG numFaces, int * xloadIndices, double * xload );
+void setFaceFluxes( double * fluxes, ITG numFaces, ITG * xloadIndices, double * xload );
 
 /**
  * @brief Calls setXload to update the heat transfer coefficients at the specified indices
@@ -158,7 +158,7 @@ void setFaceFluxes( double * fluxes, ITG numFaces, int * xloadIndices, double * 
  * @param xloadIndices: indices of the xload array where the values must be updated
  * @param xload: CalculiX array for the loads
  */
-void setFaceHeatTransferCoefficients( double * coefficients, ITG numFaces, int * xloadIndices, double * xload );
+void setFaceHeatTransferCoefficients( double * coefficients, ITG numFaces, ITG * xloadIndices, double * xload );
 
 /**
  * @brief Calls setXload to update the sink temperature at the specified indices
@@ -167,7 +167,7 @@ void setFaceHeatTransferCoefficients( double * coefficients, ITG numFaces, int *
  * @param xloadIndices: indices of the xload array where the values must be updated
  * @param xload: CalculiX array for the loads
  */
-void setFaceSinkTemperatures( double * sinkTemperatures, ITG numFaces, int * xloadIndices, double * xload );
+void setFaceSinkTemperatures( double * sinkTemperatures, ITG numFaces, ITG * xloadIndices, double * xload );
 
 /**
  * @brief Modifies the values of temperature boundary condition
@@ -176,7 +176,7 @@ void setFaceSinkTemperatures( double * sinkTemperatures, ITG numFaces, int * xlo
  * @param xbounIndices: indices of the xboun array to modify
  * @param xboun: CalculiX array containing the assigned temperature boundary values
  */
-void setNodeTemperatures( double * temperatures, ITG numNodes, int * xbounIndices, double * xboun );
+void setNodeTemperatures( double * temperatures, ITG numNodes, ITG * xbounIndices, double * xboun );
 
 /**
  * @brief Returns whether it is a steady-state simulation based on the value of nmethod

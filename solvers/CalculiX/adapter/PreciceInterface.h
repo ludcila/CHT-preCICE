@@ -29,24 +29,24 @@ typedef struct PreciceInterface {
 	char * name;
 
 	// Interface nodes
-	int numNodes;
-	int * nodeIDs;
+	ITG numNodes;
+	ITG * nodeIDs;
 	double * nodeCoordinates;
-	int nodeSetID;
+	ITG nodeSetID;
 	int * preciceNodeIDs;
-	int nodesMeshID;
+	ITG nodesMeshID;
 	char * nodesMeshName;
 
 	// Interface face elements
-	int numElements;
-	int * elementIDs;
-	int * faceIDs;
+	ITG numElements;
+	ITG * elementIDs;
+	ITG * faceIDs;
 	double * faceCenterCoordinates;
-	int faceSetID;
-	int faceCentersMeshID;
+	ITG faceSetID;
+	ITG faceCentersMeshID;
 	char * faceCentersMeshName;
 	int * preciceFaceCenterIDs;
-	int * triangles;
+	ITG * triangles;
 
 	// Arrays to store the coupling data
 	double * nodeData;
@@ -62,8 +62,8 @@ typedef struct PreciceInterface {
 	int kDeltaTemperatureReadDataID;
 
 	// Indices that indicate where to apply the boundary conditions
-	int * xloadIndices;
-	int * xbounIndices;
+	ITG * xloadIndices;
+	ITG * xbounIndices;
 
 	enum CouplingDataType readData;
 	enum CouplingDataType writeData;
@@ -93,7 +93,7 @@ typedef struct SimulationData {
 	ITG * ikboun;
 	ITG * ilboun;
 	ITG * nelemload;
-	int nload;
+	ITG nload;
 	char * sideload;
 	double nk;
 	ITG mt;
