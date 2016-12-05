@@ -17,23 +17,26 @@ from PySolverInterface import *
 
 class Adapter:
 
-    def __init__(self, precice, participantName, config, MESH, MODEL, MAT, isNonLinear=False):
+    def __init__(self, preciceConfigFile, participantName, config, MESH, MODEL, MAT, isNonLinear=False):
         self.interfaces = []
         self.numInterfaces = len(config)
-        self.precice = precice
         self.MESH = MESH
         self.MODEL = MODEL
         self.MAT = MAT
         self.LOADS = []
         self.isNonLinear = isNonLinear
         self.participantName = participantName
+        self.preciceDt = -1
+        self.precice = PySolverInterface(participantName, 0, 1)
+        self.precice.configure(preciceConfigFile)
         self.configure(config)
     
     def configure(self, config):
         L = [None] * self.numInterfaces        # Loads
         SM = [None] * self.numInterfaces    # Shifted meshes
         for i in range(self.numInterfaces):
-            # Shifted mesh
+            # Shifted mesh (interface nodes displaced by a distance delta in the direction of the surface normal
+            # towards the inside of the solid)
             SM[i] = CREA_MAILLAGE(MAILLAGE=self.MESH, RESTREINT={"GROUP_MA": config[i]["patch"], "GROUP_NO": config[i]["patch"]})
             # Create interface
             interface = Interface(self.precice, self.participantName, config[i], self.MESH, SM[i], self.MODEL, self.MAT[config[i]["material-id"]], self.isNonLinear)
@@ -43,16 +46,51 @@ class Adapter:
             interface.setLoad(L[i])
             self.LOADS.append({'CHARGE': L[i]})
             self.interfaces.append(interface)
+
+    def initialize(self, INIT_T):
+
+        self.preciceDt = self.precice.initialize()
+
+        if self.precice.isActionRequired(PyActionWriteInitialData()):
+            self.writeCouplingData(INIT_T)
+            self.precice.fulfilledAction(PyActionWriteInitialData())
+
+        self.precice.initializeData()
+
+        return self.preciceDt
+
+    def isCouplingOngoing(self):
+        return self.precice.isCouplingOngoing()
     
-    def sendCouplingData(self, TEMP, dt=0):
-        if (dt == 0) or (dt > 0 and self.precice.isWriteDataRequired(dt)):
+    def writeCouplingData(self, TEMP):
+        if self.precice.isWriteDataRequired(self.preciceDt):
             for interface in self.interfaces:
                 interface.writeBCs(TEMP)
     
-    def receiveCouplingData(self):
+    def readCouplingData(self):
         if self.precice.isReadDataAvailable():
             for interface in self.interfaces:
                 interface.readAndUpdateBCs()
+
+    def writeCheckpoint(self):
+        if self.precice.isActionRequired(PyActionWriteIterationCheckpoint()):
+            # Do nothing
+            self.precice.fulfilledAction(PyActionWriteIterationCheckpoint())
+
+    def readCheckpoint(self):
+        if self.precice.isActionRequired(PyActionReadIterationCheckpoint()):
+            # Do nothing
+            self.precice.fulfilledAction(PyActionReadIterationCheckpoint())
+
+    def isCouplingTimestepComplete(self):
+        return self.precice.isTimestepComplete()
+
+    def advance(self):
+        self.preciceDt = self.precice.advance(self.preciceDt)
+        return self.preciceDt
+
+    def finalize(self):
+        self.precice.finalize()
 
 
 class Interface:
@@ -238,12 +276,12 @@ class Interface:
         self.precice.writeBlockScalarData(self.writeTempDataID, self.writeDataSize, self.preciceNodeIndices, writeTemp)
 
     def getBoundaryValues(self, T):
-        
+
         # Sink temperature
         TPROJ = PROJ_CHAMP(MAILLAGE_1=self.MESH, MAILLAGE_2=self.SHMESH, CHAM_GD=T, METHODE='COLLOCATION')
         writeTemp = TPROJ.EXTR_COMP(lgno=[self.groupName]).valeurs
         DETRUIRE(CONCEPT=({'NOM': TPROJ}))
-        
+
         # Heat transfer coefficient
         self.updateConductivity(writeTemp)
         writeHCoeff = np.array(self.conductivity) / self.delta
