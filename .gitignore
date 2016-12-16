@@ -1,1 +1,10 @@
 *~
+# QT files
+*.config
+*.creator
+*.user
+*.files
+*.includes
+*.pro
+*.pyc
+*.uncrustify
