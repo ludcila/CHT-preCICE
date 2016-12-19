@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     adapter::ConfigReader config(configFile, participantName);
    
     bool subcyclingEnabled = true;
-    adapter::Adapter adapter(participantName, configFile, mesh, runTime, "laplacianFoam", subcyclingEnabled);
+    adapter::Adapter adapter(participantName, configFile, mesh, runTime, subcyclingEnabled);
 
     for(int i = 0; i < config.interfaces().size(); i++) {
 

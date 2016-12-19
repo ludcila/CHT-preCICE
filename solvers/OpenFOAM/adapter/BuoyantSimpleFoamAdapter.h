@@ -21,7 +21,6 @@ public:
 	        std::string participantName,
 	        std::string preciceConfigFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
-	        std::string solverName,
 	        rhoThermo & thermo,
 	        autoPtr<compressible::RASModel> & turbulence,
 	        bool subcyclingEnabled = false

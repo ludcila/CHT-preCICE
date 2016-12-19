@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
 											   configFile,
 											   mesh,
 											   runTime,
-											   "buoyantPimpleFoam",
 											   thermo,
 											   turbulence,
 											   subcyclingEnabled );
