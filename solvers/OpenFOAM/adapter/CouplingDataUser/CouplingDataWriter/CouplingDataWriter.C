@@ -2,6 +2,6 @@
 
 adapter::CouplingDataWriter::CouplingDataWriter()
 {
-
+    _dataType = scalar;
 }
 

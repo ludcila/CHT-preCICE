@@ -5,7 +5,7 @@ adapter::HeatFluxBoundaryValues::HeatFluxBoundaryValues( volScalarField & T, dou
 	_T( T ),
 	_k( k )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::HeatFluxBoundaryValues::write( double * dataBuffer )

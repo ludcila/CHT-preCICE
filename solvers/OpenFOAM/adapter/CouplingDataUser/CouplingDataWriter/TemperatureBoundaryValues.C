@@ -3,7 +3,7 @@
 adapter::TemperatureBoundaryValues::TemperatureBoundaryValues( volScalarField & T ) :
 	_T( T )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::TemperatureBoundaryValues::write( double * dataBuffer )

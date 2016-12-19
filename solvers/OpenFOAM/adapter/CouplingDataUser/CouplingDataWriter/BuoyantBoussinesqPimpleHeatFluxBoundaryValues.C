@@ -8,7 +8,7 @@ adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::BuoyantBoussinesqPimpleH
 	_rho( rho ),
 	_Cp( Cp )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues::write( double * dataBuffer )

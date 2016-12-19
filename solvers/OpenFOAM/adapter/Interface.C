@@ -14,7 +14,10 @@ adapter::Interface::Interface( precice::SolverInterface & precice, fvMesh & mesh
 		_patchIDs.push_back( mesh.boundaryMesh().findPatchID( patchNames.at( i ) ) );
 	}
 	_configureMesh( mesh );
-	_dataBuffer = new double[_numDataLocations](); // TODO: check if it is vector data and allocate appropriately
+    
+    /* An interface has only one data buffer, which is shared between several CouplingDataReaders and CouplingDataWriters 
+       The initial allocation assumes scalar data, if CouplingDataReaders or -Writers have vector data, it is resized (TODO) */    
+	_dataBuffer = new double[_numDataLocations]();
 }
 
 void adapter::Interface::_configureMesh( fvMesh & mesh )
@@ -30,7 +33,7 @@ void adapter::Interface::_configureMesh( fvMesh & mesh )
 
 	for( uint k = 0 ; k < _patchIDs.size() ; k++ )
 	{
-		const vectorField & faceCenters = mesh.boundaryMesh()[_patchIDs.at( k )].faceCentres();
+        const vectorField & faceCenters = mesh.boundaryMesh()[_patchIDs.at( k )].faceCentres();
 
 		for( uint i = 0 ; i < faceCenters.size() ; i++ )
 		{
@@ -48,6 +51,11 @@ void adapter::Interface::addCouplingDataWriter( std::string dataName, CouplingDa
 	couplingDataWriter->setDataID( _precice.getDataID( dataName, _meshID ) );
 	couplingDataWriter->setPatchIDs( _patchIDs );
 	_couplingDataWriters.push_back( couplingDataWriter );
+
+	if( couplingDataWriter->hasVectorData() )
+	{
+		// TODO: Resize buffer for vector data (if not already resized)
+	}
 }
 
 void adapter::Interface::addCouplingDataReader( std::string dataName, adapter::CouplingDataReader * couplingDataReader )
@@ -55,6 +63,11 @@ void adapter::Interface::addCouplingDataReader( std::string dataName, adapter::C
 	couplingDataReader->setDataID( _precice.getDataID( dataName, _meshID ) );
 	couplingDataReader->setPatchIDs( _patchIDs );
 	_couplingDataReaders.push_back( couplingDataReader );
+
+	if( couplingDataReader->hasVectorData() )
+	{
+		// TODO: Resize buffer for vector data (if not already resized)
+	}
 }
 
 void adapter::Interface::readCouplingData()

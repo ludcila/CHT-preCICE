@@ -7,7 +7,7 @@ adapter::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCo
 	_thermo( thermo ),
 	_turbulence( turbulence )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read( double * dataBuffer )

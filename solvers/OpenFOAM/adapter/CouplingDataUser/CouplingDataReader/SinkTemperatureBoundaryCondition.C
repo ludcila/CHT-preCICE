@@ -3,7 +3,7 @@
 adapter::SinkTemperatureBoundaryCondition::SinkTemperatureBoundaryCondition( volScalarField & T ) :
 	_T( T )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::SinkTemperatureBoundaryCondition::read( double * dataBuffer )

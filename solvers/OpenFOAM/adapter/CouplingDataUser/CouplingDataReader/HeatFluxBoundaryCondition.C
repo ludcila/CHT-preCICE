@@ -4,6 +4,7 @@ adapter::HeatFluxBoundaryCondition::HeatFluxBoundaryCondition( volScalarField & 
 	_T( T ),
 	_k( k )
 {
+    _dataType = scalar;
 }
 
 void adapter::HeatFluxBoundaryCondition::read( double * dataBuffer )

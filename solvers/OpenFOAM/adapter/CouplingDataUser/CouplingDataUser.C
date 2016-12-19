@@ -1,28 +1,19 @@
 #include "CouplingDataUser.h"
+#include <iostream>
 
 adapter::CouplingDataUser::CouplingDataUser()
 {
 
 }
 
-std::string adapter::CouplingDataUser::direction()
-{
-	return _direction;
-}
-
-std::string adapter::CouplingDataUser::dataType()
-{
-	return _dataType;
-}
-
 bool adapter::CouplingDataUser::hasVectorData()
 {
-	return false; // TODO
+	return _dataType == vector;
 }
 
 bool adapter::CouplingDataUser::hasScalarData()
 {
-	return true; // TODO
+	return _dataType == scalar;
 }
 
 void adapter::CouplingDataUser::setSize( int size )
