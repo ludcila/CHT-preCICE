@@ -82,7 +82,7 @@ void adapter::Adapter::initialize()
 
 void adapter::Adapter::readCouplingData()
 {
-	BOOST_LOG_TRIVIAL( info ) << "Adapter receiving coupling data...";
+	BOOST_LOG_TRIVIAL( info ) << "Adapter reading coupling data...";
 
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
@@ -92,7 +92,7 @@ void adapter::Adapter::readCouplingData()
 
 void adapter::Adapter::writeCouplingData()
 {
-	BOOST_LOG_TRIVIAL( info ) << "Adapter sending coupling data...";
+	BOOST_LOG_TRIVIAL( info ) << "Adapter writing coupling data...";
 
 	for ( uint i = 0 ; i < _interfaces.size() ; i++ )
 	{
