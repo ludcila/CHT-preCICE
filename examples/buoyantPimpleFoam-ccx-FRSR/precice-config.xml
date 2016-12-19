@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<precice-configuration>
+    <log>
+        <sink type="stream" output="stdout" filter="%Severity% > debug" enabled="true"/>
+    </log>
+    <solver-interface dimensions="3">
+        <data:scalar name="Heat-Transfer-Coefficient-Solid"/>
+        <data:scalar name="Sink-Temperature-Solid"/>
+        <data:scalar name="Heat-Transfer-Coefficient-Fluid"/>
+        <data:scalar name="Sink-Temperature-Fluid"/>
+        <mesh name="Solid-to-Fluid">
+            <use-data name="Sink-Temperature-Solid"/>
+            <use-data name="Heat-Transfer-Coefficient-Solid"/>
+            <use-data name="Sink-Temperature-Fluid"/>
+            <use-data name="Heat-Transfer-Coefficient-Fluid"/>
+        </mesh>
+        <mesh name="Fluid-to-Solid">
+            <use-data name="Sink-Temperature-Fluid"/>
+            <use-data name="Heat-Transfer-Coefficient-Fluid"/>
+            <use-data name="Sink-Temperature-Solid"/>
+            <use-data name="Heat-Transfer-Coefficient-Solid"/>
+        </mesh>
+        <participant name="Solid">
+            <use-mesh name="Solid-to-Fluid" provide="yes"/>
+            <use-mesh name="Fluid-to-Solid" from="Fluid"/>
+            <write-data mesh="Solid-to-Fluid" name="Sink-Temperature-Solid"/>
+            <write-data mesh="Solid-to-Fluid" name="Heat-Transfer-Coefficient-Solid"/>
+            <read-data mesh="Solid-to-Fluid" name="Sink-Temperature-Fluid"/>
+            <read-data mesh="Solid-to-Fluid" name="Heat-Transfer-Coefficient-Fluid"/>
+            <mapping:nearest-neighbor constraint="consistent" direction="read" to="Solid-to-Fluid" from="Fluid-to-Solid"/>
+        </participant>
+        <participant name="Fluid">
+            <use-mesh name="Fluid-to-Solid" provide="yes"/>
+            <use-mesh name="Solid-to-Fluid" from="Solid"/>
+            <write-data mesh="Fluid-to-Solid" name="Sink-Temperature-Fluid"/>
+            <write-data mesh="Fluid-to-Solid" name="Heat-Transfer-Coefficient-Fluid"/>
+            <read-data mesh="Fluid-to-Solid" name="Sink-Temperature-Solid"/>
+            <read-data mesh="Fluid-to-Solid" name="Heat-Transfer-Coefficient-Solid"/>
+            <mapping:nearest-neighbor constraint="consistent" direction="read" to="Fluid-to-Solid" from="Solid-to-Fluid"/>
+        </participant>
+        <m2n:sockets to="Fluid" from="Solid" distribution-type="gather-scatter"/>
+        <coupling-scheme:parallel-implicit>
+            <timestep-length value="0.01"/>
+            <max-time value="0.2"/>
+            <participants first="Solid" second="Fluid"/>
+            <exchange data="Sink-Temperature-Solid" mesh="Solid-to-Fluid" from="Solid" to="Fluid" initialize="yes"/>
+            <exchange data="Heat-Transfer-Coefficient-Solid" mesh="Solid-to-Fluid" from="Solid" to="Fluid" initialize="yes"/>
+            <exchange data="Sink-Temperature-Fluid" mesh="Fluid-to-Solid" from="Fluid" to="Solid" initialize="yes"/>
+            <exchange data="Heat-Transfer-Coefficient-Fluid" mesh="Fluid-to-Solid" from="Fluid" to="Solid" initialize="yes"/>
+            <relative-convergence-measure data="Sink-Temperature-Solid" limit="1e-6" mesh="Solid-to-Fluid" suffices="0"/>
+            <relative-convergence-measure data="Sink-Temperature-Fluid" limit="1e-6" mesh="Fluid-to-Solid" suffices="0"/>
+            <max-iterations value="30"/>
+            <post-processing:IQN-ILS>
+                <initial-relaxation value="1.0"/>
+                <max-used-iterations value="100"/>
+                <timesteps-reused value="10"/>
+                <filter limit="1e-6" type="QR1"/>
+                <preconditioner type="residual-sum"/>
+                <data mesh="Solid-to-Fluid" name="Sink-Temperature-Solid"/>
+                <data mesh="Fluid-to-Solid" name="Sink-Temperature-Fluid"/>
+            </post-processing:IQN-ILS>
+        </coupling-scheme:parallel-implicit>
+    </solver-interface>
+</precice-configuration>
