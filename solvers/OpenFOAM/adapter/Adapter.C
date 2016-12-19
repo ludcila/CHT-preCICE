@@ -78,7 +78,6 @@ void adapter::Adapter::initialize()
 	}
 
 	_precice->initializeData();
-	readCouplingData();
 }
 
 void adapter::Adapter::readCouplingData()
