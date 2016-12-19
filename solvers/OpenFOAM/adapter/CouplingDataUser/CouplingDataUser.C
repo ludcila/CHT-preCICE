@@ -31,7 +31,7 @@ void adapter::CouplingDataUser::setDataID( int dataID )
 	_dataID = dataID;
 }
 
-int adapter::CouplingDataUser::dataID()
+int adapter::CouplingDataUser::getDataID()
 {
 	return _dataID;
 }

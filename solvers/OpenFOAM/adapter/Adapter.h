@@ -16,20 +16,53 @@ class Adapter
 {
 protected:
 
+    /**
+     * @brief preCICE's solver interface object
+     */
 	precice::SolverInterface * _precice;
+    
+    /**
+     * @brief Vector of interfaces
+     */
 	std::vector<Interface*> _interfaces;
+    
+    /**
+     * @brief OpenFOAM mesh object
+     */
 	fvMesh & _mesh;
+    
+    /**
+     * @brief OpenFOAM object for controlling the time
+     */
 	Foam::Time & _runTime;
+    
+    /**
+     * @brief Name of the solver (currently not used)
+     */
 	std::string _solverName;
 
+    /**
+     * @brief Maximum time step size determined by preCICE
+     */
 	double _preciceTimeStep;
+    
+    /**
+     * @brief Actual time step size used by the solver
+     */
 	double _solverTimeStep;
 
 	bool _checkpointingIsEnabled = true;
 	bool _subcyclingEnabled = false;
 
+    /**
+     * @brief Checkpointed time
+     */
 	scalar _couplingIterationTimeValue;
 	label _couplingIterationTimeIndex;
+    
+    /**
+     * @brief Fields for checkpointing
+     */
 	std::vector<volScalarField*> _volScalarFields;
 	std::vector<volScalarField*> _volScalarFieldCopies;
 	std::vector<volVectorField*> _volVectorFields;
@@ -72,13 +105,14 @@ public:
 	 * @param runTime
 	 * @param solverName
 	 * @param subcyclingEnabled: Whether subcycling is implemented for this solver
+	 *        (disabled by default because it requires explicit checkpointing of the flow fields in the adapter!)
 	 */
 	Adapter(
 	        std::string participantName,
 	        std::string configFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
 	        std::string solverName,
-	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!
+	        bool subcyclingEnabled = false
 	        );
 
     /**
@@ -186,6 +220,9 @@ public:
 	 */
 	void writeCheckpoint();
 
+    /**
+     * @brief Destructor
+     */
 	virtual ~Adapter();
 };
 

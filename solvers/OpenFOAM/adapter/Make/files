@@ -6,9 +6,6 @@ BuoyantSimpleFoamAdapter.C
 ConfigReader.C
 CouplingDataUser/CouplingDataUser.C
 
-CouplingDataUser/CouplingDataReader/CouplingDataReader.C
-CouplingDataUser/CouplingDataWriter/CouplingDataWriter.C
-
 CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.C
 CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.C
 
