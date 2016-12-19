@@ -1,0 +1,32 @@
+// Re = 10000.0, Pr = 0.01, k = 1
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      changeDictionaryDict;
+}
+
+dictionaryReplacement
+{
+    thermophysicalProperties
+    {
+        mixture
+        {
+        	specie
+        	{
+        		molWeight       24.0998901449;
+        	}
+        	thermodynamics
+        	{
+        		Cp              100000.0;
+        	}
+        	transport
+        	{
+        		mu              1e-05;
+        		Pr              0.01; 
+        	}
+        }
+    }
+}

@@ -1,0 +1,24 @@
+couplings:
+- [Fluid-to-Solid, Solid-to-Fluid]
+participants:
+  Fluid:
+    domain-decomposed: false
+    interfaces:
+    - mesh: Fluid-to-Solid
+      name: Fluid-to-Solid
+      patches: [interface]
+      read-data: [Sink-Temperature-Solid, Heat-Transfer-Coefficient-Solid]
+      write-data: [Sink-Temperature-Fluid, Heat-Transfer-Coefficient-Fluid]
+    solver: OpenFOAM
+  Solid:
+    domain-decomposed: false
+    interfaces:
+    - mesh: Solid-to-Fluid
+      name: Solid-to-Fluid
+      patch: interface
+      read-data: [Sink-Temperature-Fluid, Heat-Transfer-Coefficient-Fluid]
+      write-data: [Sink-Temperature-Solid, Heat-Transfer-Coefficient-Solid]
+    solver: CalculiX
+precice-config-file: precice-config.xml
+simulation: {force-explicit: false, force-parallel: true, max-coupling-iterations: 30,
+  max-time: 50, steady-state: false, time-step: 0.01}
