@@ -1,0 +1,27 @@
+base-path: /home/lcheung/Thesis/CHT-preCICE/examples/fluid-fluid
+couplings:
+- [top-interface, bottom-interface]
+participants:
+  Bottom-Fluid:
+    directory: bottom-fluid
+    domain-decomposed: false
+    interfaces:
+    - mesh: bottom-interface
+      name: bottom-interface
+      patches: [interface]
+      read-data: [Sink-Temperature-Top-Fluid, Heat-Transfer-Coefficient-Top-Fluid]
+      write-data: [Sink-Temperature-Bottom-Fluid, Heat-Transfer-Coefficient-Bottom-Fluid]
+    solver: OpenFOAM
+  Top-Fluid:
+    directory: top-fluid
+    domain-decomposed: false
+    interfaces:
+    - mesh: top-interface
+      name: top-interface
+      patches: [interface]
+      read-data: [Sink-Temperature-Bottom-Fluid, Heat-Transfer-Coefficient-Bottom-Fluid]
+      write-data: [Sink-Temperature-Top-Fluid, Heat-Transfer-Coefficient-Top-Fluid]
+    solver: OpenFOAM
+precice-config-file: precice-config.xml
+simulation: {force-explicit: false, force-parallel: true, max-coupling-iterations: 30,
+  max-time: 0.03, steady-state: false, time-step: 0.01}
