@@ -6,12 +6,14 @@
 
 namespace adapter
 {
+
 class CouplingDataUser
 {
+    
 protected:
-
-	std::string _direction;
-	std::string _dataType;
+    
+    enum DataType {vector, scalar};
+	DataType _dataType;
 	int _bufferSize; // if it is vector data, the real size in memory is (_bufferSize x dims)
 	std::vector<int> _patchIDs;
 	int _dataID;
@@ -19,8 +21,6 @@ protected:
 public:
 
 	CouplingDataUser();
-	std::string direction();
-	std::string dataType();
 	bool hasVectorData();
 	bool hasScalarData();
 	void setSize( int size );

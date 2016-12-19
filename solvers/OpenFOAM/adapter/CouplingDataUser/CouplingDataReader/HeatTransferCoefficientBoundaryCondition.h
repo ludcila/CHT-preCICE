@@ -25,7 +25,7 @@ public:
 		_T( T ),
 		_turbulence( _turbulence )
 	{
-
+        _dataType = scalar;
 	}
 
 public:

@@ -4,7 +4,7 @@
 adapter::SinkTemperatureBoundaryValues::SinkTemperatureBoundaryValues( volScalarField & T ) :
 	_T( T )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::SinkTemperatureBoundaryValues::write( double * dataBuffer )

@@ -3,7 +3,7 @@
 adapter::TemperatureBoundaryCondition::TemperatureBoundaryCondition( volScalarField & T ) :
 	_T( T )
 {
-
+    _dataType = scalar;
 }
 
 void adapter::TemperatureBoundaryCondition::read( double * dataBuffer )
