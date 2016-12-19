@@ -3,6 +3,7 @@ Interface.C
 Adapter.C
 BuoyantPimpleFoamAdapter.C
 BuoyantSimpleFoamAdapter.C
+
 ConfigReader.C
 CouplingDataUser/CouplingDataUser.C
 
@@ -21,4 +22,4 @@ CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.C
 CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.C
 CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.C
 
-LIB = libOpenFOAMAdapter
+LIB = libOpenFoamAdapter
