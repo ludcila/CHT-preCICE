@@ -8,7 +8,7 @@ adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::BuoyantBoussinesqPimp
 	_rho( rho ),
 	_Cp( Cp )
 {
-    _dataType = scalar;
+	_dataType = scalar;
 }
 
 void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::read( double * dataBuffer )
@@ -21,10 +21,14 @@ void adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition::read( double * d
 
 		int patchID = _patchIDs.at( k );
 
-		scalarField alphaEff = _turbulence->nu() ().boundaryField()[patchID] / _Pr + _alphat.boundaryField()[patchID];
+		scalarField alphaEff = _turbulence->nu() ().boundaryField()[patchID] /
+							   _Pr + _alphat.boundaryField()[patchID];
+        
 		scalarField K = alphaEff * _rho * _Cp;
 
-		fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+		fixedGradientFvPatchScalarField & gradientPatch =
+			refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+
 		forAll( gradientPatch, i )
 		{
 			gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / K[i];

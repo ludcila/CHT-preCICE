@@ -20,7 +20,10 @@ protected:
 
 public:
 
-	BuoyantPimpleHeatFluxBoundaryValues( volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence );
+	BuoyantPimpleHeatFluxBoundaryValues( volScalarField & T,
+										 rhoThermo & thermo,
+										 autoPtr<compressible::turbulenceModel> & turbulence );
+    
 	void write( double * dataBuffer );
 
 };

@@ -25,7 +25,7 @@ public:
 		_T( T ),
 		_turbulence( _turbulence )
 	{
-        _dataType = scalar;
+		_dataType = scalar;
 	}
 
 public:
@@ -40,10 +40,13 @@ public:
 
 			int patchID = _patchIDs.at( k );
 
-			const fvPatch & kPatch = refCast<const fvPatch>( _turbulence->kappaEff() ().mesh().boundary()[patchID] );
+			const fvPatch & kPatch =
+				refCast<const fvPatch>( _turbulence->kappaEff() ().mesh().boundary()[patchID] );
+            
 			scalarField myKDelta = _turbulence->kappaEff() ().boundaryField()[patchID] * kPatch.deltaCoeffs();
 
 			mixedFvPatchScalarField & TPatch = refCast<mixedFvPatchScalarField>( _T.boundaryField()[patchID] );
+           
 			forAll( TPatch, i )
 			{
 				double nbrKDelta = dataBuffer[bufferIndex++];

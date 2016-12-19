@@ -7,7 +7,7 @@ adapter::BuoyantPimpleHeatFluxBoundaryCondition::BuoyantPimpleHeatFluxBoundaryCo
 	_thermo( thermo ),
 	_turbulence( turbulence )
 {
-    _dataType = scalar;
+	_dataType = scalar;
 }
 
 void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read( double * dataBuffer )
@@ -24,7 +24,9 @@ void adapter::BuoyantPimpleHeatFluxBoundaryCondition::read( double * dataBuffer 
 
 		scalarField kappaEff = _turbulence->kappaEff() ().boundaryField()[patchID];
 
-		fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+		fixedGradientFvPatchScalarField & gradientPatch =
+			refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+        
 		scalarField & gradient = gradientPatch.gradient();
 
 		forAll( gradientPatch, i )

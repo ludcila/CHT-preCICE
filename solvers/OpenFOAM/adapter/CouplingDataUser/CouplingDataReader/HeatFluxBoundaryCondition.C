@@ -4,7 +4,7 @@ adapter::HeatFluxBoundaryCondition::HeatFluxBoundaryCondition( volScalarField & 
 	_T( T ),
 	_k( k )
 {
-    _dataType = scalar;
+	_dataType = scalar;
 }
 
 void adapter::HeatFluxBoundaryCondition::read( double * dataBuffer )
@@ -15,7 +15,10 @@ void adapter::HeatFluxBoundaryCondition::read( double * dataBuffer )
 	{
 
 		int patchID = _patchIDs.at( k );
-		fixedGradientFvPatchScalarField & gradientPatch = refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+        
+		fixedGradientFvPatchScalarField & gradientPatch =
+			refCast<fixedGradientFvPatchScalarField>( _T.boundaryField()[patchID] );
+        
 		forAll( gradientPatch, i )
 		{
 			gradientPatch.gradient()[i] = dataBuffer[bufferIndex++] / _k;
