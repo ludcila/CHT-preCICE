@@ -21,4 +21,4 @@ CouplingDataUser/CouplingDataWriter/BuoyantPimpleHeatFluxBoundaryValues.C
 CouplingDataUser/CouplingDataWriter/SinkTemperatureBoundaryValues.C
 CouplingDataUser/CouplingDataReader/SinkTemperatureBoundaryCondition.C
 
-EXE = test
+LIB = libOpenFOAMAdapter
