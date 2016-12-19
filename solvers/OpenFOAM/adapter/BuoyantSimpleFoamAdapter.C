@@ -14,13 +14,12 @@ BuoyantSimpleFoamAdapter::BuoyantSimpleFoamAdapter(
 	std::string configFile,
 	fvMesh & mesh,
 	Time & runTime,
-	std::string solverName,
 	rhoThermo & thermo,
 	autoPtr<compressible::RASModel> & turbulence,
 	bool subcyclingEnabled ) :
 	_thermo( thermo ),
 	_turbulence( turbulence ),
-	Adapter( participantName, configFile, mesh, runTime, solverName, subcyclingEnabled )
+	Adapter( participantName, configFile, mesh, runTime, subcyclingEnabled )
 {
 	createInterfacesFromConfigFile( configFile, participantName );
 }

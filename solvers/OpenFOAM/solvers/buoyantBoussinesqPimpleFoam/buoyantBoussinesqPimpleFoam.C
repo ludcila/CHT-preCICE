@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
     adapter::ConfigReader config(configFile, participantName);
 
-    adapter::Adapter adapter(participantName, configFile, mesh, runTime, "buoyantBoussinesqPimpleFoam");
+    adapter::Adapter adapter(participantName, configFile, mesh, runTime);
 
     for(int i = 0; i < config.interfaces().size(); i++) {
         

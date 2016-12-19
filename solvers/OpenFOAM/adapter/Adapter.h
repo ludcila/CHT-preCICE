@@ -35,11 +35,6 @@ protected:
      * @brief OpenFOAM object for controlling the time
      */
 	Foam::Time & _runTime;
-    
-    /**
-     * @brief Name of the solver (currently not used)
-     */
-	std::string _solverName;
 
     /**
      * @brief Maximum time step size determined by preCICE
@@ -111,7 +106,6 @@ public:
 	        std::string participantName,
 	        std::string configFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
-	        std::string solverName,
 	        bool subcyclingEnabled = false
 	        );
 

@@ -23,7 +23,6 @@ public:
 	        std::string participantName,
 	        std::string preciceConfigFilename,
 	        fvMesh & mesh, Foam::Time & runTime,
-	        std::string solverName,
 	        rhoThermo & thermo,
 	        autoPtr<compressible::turbulenceModel> & turbulence,
 	        bool subcyclingEnabled = false // disabled by default because it requires explicit checkpointing of the flow fields in the adapter!

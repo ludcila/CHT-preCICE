@@ -43,10 +43,9 @@ int adapter::Adapter::_getMPISize()
 	return size;
 }
 
-adapter::Adapter::Adapter( std::string participantName,  std::string configFilename, fvMesh & mesh, Foam::Time & runTime, std::string solverName, bool subcyclingEnabled ) :
+adapter::Adapter::Adapter( std::string participantName,  std::string configFilename, fvMesh & mesh, Foam::Time & runTime, bool subcyclingEnabled ) :
 	_mesh( mesh ),
 	_runTime( runTime ),
-	_solverName( solverName ),
 	_solverTimeStep( -1 ),
 	_subcyclingEnabled( subcyclingEnabled )
 {
