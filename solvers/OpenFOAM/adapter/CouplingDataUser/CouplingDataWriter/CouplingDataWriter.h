@@ -11,11 +11,8 @@ class CouplingDataWriter : public CouplingDataUser
     
 protected:
 
-	std::string _direction = "out";
-
 public:
 
-	CouplingDataWriter();
 	virtual void write( double * dataBuffer ) = 0;
 	virtual ~CouplingDataWriter()
 	{

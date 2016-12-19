@@ -18,7 +18,7 @@ class Interface
 protected:
 
 	/**
-	 * @brief preCICE's solver interface
+	 * @brief preCICE's solver interface object
 	 */
 	precice::SolverInterface & _precice;
 
@@ -74,7 +74,7 @@ protected:
 
 	/**
 	 * @brief Extracts locations of face centers and exposes them to preCICE with setMeshVertices
-	 * TODO: Implementation for nodes mesh instead of face centers?
+	 * TODO: Create a mesh of nodes instead of face centers?
 	 */
 	void _configureMesh( fvMesh & mesh );
 
@@ -115,6 +115,9 @@ public:
 	 */
 	void writeCouplingData();
 
+	/**
+	 * @brief Destructor
+	 */
 	~Interface();
 
 };

@@ -80,11 +80,11 @@ void adapter::Interface::readCouplingData()
 
 			if( couplingDataReader->hasVectorData() )
 			{
-				_precice.readBlockVectorData( couplingDataReader->dataID(), _numDataLocations, _vertexIDs, _dataBuffer );
+				_precice.readBlockVectorData( couplingDataReader->getDataID(), _numDataLocations, _vertexIDs, _dataBuffer );
 			}
 			else
 			{
-				_precice.readBlockScalarData( couplingDataReader->dataID(), _numDataLocations, _vertexIDs, _dataBuffer );
+				_precice.readBlockScalarData( couplingDataReader->getDataID(), _numDataLocations, _vertexIDs, _dataBuffer );
 			}
 			couplingDataReader->read( _dataBuffer );
 		}
@@ -100,11 +100,11 @@ void adapter::Interface::writeCouplingData()
 
 		if( couplingDataWriter->hasVectorData() )
 		{
-			_precice.writeBlockVectorData( couplingDataWriter->dataID(), _numDataLocations, _vertexIDs, _dataBuffer );
+			_precice.writeBlockVectorData( couplingDataWriter->getDataID(), _numDataLocations, _vertexIDs, _dataBuffer );
 		}
 		else
 		{
-			_precice.writeBlockScalarData( couplingDataWriter->dataID(), _numDataLocations, _vertexIDs, _dataBuffer );
+			_precice.writeBlockScalarData( couplingDataWriter->getDataID(), _numDataLocations, _vertexIDs, _dataBuffer );
 		}
 	}
 }
