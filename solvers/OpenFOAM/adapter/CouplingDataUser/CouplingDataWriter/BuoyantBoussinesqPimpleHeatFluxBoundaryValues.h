@@ -23,7 +23,13 @@ protected:
 
 public:
 
-	BuoyantBoussinesqPimpleHeatFluxBoundaryValues( volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat, double Pr, double rho, double Cp );
+	BuoyantBoussinesqPimpleHeatFluxBoundaryValues( volScalarField & T,
+												   autoPtr<incompressible::RASModel> & turbulence,
+												   volScalarField & alphat,
+												   double Pr,
+												   double rho,
+												   double Cp );
+
 	void write( double * dataBuffer );
 
 };

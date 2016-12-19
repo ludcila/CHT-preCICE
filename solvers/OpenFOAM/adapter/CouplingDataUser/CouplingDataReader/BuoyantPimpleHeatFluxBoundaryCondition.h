@@ -21,7 +21,10 @@ protected:
 
 public:
 
-	BuoyantPimpleHeatFluxBoundaryCondition( volScalarField & T, rhoThermo & thermo, autoPtr<compressible::turbulenceModel> & turbulence );
+	BuoyantPimpleHeatFluxBoundaryCondition( volScalarField & T,
+											rhoThermo & thermo,
+											autoPtr<compressible::turbulenceModel> & turbulence );
+
 	void read( double * dataBuffer );
 
 };
