@@ -1,0 +1,27 @@
+simulation:
+
+    time-step: 0.01
+    max-time: 0.03
+    max-coupling-iterations: 30
+    force-parallel: true
+    force-explicit: false
+    steady-state: false
+
+participants:
+
+    Top-Fluid:
+        solver: OpenFOAM
+        interfaces:
+        - {name: top-interface, patches: [interface]}
+        domain-decomposed: false
+        directory: top-fluid
+
+    Bottom-Fluid:
+        solver: OpenFOAM
+        interfaces:
+        - {name: bottom-interface, patches: [interface]}
+        domain-decomposed: false
+        directory: bottom-fluid
+
+couplings:
+    - [top-interface, bottom-interface]
