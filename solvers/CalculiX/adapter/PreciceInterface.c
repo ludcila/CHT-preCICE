@@ -53,7 +53,6 @@ void Precice_InitializeData( SimulationData * sim )
 
 	Precice_WriteCouplingData( sim );
 	precicec_initialize_data();
-	Precice_ReadCouplingData( sim );
 }
 
 void Precice_AdjustSolverTimestep( SimulationData * sim )
