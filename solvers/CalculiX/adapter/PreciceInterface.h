@@ -80,21 +80,21 @@ typedef struct SimulationData {
 
 	// CalculiX data
 	ITG * ialset;
-	ITG * ielmat;
+	ITG ** ielmat;
 	ITG * istartset;
 	ITG * iendset;
 	char ** lakon;
-	ITG * kon;
-	ITG * ipkon;
+	ITG ** kon;
+	ITG ** ipkon;
 	ITG nset;
 	char * set;
 	double * co;
 	ITG nboun;
 	ITG * ikboun;
 	ITG * ilboun;
-	ITG * nelemload;
+	ITG ** nelemload;
 	ITG nload;
-	char * sideload;
+	char ** sideload;
 	double nk;
 	ITG mt;
 	double * theta;

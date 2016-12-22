@@ -222,11 +222,11 @@ void Precice_WriteCouplingData( SimulationData * sim )
 									&iset,
 									sim->istartset,
 									sim->iendset,
-									sim->ipkon,
+									*sim->ipkon,
 									*sim->lakon,
-									sim->kon,
+									*sim->kon,
 									sim->ialset,
-									sim->ielmat,
+									*sim->ielmat,
 									sim->mi,
 									interfaces[i]->faceCenterData
 									)
@@ -245,11 +245,11 @@ void Precice_WriteCouplingData( SimulationData * sim )
 										  &iset,
 										  sim->istartset,
 										  sim->iendset,
-										  sim->ipkon,
+										  *sim->ipkon,
 										  *sim->lakon,
-										  sim->kon,
+										  *sim->kon,
 										  sim->ialset,
-										  sim->ielmat,
+										  *sim->ielmat,
 										  sim->mi,
 										  myKDelta,
 										  T
@@ -337,7 +337,7 @@ void PreciceInterface_ConfigureFaceCentersMesh( PreciceInterface * interface, Si
 	getSurfaceElementsAndFaces( interface->faceSetID, sim->ialset, sim->istartset, sim->iendset, interface->elementIDs, interface->faceIDs );
 
 	interface->faceCenterCoordinates = malloc( interface->numElements * 3 * sizeof( double ) );
-	getTetraFaceCenters( interface->elementIDs, interface->faceIDs, interface->numElements, sim->kon, sim->ipkon, sim->co, interface->faceCenterCoordinates );
+	getTetraFaceCenters( interface->elementIDs, interface->faceIDs, interface->numElements, *sim->kon, *sim->ipkon, sim->co, interface->faceCenterCoordinates );
 
 	interface->faceCentersMeshID = precicec_getMeshID( interface->faceCentersMeshName );
 	interface->preciceFaceCenterIDs = malloc( interface->numElements * sizeof( int ) );
@@ -382,7 +382,7 @@ void PreciceInterface_ConfigureTetraFaces( PreciceInterface * interface, Simulat
 	if( interface->nodesMeshName != NULL )
 	{
 		interface->triangles = malloc( interface->numElements * 3 * sizeof( ITG ) );
-		getTetraFaceNodes( interface->elementIDs, interface->faceIDs,  interface->nodeIDs, interface->numElements, interface->numNodes, sim->kon, sim->ipkon, interface->triangles );
+		getTetraFaceNodes( interface->elementIDs, interface->faceIDs,  interface->nodeIDs, interface->numElements, interface->numNodes, *sim->kon, *sim->ipkon, interface->triangles );
 
 		for( i = 0 ; i < interface->numElements ; i++ )
 		{
@@ -416,7 +416,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		{
 			interface->readData = HEAT_FLUX;
 			interface->xloadIndices = malloc( interface->numElements * sizeof( int ) );
-			getXloadIndices( "DFLUX", interface->elementIDs, interface->faceIDs, interface->numElements, sim->nload, sim->nelemload, sim->sideload, interface->xloadIndices );
+			getXloadIndices( "DFLUX", interface->elementIDs, interface->faceIDs, interface->numElements, sim->nload, *sim->nelemload, *sim->sideload, interface->xloadIndices );
 			interface->fluxDataID = precicec_getDataID( "Heat-Flux", interface->faceCentersMeshID );
 			printf( "Read data '%s' found.\n", config->readDataNames[i] );
 			break;
@@ -425,7 +425,7 @@ void PreciceInterface_ConfigureHeatTransferData( PreciceInterface * interface, S
 		{
 			interface->readData = CONVECTION;
 			interface->xloadIndices = malloc( interface->numElements * sizeof( int ) );
-			getXloadIndices( "FILM", interface->elementIDs, interface->faceIDs, interface->numElements, sim->nload, sim->nelemload, sim->sideload, interface->xloadIndices );
+			getXloadIndices( "FILM", interface->elementIDs, interface->faceIDs, interface->numElements, sim->nload, *sim->nelemload, *sim->sideload, interface->xloadIndices );
 			interface->kDeltaTemperatureReadDataID = precicec_getDataID( config->readDataNames[i], interface->faceCentersMeshID );
 			printf( "Read data '%s' found.\n", config->readDataNames[i] );
 		}
