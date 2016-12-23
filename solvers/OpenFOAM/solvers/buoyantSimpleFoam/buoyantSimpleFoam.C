@@ -47,8 +47,13 @@ Description
 int main(int argc, char *argv[])
 {
     
-    argList::addOption( "precice-participant", "string", "name of preCICE participant" );
-    argList::addOption( "config-file", "string", "name of YAML config file" );
+	argList::addOption( "precice-participant",
+						"string",
+						"name of preCICE participant" );
+
+	argList::addOption( "config-file",
+						"string",
+						"name of YAML config file" );
 
     #include "setRootCase.H"
     #include "createTime.H"
@@ -70,20 +75,25 @@ int main(int argc, char *argv[])
 	std::string configFile = args.optionFound( "config-file" ) ?
 							 args.optionRead<string>( "config-file" ) : "config.yml";
     
+    bool subcyclingEnabled = true;
 	adapter::BuoyantSimpleFoamAdapter adapter( participantName,
 											   configFile,
 											   mesh,
 											   runTime,
-											   "buoyantSimpleFoam",
 											   thermo,
-											   turbulence );
+											   turbulence,
+											   subcyclingEnabled );
 
     adapter.initialize();
 
     Info<< "\nStarting time loop\n" << endl;
+    
+    int counter = 0;
 
     while ( simple.loop() && adapter.isCouplingOngoing() )
     {
+        
+        adapter.adjustSolverTimeStep();
         
         adapter.readCouplingData();
 
@@ -104,6 +114,10 @@ int main(int argc, char *argv[])
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
+        
+        counter++;
+        
+        Info << "Simple iterations: " << counter << endl;
 
     }
 
