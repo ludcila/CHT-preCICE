@@ -66,8 +66,7 @@ RUN \
     && source /opt/openfoam30/etc/bashrc \
     && export WM_COMPILER=Mpicc \
     && cd ~/CHT-preCICE/solvers/OpenFOAM/adapter \
-    && wclean && wmake lib \
-    && mv libNULL.a libOpenFoamAdapter.a
+    && wclean && wmake lib
 
 RUN \
     export PRECICE_ROOT=/precice \
