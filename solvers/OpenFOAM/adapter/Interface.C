@@ -125,5 +125,9 @@ adapter::Interface::~Interface()
 		delete _couplingDataWriters.at( i );
 	}
 	_couplingDataWriters.clear();
+    
+    delete [] _vertexIDs;
+    delete [] _dataBuffer;
+    
 }
 
