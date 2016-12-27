@@ -3,7 +3,8 @@
 
 adapter::CouplingDataUser::CouplingDataUser()
 {
-
+    // set default
+    _dataType = scalar;
 }
 
 bool adapter::CouplingDataUser::hasVectorData()
