@@ -297,6 +297,8 @@ adapter::Adapter::~Adapter()
 	_interfaces.clear();
 
 	_precice->finalize();
+    
+    delete _precice;
 
 }
 
