@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
-     \\/     M anipulation  |
--------------------------------------------------------------------------------
-License
+   =========                 |
+\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+\\    /   O peration     |
+\\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+\\\\\\\\\\\\\\\\\\\\\\\\/     M anipulation  |
+   -------------------------------------------------------------------------------
+   License
     This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
@@ -21,19 +21,16 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Application
+   Application
     laplacianFoam
 
-Description
+   Description
     Solves a simple Laplace equation, e.g. for thermal diffusion in a solid.
 
 \*---------------------------------------------------------------------------*/
 
-#include "mpi/mpi.h"
 #include "fvCFD.H"
 #include "simpleControl.H"
-#include "precice/SolverInterface.hpp"
-#include "fixedGradientFvPatchFields.H"
 #include "adapter/ConfigReader.h"
 #include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataWriter/TemperatureBoundaryValues.h"
@@ -43,120 +40,149 @@ Description
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-int main(int argc, char *argv[])
+void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::string participantName,
+					  volScalarField & T, dimensionedScalar & k );
+
+int main( int argc, char * argv[] )
 {
-    argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("config-file", "string", "name of preCICE config file");
-    
-    #include "setRootCase.H"
+	argList::addOption( "precice-participant",
+						"string",
+						"name of preCICE participant" );
 
-    #include "createTime.H"
-    #include "createMesh.H"
-    #include "createFields.H"
+	argList::addOption( "config-file",
+						"string",
+						"name of preCICE config file" );
 
-    simpleControl simple(mesh);
+	#include "setRootCase.H"
 
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    
-    
-    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string configFile = args.optionFound("config-file") ? args.optionRead<string>("config-file") : "config.yml";
-    
-    adapter::ConfigReader config(configFile, participantName);
-   
-    bool subcyclingEnabled = true;
-    adapter::Adapter adapter(participantName, configFile, mesh, runTime, subcyclingEnabled);
+	#include "createTime.H"
+	#include "createMesh.H"
+	#include "createFields.H"
 
-    for(int i = 0; i < config.interfaces().size(); i++) {
+	simpleControl simple( mesh );
 
-        adapter::Interface & coupledSurface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
-        
-        
-        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).writeData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::HeatFluxBoundaryValues * bw = new adapter::HeatFluxBoundaryValues(T, k.value());
-                coupledSurface.addCouplingDataWriter(dataName, bw);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
-        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).readData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::HeatFluxBoundaryCondition * br = new adapter::HeatFluxBoundaryCondition(T, k.value());
-                coupledSurface.addCouplingDataReader(dataName, br);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
-    }
-    
-    adapter.addCheckpointField(T);
-    adapter.initialize();
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    Info<< "\nCalculating temperature distribution\n" << endl;
-	    
-    while(adapter.isCouplingOngoing()) {
-        
-        adapter.adjustSolverTimeStep();
 
-        if(adapter.isWriteCheckpointRequired()){
-            adapter.writeCheckpoint();
-            adapter.fulfilledWriteCheckpoint();
-        }
-        
-        simple.loop();
+	std::string participantName = args.optionFound( "precice-participant" ) ?
+								  args.optionRead<string>( "precice-participant" ) : "Fluid";
 
-        adapter.readCouplingData();
+	std::string configFile = args.optionFound( "config-file" ) ?
+							 args.optionRead<string>( "config-file" ) : "config.yml";
 
-        /* =========================== solve =========================== */
 
-        while (simple.correctNonOrthogonal())
-        {
-            solve
-            (
-                fvm::ddt(T) - fvm::laplacian(k/rho/Cp, T)
-            );
-        }
+	bool subcyclingEnabled = true;
+	adapter::Adapter adapter( participantName, configFile, mesh, runTime, subcyclingEnabled );
 
-        /* =========================== preCICE write data =========================== */
+	addCouplingData( adapter, configFile, participantName, T, k );
 
-        adapter.writeCouplingData();
-        adapter.advance();
+	adapter.addCheckpointField( T );
+	adapter.initialize();
 
-        if(adapter.isReadCheckpointRequired()){
-            
-            adapter.readCheckpoint();
-            adapter.fulfilledReadCheckpoint();
-            
-        } else {
-            
-            #include "write.H"
+	Info<< "\nCalculating temperature distribution\n" << endl;
 
-            Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-                << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-                << nl << endl;
+	while( adapter.isCouplingOngoing() ) {
 
-        }
-    }
+		adapter.adjustSolverTimeStep();
 
-    Info<< "End\n" << endl;
+		if( adapter.isWriteCheckpointRequired() )
+		{
+			adapter.writeCheckpoint();
+			adapter.fulfilledWriteCheckpoint();
+		}
 
-    return 0;
+		simple.loop();
+
+		adapter.readCouplingData();
+
+		while ( simple.correctNonOrthogonal() )
+		{
+			solve
+			(
+				fvm::ddt( T ) - fvm::laplacian( k/rho/Cp, T )
+			);
+		}
+
+		adapter.writeCouplingData();
+		adapter.advance();
+
+		if( adapter.isReadCheckpointRequired() )
+		{
+			adapter.readCheckpoint();
+			adapter.fulfilledReadCheckpoint();
+		}
+		else
+		{
+
+			#include "write.H"
+
+			Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+				<< "  ClockTime = " << runTime.elapsedClockTime() << " s"
+				<< nl << endl;
+
+		}
+	}
+
+	Info<< "End\n" << endl;
+
+	return 0;
 }
 
+void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::string participantName,
+					  volScalarField & T, dimensionedScalar & k )
+{
+	adapter::ConfigReader configReader( configFile, participantName );
+
+	for( uint i = 0 ; i < configReader.interfaces().size() ; i++ )
+	{
+
+		adapter::Interface & coupledSurface = adapter.addNewInterface( configReader.interfaces().at( i ).meshName,
+																	   configReader.interfaces().at( i ).patchNames );
+
+		for( uint j = 0 ; j < configReader.interfaces().at( i ).writeData.size() ; j++ )
+		{
+			std::string dataName = configReader.interfaces().at( i ).writeData.at( j );
+			std::cout << dataName << std::endl;
+
+			if( dataName.compare( "Temperature" ) == 0 )
+			{
+				adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues( T );
+				coupledSurface.addCouplingDataWriter( dataName, bw );
+			}
+			else if( dataName.compare( "Heat-Flux" ) == 0 )
+			{
+				adapter::HeatFluxBoundaryValues * bw = new adapter::HeatFluxBoundaryValues( T, k.value() );
+				coupledSurface.addCouplingDataWriter( dataName, bw );
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL( error ) << "Error: " << dataName << " is not valid";
+				exit( 1 );
+			}
+		}
+
+		for( uint j = 0 ; j < configReader.interfaces().at( i ).readData.size() ; j++ )
+		{
+			std::string dataName = configReader.interfaces().at( i ).readData.at( j );
+			std::cout << dataName << std::endl;
+
+			if( dataName.compare( "Temperature" ) == 0 )
+			{
+				adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition( T );
+				coupledSurface.addCouplingDataReader( dataName, br );
+			}
+			else if( dataName.compare( "Heat-Flux" ) == 0 )
+			{
+				adapter::HeatFluxBoundaryCondition * br = new adapter::HeatFluxBoundaryCondition( T, k.value() );
+				coupledSurface.addCouplingDataReader( dataName, br );
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL( error ) << "Error: " << dataName << " is not valid";
+				exit( 1 );
+			}
+		}
+	}
+}
 
 // ************************************************************************* //
