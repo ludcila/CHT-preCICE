@@ -245,7 +245,7 @@ RUN \
     tar -xzf /srvtc/cloud/aster-$CA_VERSION/SRC/mumps-$MUMPS_ARCHIVE.tar.gz -C /srvtc/cloud/aster-$CA_VERSION/contrib \
     && mv mumps-$MUMPS_VERSION mumps-${MUMPS_VERSION}_mpi
 
-ADD build-utils-tmp /srvtc/cloud/build-utils
+ADD docker/build-utils-tmp /srvtc/cloud/build-utils
 
 WORKDIR \
     /srvtc/cloud/aster-$CA_VERSION/contrib/mumps-${MUMPS_VERSION}_mpi
