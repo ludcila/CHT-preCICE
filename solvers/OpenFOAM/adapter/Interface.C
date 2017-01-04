@@ -11,12 +11,20 @@ adapter::Interface::Interface( precice::SolverInterface & precice, fvMesh & mesh
 
 	for( uint i = 0 ; i < patchNames.size() ; i++ )
 	{
-		_patchIDs.push_back( mesh.boundaryMesh().findPatchID( patchNames.at( i ) ) );
+		int patchID = mesh.boundaryMesh().findPatchID( patchNames.at( i ) );
+
+		if( patchID == -1 )
+		{
+			BOOST_LOG_TRIVIAL( error ) << "ERROR: Patch '" << patchNames.at( i ) << "' does not exist.";
+			exit( 1 );
+		}
+
+		_patchIDs.push_back( patchID );
 	}
 	_configureMesh( mesh );
-    
-    /* An interface has only one data buffer, which is shared between several CouplingDataReaders and CouplingDataWriters 
-       The initial allocation assumes scalar data, if CouplingDataReaders or -Writers have vector data, it is resized (TODO) */    
+
+	/* An interface has only one data buffer, which is shared between several CouplingDataReaders and CouplingDataWriters
+	   The initial allocation assumes scalar data, if CouplingDataReaders or -Writers have vector data, it is resized (TODO) */
 	_dataBuffer = new double[_numDataLocations]();
 }
 
@@ -33,7 +41,7 @@ void adapter::Interface::_configureMesh( fvMesh & mesh )
 
 	for( uint k = 0 ; k < _patchIDs.size() ; k++ )
 	{
-        const vectorField & faceCenters = mesh.boundaryMesh()[_patchIDs.at( k )].faceCentres();
+		const vectorField & faceCenters = mesh.boundaryMesh()[_patchIDs.at( k )].faceCentres();
 
 		for( uint i = 0 ; i < faceCenters.size() ; i++ )
 		{
@@ -125,9 +133,9 @@ adapter::Interface::~Interface()
 		delete _couplingDataWriters.at( i );
 	}
 	_couplingDataWriters.clear();
-    
-    delete [] _vertexIDs;
-    delete [] _dataBuffer;
-    
+
+	delete [] _vertexIDs;
+	delete [] _dataBuffer;
+
 }
 
