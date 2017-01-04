@@ -15,12 +15,14 @@ participants:
         interfaces:
             - {name: Fluid-to-Solid, patches: [interface]}
         domain-decomposed: False
+        directory: Fluid
 
     Solid:
         solver: CalculiX
         interfaces:
             - {name: Solid-to-Fluid, patch: interface}
         domain-decomposed: False
+        directory: Solid
 
 
 couplings:
