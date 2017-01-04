@@ -1,5 +1,13 @@
 #!/usr/bin/python
 
+"""
+This utility resets the paths in the .export file of a Code_Aster simulation
+ - The path to adapter.comm will be: $ASTER_ADAPTER_ROOT + "/adapter.comm"
+   (The environment variable ASTER_ADAPTER_ROOT must be set with the path to the Code_Aster adapter)
+ - The path to config.comm will be ../config.comm (in the directory of the coupled case)
+ - The absolute path is removed from the rest of the files (e.g. /my/path/to/the/case/mesh.mmed --> mesh.mmed)
+"""
+
 import os
 import argparse
 
