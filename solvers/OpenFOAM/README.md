@@ -22,7 +22,7 @@ Several adapted solvers for CHT are provided in the `solvers` directory.  In ord
 
     cd adapter
     wmake lib
-    mv libNULL.a libFoamPreciceAdapter.a
+    
 Now we are ready to compile the solvers, by entering to each solver directory and running `wmake`.  For example:
 
     cd laplacianFoam
@@ -37,7 +37,7 @@ For example, outside of an OpenFOAM case directory named `Fluid`, we run the ada
 # Compiling and linking OpenFOAM with preCICE #
 This section describes how to compile a new OpenFOAM solver with preCICE.  If you don't want to adapt your own OpenFOAM solver, you may skip this section.
 
-A tutorial on how to create a new OpenFOAM solver based on a standard OpenFOAM solver can be found here: 
+A tutorial on how to create a new OpenFOAM solver based on a standard OpenFOAM solver can be found here:
 https://openfoamwiki.net/index.php/How_to_add_temperature_to_icoFoam
 
 ### Make a copy of the FOAM solver to be adapted ###
@@ -52,11 +52,11 @@ For example:
     cp $FOAM_SOLVERS/basic/laplacianFoam/createFields.H .
 
 ### Edit the files in the Make directory ###
-Change the name and the directory of the binary that will be created.  
+Change the name and the directory of the binary that will be created.
 For example, the file `Make/files` will look like this:
 
     laplacianFoam.C
-    
+
     EXE = $(FOAM_USER_APPBIN)/laplacianFoam_preCICE
 
 Add the directory of the original solver to the include paths in `Make/options`, such that the unmodified files can be located:
