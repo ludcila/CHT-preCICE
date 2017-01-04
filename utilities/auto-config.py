@@ -198,4 +198,7 @@ for participant in participants:
 for j in range(i):
     output_sh_file.write("wait $pid" + str(j) + "\n")
 output_sh_file.close()
+# chmod +x run.sh
+st = os.stat(output_sh_file_name)
+os.chmod(output_sh_file_name, st.st_mode | 0111)
 logging.info("Output .sh file:\t" + output_sh_file_name)
