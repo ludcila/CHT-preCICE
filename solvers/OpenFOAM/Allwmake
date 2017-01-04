@@ -4,12 +4,12 @@ cd ${0%/*} || exit 1    # Run from this directory
 export WM_COMPILER=Mpicc
 
 cd adapter
-wmake lib
-mv libNULL.a libOpenFoamAdapter.a
+wclean && wmake lib
 
 cd ../solvers
 
 # wmake -all solvers
-cd buoyantPimpleFoam; wmake; cd ..
-cd buoyantBoussinesqPimpleFoam; wmake; cd ..
-cd laplacianFoam; wmake; cd ..
+cd buoyantBoussinesqPimpleFoam; wclean && wmake; cd ..
+cd laplacianFoam; wclean && wmake; cd ..
+cd buoyantPimpleFoam; wclean && wmake; cd ..
+cd buoyantSimpleFoam; wclean && wmake; cd ..
