@@ -22,11 +22,15 @@ Several adapted solvers for CHT are provided in the `solvers` directory.  In ord
 
     cd adapter
     wmake lib
-    
+
 Now we are ready to compile the solvers, by entering to each solver directory and running `wmake`.  For example:
 
     cd laplacianFoam
     wmake
+
+Alternatively, the `Allwmake` script can be used, which will take care of compiling the adapter and the solvers:
+
+    ./Allwmake
 
 # Running the adapted OpenFOAM solvers #
 
