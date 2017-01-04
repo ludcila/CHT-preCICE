@@ -1,5 +1,13 @@
 #!/usr/bin/python
 
+"""
+This utility reads an input YAML configuration file, and outputs:
+- The preCICE XML configuration file
+- Another YAML configuration file, which is read by the adapters
+- A .comm configuration file, if there is a Code_Aster participant
+- A script for running the coupled simulation
+"""
+
 import os
 import logging
 import yaml
