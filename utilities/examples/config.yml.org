@@ -2,7 +2,7 @@ simulation:
 
     time-step: 10
     max-time: 500
-    steady-state: True
+    steady-state: False
     force-explicit: False
     force-parallel: True
     max-coupling-iterations: 30
@@ -14,7 +14,8 @@ participants:
         solver: OpenFOAM
         interfaces:
             - {name: Inner-Fluid-to-Solid, patches: [left-patch, right-patch]}
-        domain-decomposed: False
+        domain-decomposed: True
+        nprocs: 8
         directory: inner-fluid
 
     Outer-Fluid:
