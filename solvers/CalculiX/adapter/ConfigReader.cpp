@@ -6,15 +6,13 @@
  *********************************************************************************************/
 
 #include "ConfigReader.hpp"
-#include "yaml-cpp/yaml.h"
-#include <iostream>
-#include <string.h>
-#include <algorithm>
 
 void ConfigReader_Read( char * configFilename, char * participantName, char ** preciceConfigFilename, InterfaceConfig ** interfaces, int * numInterface )
 {
 
 	YAML::Node config = YAML::LoadFile( configFilename );
+
+	ConfigReader_CheckFields( config, participantName );
 
 	*preciceConfigFilename = strdup( config["precice-config-file"].as<std::string>().c_str() );
 
@@ -90,6 +88,58 @@ void ConfigReader_Read( char * configFilename, char * participantName, char ** p
 			}
 		}
 
+	}
+}
+
+void ConfigReader_CheckFields( YAML::Node & config, std::string participantName )
+{
+	if( !config["precice-config-file"] )
+	{
+		std::cout << "ERROR: precice-config-file not specified in the YAML configuration file." << std::endl;
+		exit( 1 );
+	}
+
+	if( !config["participants"][participantName] )
+	{
+		std::cout << "ERROR: Participant '" << participantName << "' is not in the YAML configuration file." << std::endl;
+		exit( 1 );
+	}
+
+	if( !config["participants"][participantName]["interfaces"] )
+	{
+		std::cout << "ERROR: Participant '" << participantName << "' does not have interfaces in the YAML configuration file." << std::endl;
+		exit( 1 );
+	}
+
+	int numInterfaces = config["participants"][participantName]["interfaces"].size();
+
+	for( int i = 0 ; i < numInterfaces ; i++ )
+	{
+		if( !config["participants"][participantName]["interfaces"][i]["mesh"]
+			&& !config["participants"][participantName]["interfaces"][i]["faces-mesh"]
+			&& !config["participants"][participantName]["interfaces"][i]["nodes-mesh"] )
+		{
+			std::cout << "ERROR: Participant '" << participantName << "' does not have valid meshes ('mesh', or 'nodes-mesh' and 'faces-mesh') in the YAML configuration file, for interface #" << i << "." << std::endl;
+			exit( 1 );
+		}
+
+		if( !config["participants"][participantName]["interfaces"][i]["read-data"] )
+		{
+			std::cout << "ERROR: Participant '" << participantName << "' does not have 'read-data' in the YAML configuration file, for interface #" << i << "." << std::endl;
+			exit( 1 );
+		}
+
+		if( !config["participants"][participantName]["interfaces"][i]["write-data"] )
+		{
+			std::cout << "ERROR: Participant '" << participantName << "' does not have 'write-data' in the YAML configuration file, for interface #" << i << "." << std::endl;
+			exit( 1 );
+		}
+
+		if( !config["participants"][participantName]["interfaces"][i]["patch"] )
+		{
+			std::cout << "ERROR: Participant '" << participantName << "' does not have 'patch' in the YAML configuration file, for interface #" << i << "." << std::endl;
+			exit( 1 );
+		}
 	}
 }
 
