@@ -18,6 +18,8 @@ USER \
 COPY \
     /utilities/ /home/precice/CHT-preCICE/utilities/
 
+ENV CHT_PRECICE=/home/precice/CHT-preCICE
+ENV CHT_PRECICE_UTILITIES=/home/precice/CHT-preCICE/utilities
 
 # Adapters
 # ------------------------------------------------------------------------------
