@@ -142,7 +142,6 @@ void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::s
 		for( uint j = 0 ; j < configReader.interfaces().at( i ).writeData.size() ; j++ )
 		{
 			std::string dataName = configReader.interfaces().at( i ).writeData.at( j );
-			std::cout << dataName << std::endl;
 
 			if( dataName.compare( "Temperature" ) == 0 )
 			{
@@ -164,7 +163,6 @@ void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::s
 		for( uint j = 0 ; j < configReader.interfaces().at( i ).readData.size() ; j++ )
 		{
 			std::string dataName = configReader.interfaces().at( i ).readData.at( j );
-			std::cout << dataName << std::endl;
 
 			if( dataName.compare( "Temperature" ) == 0 )
 			{
