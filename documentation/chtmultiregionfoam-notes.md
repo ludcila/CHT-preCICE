@@ -1,6 +1,0 @@
-# chtMultiRegionFoam
-
-## nOuterCorrectors
-
-
-## regions
