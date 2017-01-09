@@ -1,6 +1,6 @@
 # Dockerfiles
 
-Commands to be executed from the parent directory (../):
+Commands to be executed from the parent directory (`../`):
 
     build -t precice -f docker/precice.Dockerfile .
     build -t solvers -f docker/solvers.Dockerfile .
