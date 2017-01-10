@@ -92,20 +92,6 @@ void getNodeTemperatures( ITG * nodes, ITG numNodes, double * v, ITG mt, double 
 	}
 }
 
-/*
-   int getNodesPerFace(char * lakon, int elementIdx) {
-
-        int nodesPerFace;
-        if(strcmp1(&lakon[elementIdx * 8], "C3D4") == 0) {
-                nodesPerFace = 3;
-        } else if(strcmp1(&lakon[elementIdx * 8], "C3D10") == 0) {
-                nodesPerFace = 6;
-        }
-        return nodesPerFace;
-
-   }
- */
-
 void getTetraFaceCenters( ITG * elements, ITG * faces, ITG numElements, ITG * kon, ITG * ipkon, double * co, double * faceCenters )
 {
 
@@ -141,16 +127,6 @@ void getTetraFaceCenters( ITG * elements, ITG * faces, ITG numElements, ITG * ko
 
 	}
 }
-
-/*
-   void getSurfaceGaussPoints(int setID, ITG * co, ITG istartset, ITG iendset, ITG * ipkon, ITG * lakon, ITG * kon, ITG * ialset, double * coords) {
-
-        int iset = setID + 1; // plus one because of fortran indices
-        FORTRAN(getgausspointscoords,(co,&iset,istartset,iendset,ipkon,lakon,kon,ialset, coords));
-
-   }
- */
-
 
 void getTetraFaceNodes( ITG * elements, ITG * faces, ITG * nodes, ITG numElements, ITG numNodes, ITG * kon, ITG * ipkon, ITG * tetraFaceNodes )
 {
@@ -255,7 +231,7 @@ void getXbounIndices( ITG * nodes, ITG numNodes, ITG nboun, ITG * ikboun, ITG * 
 	{
 		if( xbounIndices[i] < 0 )
 		{
-            missingTemperatureBCError();
+			missingTemperatureBCError();
 		}
 	}
 }
