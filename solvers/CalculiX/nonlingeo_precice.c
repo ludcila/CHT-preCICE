@@ -1031,6 +1031,9 @@ void nonlingeo_precice(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **l
 	      Precice_WriteIterationCheckpoint( &simulationData, vini );
 	      Precice_FulfilledWriteCheckpoint();
       }
+      
+	  printf( "Start solving..." );
+	  fflush( stdout );
 	  
 	  for(k=0;k<*nboun;++k){xbounini[k]=xbounact[k];}
 	  if((*ithermal==1)||(*ithermal>=3)){
