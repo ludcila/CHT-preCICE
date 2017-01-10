@@ -2978,7 +2978,3 @@ void FORTRAN(getkdeltatemp,(double *co,ITG *ntmat_,
 			ITG *ncocon,ITG * iset,ITG *istartset,ITG *iendset,
 			ITG *ipkon,char *lakon,ITG *kon,ITG *ialset,
 			ITG *ielmat,ITG *mi,double * kdelta, double * reftemp));
-
-void FORTRAN(getgausspointscoords,(int setID, double *co,
-			ITG * iset,ITG *istartset,ITG *iendset,
-			ITG *ipkon,char *lakon,ITG *kon,ITG *ialset));
