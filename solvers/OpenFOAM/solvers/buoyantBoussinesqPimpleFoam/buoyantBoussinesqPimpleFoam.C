@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
-     \\/     M anipulation  |
--------------------------------------------------------------------------------
-License
+   =========                 |
+\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+\\    /   O peration     |
+\\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
+\\\\\\\\\\\\\\/     M anipulation  |
+   -------------------------------------------------------------------------------
+   License
     This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
@@ -21,10 +21,10 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Application
+   Application
     buoyantBoussinesqPimpleFoam
 
-Description
+   Description
     Transient solver for buoyant, turbulent flow of incompressible fluids
 
     Uses the Boussinesq approximation:
@@ -45,7 +45,6 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
-#include <mpi.h>
 #include "fvCFD.H"
 #include "singlePhaseTransportModel.H"
 #include "turbulentTransportModel.H"
@@ -53,8 +52,6 @@ Description
 #include "fvIOoptionList.H"
 #include "pimpleControl.H"
 #include "fixedFluxPressureFvPatchScalarField.H"
-#include "precice/SolverInterface.hpp"
-#include <sstream>
 #include "adapter/ConfigReader.h"
 #include "adapter/Adapter.h"
 #include "adapter/CouplingDataUser/CouplingDataReader/TemperatureBoundaryCondition.h"
@@ -65,136 +62,169 @@ Description
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-int main(int argc, char *argv[])
+void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::string participantName,
+					  volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat,
+					  dimensionedScalar & Pr, dimensionedScalar & rho, dimensionedScalar & Cp );
+
+int main( int argc, char * argv[] )
 {
-    argList::addOption("precice-participant", "string", "name of preCICE participant");
-    argList::addOption("config-file", "string", "name of YAML config file");
-    
-    #include "setRootCase.H"
-    #include "createTime.H"
-    #include "createMesh.H"
+	argList::addOption( "precice-participant",
+						"string",
+						"name of preCICE participant" );
 
-    pimpleControl pimple(mesh);
+	argList::addOption( "config-file",
+						"string",
+						"name of YAML config file" );
 
-    #include "createFields.H"
-    #include "createIncompressibleRadiationModel.H"
-    #include "createMRF.H"
-    #include "createFvOptions.H"
-    #include "initContinuityErrs.H"
-    #include "createTimeControls.H"
-    #include "CourantNo.H"
-    #include "setInitialDeltaT.H"
-    Info << "rhoCpRef" << rhoCpRef << endl;
+	#include "setRootCase.H"
+	#include "createTime.H"
+	#include "createMesh.H"
 
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+	pimpleControl pimple( mesh );
 
-    std::string participantName = args.optionFound("precice-participant") ? args.optionRead<string>("precice-participant") : "Fluid";
-    std::string configFile = args.optionFound("config-file") ? args.optionRead<string>("config-file") : "config.yml";
-    bool checkpointingEnabled = ! args.optionFound("disable-checkpointing");
-    adapter::ConfigReader config(configFile, participantName);
+	#include "createFields.H"
+	#include "createIncompressibleRadiationModel.H"
+	#include "createMRF.H"
+	#include "createFvOptions.H"
+	#include "initContinuityErrs.H"
+	#include "createTimeControls.H"
+	#include "CourantNo.H"
+	#include "setInitialDeltaT.H"
 
-    adapter::Adapter adapter(participantName, configFile, mesh, runTime);
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    for(int i = 0; i < config.interfaces().size(); i++) {
-        
-        adapter::Interface & interface = adapter.addNewInterface(config.interfaces().at(i).meshName, config.interfaces().at(i).patchNames);
+	std::string participantName = args.optionFound( "precice-participant" ) ?
+								  args.optionRead<string>( "precice-participant" ) : "Fluid";
 
-        for(int j = 0; j < config.interfaces().at(i).writeData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).writeData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues(T);
-                interface.addCouplingDataWriter(dataName, bw);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
-                interface.addCouplingDataWriter(dataName, bw);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
-        for(int j = 0; j < config.interfaces().at(i).readData.size(); j++) {
-            std::string dataName = config.interfaces().at(i).readData.at(j);
-            std::cout << dataName << std::endl;
-            if(dataName.compare("Temperature") == 0) {
-                adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition(T);
-                interface.addCouplingDataReader(dataName, br);
-            } else if(dataName.compare("Heat-Flux") == 0) {
-                adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition(T, turbulence, alphat, Pr.value(), rho.value(), Cp.value());
-                interface.addCouplingDataReader(dataName, br);
-            } else {
-                std::cout << "Error: " << dataName << " does not exist." << std::endl;
-                return 1;
-            }
-        }
-        
-    }
+	std::string configFile = args.optionFound( "config-file" ) ?
+							 args.optionRead<string>( "config-file" ) : "config.yml";
 
-    adapter.initialize();
+	adapter::Adapter adapter( participantName, configFile, mesh, runTime );
 
-    Info<< "\nStarting time loop\n" << endl;
+	addCouplingData( adapter, configFile, participantName, T, turbulence, alphat, Pr, rho, Cp );
+	adapter.initialize();
 
-    while(adapter.isCouplingOngoing())
-    {
+	Info<< "\nStarting time loop\n" << endl;
 
-        Info<< "Time = " << runTime.timeName() << nl << endl;
+	while( adapter.isCouplingOngoing() )
+	{
 
-        #include "createTimeControls.H"
-        #include "CourantNo.H"
-        #include "setDeltaT.H"
-        
-        adapter.adjustSolverTimeStep();
+		Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        if(adapter.isWriteCheckpointRequired()){
-            adapter.writeCheckpoint();
-            adapter.fulfilledWriteCheckpoint();
-        }
-        
-        runTime++;
+		#include "createTimeControls.H"
+		#include "CourantNo.H"
+		#include "setDeltaT.H"
 
-        adapter.readCouplingData();
+		adapter.adjustSolverTimeStep();
 
-        // --- Pressure-velocity PIMPLE corrector loop
-        while (pimple.loop())
-        {
-            #include "UEqn.H"
-            #include "TEqn.H"
+		if( adapter.isWriteCheckpointRequired() )
+		{
+			adapter.writeCheckpoint();
+			adapter.fulfilledWriteCheckpoint();
+		}
 
-            // --- Pressure corrector loop
-            while (pimple.correct())
-            {
-                #include "pEqn.H"
-            }
+		runTime++;
 
-            if (pimple.turbCorr())
-            {
-                laminarTransport.correct();
-                turbulence->correct();
-            }
-        }
+		adapter.readCouplingData();
 
-        adapter.writeCouplingData();
-        adapter.advance();
+		// --- Pressure-velocity PIMPLE corrector loop
+		while ( pimple.loop() )
+		{
+			#include "UEqn.H"
+			#include "TEqn.H"
 
-        if(adapter.isReadCheckpointRequired()){
-            adapter.readCheckpoint();
-            adapter.fulfilledReadCheckpoint();
-        } else {
-            
-            runTime.write();
+			// --- Pressure corrector loop
+			while ( pimple.correct() )
+			{
+				#include "pEqn.H"
+			}
 
-            Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-                << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-                << nl << endl;
-        }
+			if ( pimple.turbCorr() )
+			{
+				laminarTransport.correct();
+				turbulence->correct();
+			}
+		}
 
-    }
+		adapter.writeCouplingData();
+		adapter.advance();
 
-    Info<< "End\n" << endl;
+		if( adapter.isReadCheckpointRequired() )
+		{
+			adapter.readCheckpoint();
+			adapter.fulfilledReadCheckpoint();
+		}
+		else
+		{
 
-    return 0;
+			runTime.write();
+
+			Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+				<< "  ClockTime = " << runTime.elapsedClockTime() << " s"
+				<< nl << endl;
+		}
+
+	}
+
+	Info<< "End\n" << endl;
+
+	return 0;
 }
 
+void addCouplingData( adapter::Adapter & adapter, std::string configFile, std::string participantName,
+					  volScalarField & T, autoPtr<incompressible::RASModel> & turbulence, volScalarField & alphat,
+					  dimensionedScalar & Pr, dimensionedScalar & rho, dimensionedScalar & Cp )
+{
+
+	adapter::ConfigReader configReader( configFile, participantName );
+
+	for( uint i = 0 ; i < configReader.interfaces().size() ; i++ )
+	{
+
+		adapter::Interface & interface = adapter.addNewInterface( configReader.interfaces().at( i ).meshName, configReader.interfaces().at( i ).patchNames );
+
+		for( uint j = 0 ; j < configReader.interfaces().at( i ).writeData.size() ; j++ )
+		{
+			std::string dataName = configReader.interfaces().at( i ).writeData.at( j );
+
+			if( dataName.compare( "Temperature" ) == 0 )
+			{
+				adapter::TemperatureBoundaryValues * bw = new adapter::TemperatureBoundaryValues( T );
+				interface.addCouplingDataWriter( dataName, bw );
+			}
+			else if( dataName.compare( "Heat-Flux" ) == 0 )
+			{
+				adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues * bw = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryValues( T, turbulence, alphat, Pr.value(), rho.value(), Cp.value() );
+				interface.addCouplingDataWriter( dataName, bw );
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL( error ) << "Error: " << dataName << " is not valid";
+				exit( 1 );
+			}
+		}
+
+		for( uint j = 0 ; j < configReader.interfaces().at( i ).readData.size() ; j++ )
+		{
+			std::string dataName = configReader.interfaces().at( i ).readData.at( j );
+
+			if( dataName.compare( "Temperature" ) == 0 )
+			{
+				adapter::TemperatureBoundaryCondition * br = new adapter::TemperatureBoundaryCondition( T );
+				interface.addCouplingDataReader( dataName, br );
+			}
+			else if( dataName.compare( "Heat-Flux" ) == 0 )
+			{
+				adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition * br = new adapter::BuoyantBoussinesqPimpleHeatFluxBoundaryCondition( T, turbulence, alphat, Pr.value(), rho.value(), Cp.value() );
+				interface.addCouplingDataReader( dataName, br );
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL( error ) << "Error: " << dataName << " is not valid";
+				exit( 1 );
+			}
+		}
+	}
+}
 
 // ************************************************************************* //
