@@ -69,10 +69,18 @@ bool isTurbulenceUsed( Foam::fvMesh & mesh, Foam::Time & runTime )
 int main(int argc, char *argv[])
 {
 
-    /* Adapter: Add command line arguments */    
-    argList::addOption( "precice-participant", "string", "name of preCICE participant" );
-    argList::addOption( "config-file", "string", "name of YAML config file" );
-    argList::addBoolOption( "disable-checkpointing", "disable checkpointing" );
+    /* Adapter: Add command line arguments */
+    
+	argList::addOption( "precice-participant",
+						"string",
+						"name of preCICE participant" );
+
+	argList::addOption( "config-file",
+						"string",
+						"name of YAML config file" );
+
+	argList::addBoolOption( "disable-checkpointing",
+							"disable checkpointing" );
 
     #include "setRootCase.H"
     #include "createTime.H"
