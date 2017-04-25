@@ -10,9 +10,12 @@ EXE_INC = \
 	-I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude \
 	-I$(PRECICE_ROOT)/src \
 	-I/usr/local/yaml-cpp/include \
-	-I../..
+	-I../.. \
+	-DBOOST_LOG_DYN_LINK
 
 EXE_LIBS = \
+	-L../../adapter \
+	-lOpenFoamAdapter \
     -lfiniteVolume \
     -lfvOptions \
     -lsampling \
@@ -28,12 +31,13 @@ EXE_LIBS = \
 	-L${PETSC_DIR}/${PETSC_ARCH}/lib \
 	-lprecice \
 	-lpetsc \
+	-lboost_log \
+	-lboost_log_setup \
+	-lboost_program_options \
 	-lboost_system \
 	-lboost_filesystem \
 	-lpython2.7 \
 	-L/usr/local/yaml-cpp/build \
-	-L../../adapter \
-	-lOpenFoamAdapter \
 	-lyaml-cpp \
 
 
